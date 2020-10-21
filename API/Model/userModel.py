@@ -5,12 +5,12 @@ from fastapi  import Depends, HTTPException
 from datetime import datetime, timedelta
 
 # Security
-from API.Model.auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from API.Model.auth   import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 
 # Database
-import Database.db_user
+import Database.user_functions
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl = "/user/login/")
 
@@ -57,7 +57,7 @@ class UserLoginData(BaseModel):
 
 def get_user_by_email(email: EmailStr) -> Dict[str, Any]:
     user = None
-    user = Database.db_user.get_user_by_email(email)
+    user = Database.user_functions.get_user_by_email(email)
     if not user:
         return {}
     else:
@@ -78,14 +78,14 @@ def register(new_user: UserRegisterIn) -> Dict[str, Any]:
     )
     
     try:
-        Database.db_user.register_user(user)
+        Database.user_functions.register_user(user)
         return { "message": "Ok", "created": True }
     except Exception as e:
         return { "message": str(e), "created": False }
 
 
 def get_user_auth(email: EmailStr) -> Dict[str, Any]:
-    user = Database.db_user.get_user_by_email(email)
+    user = Database.user_functions.get_user_by_email(email)
     return {
         "email": user.email,
         "username": user.username,
@@ -95,8 +95,8 @@ def get_user_auth(email: EmailStr) -> Dict[str, Any]:
 
 def authenticate(email: EmailStr, password: str) -> Dict[str, Any]:
     data_user = None
-    if Database.db_user.auth_user(email, password.encode()):
-        user = Database.db_user.get_user_by_email(email)
+    if Database.user_functions.auth_user(email, password.encode()):
+        user = Database.user_functions.get_user_by_email(email)
         data_user = {
             "email": user.email,
             "username": user.username,
@@ -143,12 +143,12 @@ async def get_user_if_active(user: UserLoginData = Depends(get_this_user)):
     return user
 
 def change_username(email: EmailStr, new_username: str) -> bool:
-    return new_username == Database.db_user.change_username(email, new_username)
+    return new_username == Database.user_functions.change_username(email, new_username)
 
 def change_password(email: EmailStr, old_password: str, new_password: str) -> bool:
     if old_password == new_password:
         return False
-    return Database.db_user.change_password(email, old_password.encode(), new_password.encode())
+    return Database.user_functions.change_password(email, old_password.encode(), new_password.encode())
 
 def change_icon(email: EmailStr, new_icon: bytes) -> bool:
-    return new_icon == Database.db_user.change_icon(email, new_icon)
+    return new_icon == Database.user_functions.change_icon(email, new_icon)
