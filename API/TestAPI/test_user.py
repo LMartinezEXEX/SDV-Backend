@@ -56,11 +56,12 @@ Endpoint test: "/user/register/"
 Descripción:
 Tiene que funcionar la primera vez que lo ejecutan. Si lo ejecutan una segunda vez no funciona, 
 ya que el recurso ha sido creado.
+Escenario exitoso: 201
+Error: 409
 
 """
 def test_register_users(users):
-    USERS = users
-    for user in USERS:
+    for user in users:
         user_register = { "email": user["email"], "username": user["username"], "password": user["password"] }
         response = client.post(
             "/user/register/",
@@ -75,11 +76,12 @@ Endpoint test: "/user/{email}"
 
 Descripción:
 Una vez registrados nuestros usuarios, testeamos si son accesibles por un query.
+Escenario exitoso: 200
+Error: 404
 
 """
 def test_get_users(users):
-    USERS = users
-    for user in USERS:
+    for user in users:
         user_data = { "email": user["email"], "username": user["username"] }
         response = client.get(
             "/user/" + user_data["email"]
@@ -93,32 +95,23 @@ Endpoint test: "/user/login/"
 
 Descripción:
 Queremos ver que nos devuelva la información acordada respecto a la autenticación.
+Escenario exitoso: 302
+Error: 401
 
 """
 def test_login_users(users):
-    USERS = users
-    for user in USERS:
-        user_data = { "email": user["email"], "password": user["password"] }
+    for user in users:
+        user_data = { "username": user["email"], "password": user["password"] }
         response = client.post(
             "/user/login/",
-            headers = { "accept": "application/json" },
-            json    = user_data
+            headers = { "Content-Type": "application/x-www-form-urlencoded" },
+            data = user_data
         )
 
-        assert response.status_code == 302, "%s -> %s\n"%(user_data["email"], response.content.decode())
+        assert response.status_code == 302, "Unauthorized: %s\n"%(user_data["username"])
 
-        USERS_AUTH_DICT.update({ user_data["email"]: ( response.status_code, dict(json.loads(response.content.decode())) ) })
+        USERS_AUTH_DICT.update({ user_data["username"]: ( response.status_code, dict(response.headers)["set-cookie"] ) })
     
     for key in list(USERS_AUTH_DICT.keys()):
         if USERS_AUTH_DICT[key][0] == 302:
-            print("Login: %s"%(key))
-
-"""
-Endpoint test: "/user/profile/"
-
-Descripción:
-Queremos que cada usuario pueda acceder a los datos de acuerdo a la información que posee.
-
-"""
-def test_profile_users():
-    assert True
+            print("Login: %s %s"%(key, USERS_AUTH_DICT[key][1]))
