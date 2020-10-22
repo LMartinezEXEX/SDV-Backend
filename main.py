@@ -1,122 +1,181 @@
 # Imports
+from itertools import chain
 from datetime import datetime, timedelta
 from typing   import Optional
 from pydantic import EmailStr
-from fastapi  import FastAPI, Depends, Body, File, UploadFile, HTTPException, status
-
-# Security
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from API.Model.auth   import ACCESS_TOKEN_EXPIRE_MINUTES
+from fastapi  import FastAPI, Cookie, Response, Depends, Body, File, UploadFile, HTTPException, status
+from fastapi.responses import RedirectResponse
+from fastapi.encoders  import jsonable_encoder
+from fastapi.security  import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from API.Model.auth    import ACCESS_TOKEN_EXPIRE_MINUTES
 
 # User Model
-from API.Model.userModel import UserRegisterIn, UserRegisterOut, UserLoginData, Token, TokenData,\
-     oauth2_scheme, get_user_by_email, register, authenticate, new_access_token, get_user_if_active, change_username, change_password, change_icon
+from API.Model.userModel import UserRegisterIn, UserOperationOut, UserProfile, UserUpdateUsername, UserUpdatePassword, UserUpdateIcon, Token,\
+     oauth2_scheme, get_user_by_email, register, authenticate, deauthenticate, new_access_token, get_user_if_active,\
+     change_username, change_password, change_icon
 
-app = FastAPI()
+from API.Model.userExceptions import register_exception, update_exception
+
+from API.Model.userMetadata import user_metadata, user_metadata_testing
+
+# Domain for testing purposes, recommended practice. localtest.me resolves to 127.0.0.1
+DOMAIN  = "localtest.me"
+EXPIRES = 60 * 60 * 24 * 1000
+
+# Add metadata tags for each module
+tags_metadata = list(
+    chain.from_iterable([
+        [ { "name": "Root", "description": "", } ],
+        user_metadata_testing, user_metadata,
+        ]
+    )
+)
+
+app = FastAPI(
+    title       = "Secret Voldemort API",
+    description = "Secret Voldemort is a multiplayer game based on Secret Hitler where two teams compete against each other for the control of Hogwarts.",
+    version     = "0.0.0",
+    openapi_url  = "/api/openapi.json",
+    docs_url     = "/api/docs",
+    redoc_url    = "/api/redoc",
+    openapi_tags = tags_metadata
+)
 
 # Root
-@app.get("/")
+@app.get(
+    "/",
+    tags = ["Root"]
+    )
 async def get_root():
     return "Secret Voldemort API"
 
 # Get by email
-@app.get("/user/{email}")
+@app.get(
+    "/user/{email}",
+    status_code = status.HTTP_200_OK,
+    tags = ["User data (Testing)"]
+)
 async def get_user(email: EmailStr):
     return get_user_by_email(email)
 
 # Register
 @app.post(
     "/user/register/",
-    response_model = UserRegisterOut,
-    status_code = status.HTTP_201_CREATED  
-    )
+    response_model = UserOperationOut,
+    status_code = status.HTTP_201_CREATED,
+    tags = ["Register"]
+)
 async def user_register(new_user: UserRegisterIn):
-    dict_register = register(new_user)
-    if dict_register["created"]:
-        return UserRegisterOut(
+    if register(new_user):
+        return UserOperationOut(
             username = new_user.username, 
-            operation_result = "Ok"
+            operation_result = "success"
         )
     else:
-        raise HTTPException(
-            status_code = status.HTTP_409_CONFLICT, 
-            detail = dict_register["message"]
-        )
+        raise register_exception
 
 # Login
 @app.post(
     "/user/login/",
-    response_model = Token,
-    status_code = status.HTTP_302_FOUND
+    status_code = status.HTTP_302_FOUND,
+    tags = ["Login"]
 )
-async def user_login(email: EmailStr = Body(...), password: str = Body(...)):
+async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = None
     # Spec requires the field username, but there we store the email
+    email    = form_data.username
+    password = form_data.password
     user = authenticate(email, password)
-    if not user:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Incorrect email or password",
-            headers = {"WWW-Authenticate": "Bearer"},
-        )
     
     access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = new_access_token(
         data = { "sub": email }, expires_delta = access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    access_token_json = jsonable_encoder(access_token)
+    
+    response = Response(
+        status_code = status.HTTP_302_FOUND,
+        headers = {"WWW-Authenticate": "Bearer"}
+    )
+    response.set_cookie(
+            "Authorization",
+            value = "Bearer {%s}"%(access_token_json),
+            domain= DOMAIN,
+            httponly = True,
+            max_age = EXPIRES,
+            expires = EXPIRES,
+    )
+
+    return response 
 
 # Logout
+@app.post(
+    "/user/logout/",
+    response_model = UserOperationOut,
+    status_code = status.HTTP_302_FOUND,
+    tags = ["Logout"]
+)
+async def user_logout(user: UserProfile = Depends(get_user_if_active)):
+    deauthenticate(user.email)
+    response = RedirectResponse(url = "/")
+    response.delete_cookie("Authorization", domain = DOMAIN)
+    return UserOperationOut(
+        username = user.username,
+        operation_result = "success"
+    )
 
 # Profile
 @app.get(
     "/user/profile/",
-    response_model = UserLoginData
-    )
-async def profile(user: UserLoginData = Depends(get_user_if_active)):
+    response_model = UserProfile,
+    status_code = status.HTTP_200_OK,
+    tags = ["Profile"]
+)
+async def profile(user: UserProfile = Depends(get_user_if_active)):
     return user
 
 # Update username
 @app.put(
-    "/user/update/",
-    status_code = status.HTTP_200_OK
-    )
-async def user_update(email: EmailStr = Body(...), new_username: str = Body(...)):
-    if change_username(email, new_username):
-        return { "success": True }
-    else:
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            success = False,
-            detail = "Failed to update"
+    "/user/update/username/",
+    status_code = status.HTTP_200_OK,
+    tags = ["Update username"]
+)
+async def user_update(update_data: UserUpdateUsername, user: UserProfile = Depends(get_user_if_active)):
+    if update_data.email == user.email and change_username(update_data):
+        return UserOperationOut(
+            username = user.username,
+            operation_result = "success"
         )
+    else:
+        raise update_exception
 
 # Update password
 @app.put(
-    "/user/update/",
-    status_code = status.HTTP_200_OK
-    )
-async def user_update(email: EmailStr = Body(...), old_password: str = Body(...), new_password: str = Body(...)):
-    if change_password(email, old_password, new_password):
-        return { "success": True }
-    else:
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            success = False,
-            detail = "Failed to update"
+    "/user/update/password/",
+    status_code = status.HTTP_200_OK,
+    tags = ["Update password"]
+)
+async def user_update(update_data: UserUpdatePassword, user: UserProfile = Depends(get_user_if_active)):
+    if update_data.email == user.email and change_password(update_data):
+        return UserOperationOut(
+            username = user.username,
+            operation_result = "success"
         )
+    else:
+        raise update_exception
 
 # Update icon
 @app.put(
-    "/user/update/",
-    status_code = status.HTTP_200_OK
-    )
-async def user_update(email: EmailStr, new_icon: UploadFile = File(...) ):
-    if change_icon(email, new_icon):
-        return { "success": True }
-    else:
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            success = False,
-            detail = "Failed to update"
+    "/user/update/icon/",
+    status_code = status.HTTP_200_OK,
+    tags = ["Update icon"]
+)
+async def user_update(update_data: UserUpdateIcon, user: UserProfile = Depends(get_user_if_active)):
+    if update_data.email == user.email and change_icon(update_data):
+        return UserOperationOut(
+            username = user.username,
+            operation_result = "success"
         )
+    else:
+        raise update_exception
