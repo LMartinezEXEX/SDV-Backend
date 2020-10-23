@@ -1,26 +1,22 @@
 # Imports
 from itertools import chain
-from datetime import datetime, timedelta
-from typing   import Optional
-from pydantic import EmailStr
-from fastapi  import FastAPI, Cookie, Response, Depends, Body, File, UploadFile, HTTPException, status
+from datetime  import datetime, timedelta
+from typing    import Optional
+from pydantic  import EmailStr
+from fastapi   import FastAPI, Cookie, Depends, File, UploadFile, Response, status
 from fastapi.responses import RedirectResponse
-from fastapi.encoders  import jsonable_encoder
+
 from fastapi.security  import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from API.Model.auth    import ACCESS_TOKEN_EXPIRE_MINUTES
+from API.Model.auth    import DOMAIN, TOKEN_SEP
 
 # User Model
 from API.Model.userModel import UserRegisterIn, UserOperationOut, UserProfile, UserUpdateUsername, UserUpdatePassword, UserUpdateIcon, Token,\
-     oauth2_scheme, get_user_by_email, register, authenticate, deauthenticate, new_access_token, get_user_if_active,\
+     oauth2_scheme, get_user_profile_by_email, register, authenticate, deauthenticate, new_access_token, get_this_user,\
      change_username, change_password, change_icon
 
 from API.Model.userExceptions import register_exception, update_exception
 
 from API.Model.userMetadata import user_metadata, user_metadata_testing
-
-# Domain for testing purposes, recommended practice. localtest.me resolves to 127.0.0.1
-DOMAIN  = "localtest.me"
-EXPIRES = 60 * 60 * 24 * 1000
 
 # Add metadata tags for each module
 tags_metadata = list(
@@ -38,7 +34,8 @@ app = FastAPI(
     openapi_url  = "/api/openapi.json",
     docs_url     = "/api/docs",
     redoc_url    = "/api/redoc",
-    openapi_tags = tags_metadata
+    openapi_tags = tags_metadata,
+    debug = True
 )
 
 # Root
@@ -56,23 +53,24 @@ async def get_root():
     tags = ["User data (Testing)"]
 )
 async def get_user(email: EmailStr):
-    return get_user_by_email(email)
+    return get_user_profile_by_email(email)
 
 # Register
 @app.post(
     "/user/register/",
-    response_model = UserOperationOut,
     status_code = status.HTTP_201_CREATED,
     tags = ["Register"]
 )
 async def user_register(new_user: UserRegisterIn):
-    if register(new_user):
+    try:
+        register(new_user)
         return UserOperationOut(
             username = new_user.username, 
             operation_result = "success"
         )
-    else:
-        raise register_exception
+    except Exception as e:
+        #raise register_exception
+        return str(e)
 
 # Login
 @app.post(
@@ -81,43 +79,28 @@ async def user_register(new_user: UserRegisterIn):
     tags = ["Login"]
 )
 async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = None
     # Spec requires the field username, but there we store the email
     email    = form_data.username
     password = form_data.password
-    user = authenticate(email, password)
-    
-    access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = new_access_token(
-        data = { "sub": email }, expires_delta = access_token_expires
-    )
-
-    access_token_json = jsonable_encoder(access_token)
-    
-    response = Response(
-        status_code = status.HTTP_302_FOUND,
-        headers = {"WWW-Authenticate": "Bearer"}
-    )
-    response.set_cookie(
-            "Authorization",
-            value = "Bearer {%s}"%(access_token_json),
-            domain= DOMAIN,
-            httponly = True,
-            max_age = EXPIRES,
-            expires = EXPIRES,
-    )
-
-    return response 
+    return authenticate(email, password)
 
 # Logout
 @app.post(
     "/user/logout/",
-    response_model = UserOperationOut,
     status_code = status.HTTP_302_FOUND,
     tags = ["Logout"]
 )
-async def user_logout(user: UserProfile = Depends(get_user_if_active)):
-    deauthenticate(user.email)
+async def user_logout(Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
+    authorization_splitted = Authorization.split(TOKEN_SEP)
+    if len(authorization_splitted) != 2:
+        raise not_authenticated_exception        
+    refresh = authorization_splitted[1].strip()
+    refresh_splitted = refresh.split(" ")
+    if len(refresh_splitted) != 2:
+        raise not_authenticated_exception
+    refresh_token  = refresh_splitted[1]
+
+    deauthenticate(user.email, refresh_token)
     response = RedirectResponse(url = "/")
     response.delete_cookie("Authorization", domain = DOMAIN)
     return UserOperationOut(
@@ -128,11 +111,10 @@ async def user_logout(user: UserProfile = Depends(get_user_if_active)):
 # Profile
 @app.get(
     "/user/profile/",
-    response_model = UserProfile,
     status_code = status.HTTP_200_OK,
     tags = ["Profile"]
 )
-async def profile(user: UserProfile = Depends(get_user_if_active)):
+async def profile(Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     return user
 
 # Update username
@@ -141,8 +123,11 @@ async def profile(user: UserProfile = Depends(get_user_if_active)):
     status_code = status.HTTP_200_OK,
     tags = ["Update username"]
 )
-async def user_update(update_data: UserUpdateUsername, user: UserProfile = Depends(get_user_if_active)):
+async def user_update(
+    update_data: UserUpdateUsername, 
+    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and change_username(update_data):
+        user = get_user_profile_by_email(user.email)
         return UserOperationOut(
             username = user.username,
             operation_result = "success"
@@ -156,7 +141,9 @@ async def user_update(update_data: UserUpdateUsername, user: UserProfile = Depen
     status_code = status.HTTP_200_OK,
     tags = ["Update password"]
 )
-async def user_update(update_data: UserUpdatePassword, user: UserProfile = Depends(get_user_if_active)):
+async def user_update(
+    update_data: UserUpdatePassword, 
+    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and change_password(update_data):
         return UserOperationOut(
             username = user.username,
@@ -171,8 +158,15 @@ async def user_update(update_data: UserUpdatePassword, user: UserProfile = Depen
     status_code = status.HTTP_200_OK,
     tags = ["Update icon"]
 )
-async def user_update(update_data: UserUpdateIcon, user: UserProfile = Depends(get_user_if_active)):
-    if update_data.email == user.email and change_icon(update_data):
+async def user_update(
+    email: EmailStr, password: str, new_icon: UploadFile = File(...),
+    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
+
+    update_data = UserUpdateIcon(email, password)
+    
+    if new_icon.content_type not in ["image/jpeg", "image/png"]:
+        raise update_exception
+    if update_data.email == user.email and change_icon(update_data, new_icon):
         return UserOperationOut(
             username = user.username,
             operation_result = "success"
