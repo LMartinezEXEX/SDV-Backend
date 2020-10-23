@@ -68,7 +68,7 @@ async def get_user(email: EmailStr):
 async def user_register(new_user: UserRegisterIn):
     if register(new_user):
         return UserOperationOut(
-            username = new_user.username, 
+            username = new_user.username,
             operation_result = "success"
         )
     else:
@@ -86,14 +86,14 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
     email    = form_data.username
     password = form_data.password
     user = authenticate(email, password)
-    
+
     access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = new_access_token(
         data = { "sub": email }, expires_delta = access_token_expires
     )
 
     access_token_json = jsonable_encoder(access_token)
-    
+
     response = Response(
         status_code = status.HTTP_302_FOUND,
         headers = {"WWW-Authenticate": "Bearer"}
@@ -107,7 +107,7 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
             expires = EXPIRES,
     )
 
-    return response 
+    return response
 
 # Logout
 @app.post(
@@ -179,3 +179,11 @@ async def user_update(update_data: UserUpdateIcon, user: UserProfile = Depends(g
         )
     else:
         raise update_exception
+
+
+#-------------------------------------------------------------------------------
+@app.put("/game/{id}/select_MM",
+         status_code = status.HTTP_200_OK
+         )
+async def select_MM(id: int):
+    return get_next_MM(id)
