@@ -75,3 +75,94 @@ def select_MM_candidate(game_id):
             order += 1
 
     return next_candidate_minister.id
+
+
+@db_session()
+def player_voted(game_id, player_id):
+    game = Game[game_id]
+    player = game.player.select(lambda p: p.id == player_id).first()
+
+    turn_number = len(game.turn)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    vote = Vote.get(lambda v: v.turn.turn_number==turn.turn_number)
+
+    voted = False
+    # No one voted yet in this turn
+    if vote is None:
+        return voted
+
+    if Player_vote.get(lambda pv: pv.player.id==player_id and pv.vote.id==vote.id) is not None:
+        voted = True
+
+    return voted
+
+
+@db_session()
+def vote_turn(game_id, player_id, player_vote):
+    game = Game[game_id]
+    turn_number = len(game.turn)
+    turn = get_turn_in_game(game_id, turn_number)
+    player = get_player_in_game(game_id, player_id)
+    vote = Vote.get(lambda v: v.turn.turn_number == turn.turn_number)
+
+    # Is the first vote in the current turn
+    if vote is None:
+        vote = Vote(result=False,
+                    turn=turn)
+
+        Player_vote(player=player,
+                    vote = vote,
+                    is_lumos= True if player_vote else False)
+
+    else:
+        Player_vote(player=player,
+                    vote = vote,
+                    is_lumos= True if player_vote else False)
+
+    return len(vote.player_vote)
+
+
+@db_session()
+def current_votes(game_id):
+    game = Game[game_id]
+
+    turn_number = len(game.turn)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
+
+    # No one voted yet
+    if vote is None:
+        return 0
+
+    return len(vote.player_vote)
+
+
+@db_session()
+def alive_players(game_id):
+    game = Game[game_id]
+    alive_players = Player.select(lambda p: p.game_in.id==game_id and p.is_alive)
+    return alive_players.count()
+
+
+@db_session()
+def get_result(game_id):
+    game = Game[game_id]
+    turn_number = len(game.turn)
+    turn = get_turn_in_game(game_id, turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
+
+    lumos = Player_vote.select(lambda pv: pv.vote.id==vote.id and pv.is_lumos).count()
+    lumos_votes = select(pv for pv in Player_vote if pv.vote.id==vote.id and pv.is_lumos)[:]
+
+    player_ids = []
+    for _vote_ in lumos_votes:
+        player_ids.append(_vote_.player.id)
+
+    result = False
+    if len(vote.player_vote) - lumos < lumos:
+        result = True
+
+    vote.result = result
+    return [result, player_ids]
