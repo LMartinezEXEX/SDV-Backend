@@ -3,7 +3,7 @@ from pathlib import Path
 from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
-from fixtures_user import users, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING
+from user_data import users, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING
 
 from main import app
 
