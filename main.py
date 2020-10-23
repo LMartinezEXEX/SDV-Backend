@@ -18,6 +18,10 @@ from API.Model.userExceptions import register_exception, update_exception
 
 from API.Model.userMetadata import user_metadata, user_metadata_testing
 
+# Turn Model
+
+from API.Model.turnModel import *
+
 # Domain for testing purposes, recommended practice. localtest.me resolves to 127.0.0.1
 DOMAIN  = "localtest.me"
 EXPIRES = 60 * 60 * 24 * 1000

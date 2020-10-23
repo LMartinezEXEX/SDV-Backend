@@ -53,7 +53,7 @@ class Game(db.Entity):
     name = Required(str, 40)
     min_players = Required(int)
     max_players = Required(int)
-    creation_date = Required(datetime)
+    creation_date = Required(datetime.datetime)
     state = Required(int)
     player = Set('Player')
     turn = Set('Turn')
@@ -79,3 +79,38 @@ class Card(db.Entity):
 #
 
 db.generate_mapping(create_tables=True)
+
+#-TEST DATA---------------------------------------------------------------------
+with db_session:
+
+    Game(name='LOL',
+         min_players=5,
+         max_players=5,
+         creation_date=datetime.datetime.today(),
+         state=0)
+
+    game = Game[1]
+
+    Player(turn=1,
+           rol=1,
+           loyalty='Fenix',
+           is_alive=False,
+           chat_enabled=True,
+           is_investigated=False,
+           game_in=game.id)
+
+    Player(turn=2,
+           rol=1,
+           loyalty='Fenix',
+           is_alive=True,
+           chat_enabled=True,
+           is_investigated=False,
+           game_in=game.id)
+
+    Player(turn=3,
+           rol=2,
+           loyalty='Mortifago',
+           is_alive=True,
+           chat_enabled=True,
+           is_investigated=False,
+           game_in=game.id)
