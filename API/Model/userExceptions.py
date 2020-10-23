@@ -2,12 +2,12 @@ from fastapi import HTTPException, status
 
 register_exception = HTTPException(
     status_code = status.HTTP_409_CONFLICT, 
-    detail = "Could not register the user"
+    detail      = "Could not register the user"
 )
 
 update_exception = HTTPException(
     status_code = status.HTTP_400_BAD_REQUEST,
-    detail  = "Failed to update"
+    detail      = "Failed to update"
 )
 
 unauthorized_exception = HTTPException(
@@ -18,7 +18,7 @@ unauthorized_exception = HTTPException(
 
 not_authenticated_exception = HTTPException(
     status_code = status.HTTP_403_FORBIDDEN,
-    detail="Not authenticated"
+    detail      = "Not authenticated"
 )
 
 credentials_exception = HTTPException(
@@ -29,5 +29,5 @@ credentials_exception = HTTPException(
 
 profile_exception = HTTPException(
     status_code = status.HTTP_400_BAD_REQUEST,
-    detail = "Login to see user profile"
+    detail      = "Login to see user profile"
 )
