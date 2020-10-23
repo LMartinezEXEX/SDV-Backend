@@ -40,3 +40,7 @@ def get_vote_result(game_id: int):
     else:
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
                             detail = "Vote's missing")
+
+
+def get_3_cards(game_id):
+    return {"cards": Database.turn_functions.generate_3_cards(game_id)}

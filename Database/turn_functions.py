@@ -166,3 +166,26 @@ def get_result(game_id):
 
     vote.result = result
     return [result, player_ids]
+
+
+'''
+Generate 3 new cards and return the previous 3 cards type
+'''
+@db_session()
+def generate_3_cards(game_id):
+    game = Game[game_id]
+    turn = get_turn_in_game(game_id, len(game.turn))
+
+    game_deck_cuantity = len(game.card)
+
+    cards = Card.select(lambda c: c.game.id==game_id and c.turn.turn_number==turn.turn_number and c.order > (game_deck_cuantity - 3)).order_by(Card.order)[:3]
+
+    for _ in range(3):
+        game_deck_cuantity += 1
+        card_type = random.randint(0,1)
+        Card(order=game_deck_cuantity,
+             type=card_type,
+             turn=turn,
+             game=game)
+
+    return [cards[0].type, cards[1].type, cards[2].type]

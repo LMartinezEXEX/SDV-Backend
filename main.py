@@ -200,3 +200,9 @@ async def vote(id: int, player_id: int, vote: bool):
         status_code = status.HTTP_200_OK)
 async def vote_result(id: int):
     return get_vote_result(id)
+
+# Get three cards
+@app.put("/game/{id}/get_cards",
+        status_code = status.HTTP_200_OK)
+async def get_cards(id: int):
+    return get_3_cards(id)
