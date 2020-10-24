@@ -19,10 +19,10 @@ class User(db.Entity):
     is_validated     = Required(bool)
     active           = Required(bool)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------\
 
 class Turn(db.Entity):
-    turn_number =  PrimaryKey(int, auto=True)
+    turn_number = Required(int)
     game = Required('Game')
     current_minister = Required('Player')
     current_director = Required('Player')
@@ -32,9 +32,11 @@ class Turn(db.Entity):
     candidate_director = Required('Player')
     vote = Optional('Vote')
     card = Set('Card')
+    taken_cards = Required(bool)
+    PrimaryKey(game, turn_number)
 
 class Player(db.Entity):
-    turn = Required(int, unique=True)
+    turn = Required(int)
     rol = Required(int)
     loyalty = Required(str)
     is_alive = Required(bool)
@@ -61,7 +63,7 @@ class Game(db.Entity):
 
 class Vote(db.Entity):
     result = Required(bool)
-    turn = Required('Turn')
+    turn = PrimaryKey('Turn')
     player_vote = Set('Player_vote')
 
 class Player_vote(db.Entity):
@@ -79,38 +81,3 @@ class Card(db.Entity):
 #
 
 db.generate_mapping(create_tables=True)
-
-#-TEST DATA---------------------------------------------------------------------
-with db_session:
-
-    Game(name='LOL',
-         min_players=5,
-         max_players=5,
-         creation_date=datetime.datetime.today(),
-         state=0)
-
-    game = Game[1]
-
-    Player(turn=1,
-           rol=1,
-           loyalty='Fenix',
-           is_alive=False,
-           chat_enabled=True,
-           is_investigated=False,
-           game_in=game.id)
-
-    Player(turn=2,
-           rol=1,
-           loyalty='Fenix',
-           is_alive=True,
-           chat_enabled=True,
-           is_investigated=False,
-           game_in=game.id)
-
-    Player(turn=3,
-           rol=2,
-           loyalty='Mortifago',
-           is_alive=True,
-           chat_enabled=True,
-           is_investigated=False,
-           game_in=game.id)

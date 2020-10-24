@@ -194,10 +194,11 @@ async def select_MM(id: int):
     return get_next_MM(id)
 
 # Submit a vote
-@app.put("/game/{id}/vote/",
+@app.put("/game/{id}/vote",
         status_code = status.HTTP_200_OK)
-async def vote(id: int, player_id: int, vote: bool):
-    return vote_candidate(id, player_id, vote)
+async def vote(id: int,
+               player_vote: PlayerVote = Body(..., description="Player data: id and vote")):
+    return vote_candidate(id, player_vote.id, player_vote.vote)
 
 # Get the vote result
 @app.put("/game/{id}/result",

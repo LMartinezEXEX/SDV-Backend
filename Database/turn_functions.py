@@ -10,6 +10,11 @@ def get_player_in_game(game_id, player_id):
 
 
 @db_session()
+def is_player_in_game(game_id, player_id):
+    return True if Player.get(lambda p: p.game_in.id==game_id and p.id==player_id) is not None else False
+
+
+@db_session()
 def is_alive(game_id, player_id):
     player = Player.get(lambda p: p.game_in.id==game_id and p.id==player_id)
     return player.is_alive
@@ -31,11 +36,14 @@ def select_MM_candidate(game_id):
     game = Game[game_id]
     players_set = game.player
     next_candidate_minister = None
+    game_turns = len(game.turn)
 
-    if len(game.turn) > 0:
+    if game_turns > 0:
+        print(len(game.turn))
         last_turn = get_turn_in_game(game_id=game_id,
-                                     turn_number=len(game.turn))
+                                     turn_number=game_turns)
 
+        print(last_turn)
         last_candidate_minister = last_turn.candidate_minister
 
         next_candidate_minister = players_set.select(lambda p: p.is_alive and p.turn > last_candidate_minister.turn).order_by(Player.turn).first()
@@ -45,24 +53,28 @@ def select_MM_candidate(game_id):
             next_candidate_minister = players_set.select(lambda p: p.is_alive).order_by(Player.turn).first()
 
         Turn(game=game,
+             turn_number=game_turns+1,
              current_minister=next_candidate_minister,
              current_director=next_candidate_minister,
              last_minister=last_turn.current_minister,
              last_director=last_turn.current_director,
              candidate_minister=next_candidate_minister,
-             candidate_director=next_candidate_minister)
+             candidate_director=next_candidate_minister,
+             taken_cards=False)
 
     # Is the first turn in the game
     else:
         next_candidate_minister = players_set.select(lambda p: p.is_alive).order_by(Player.turn).first()
 
         turn = Turn(game=game,
+                     turn_number=game_turns+1,
                      current_minister=next_candidate_minister,
                      current_director=next_candidate_minister,
                      last_minister=next_candidate_minister,
                      last_director=next_candidate_minister,
                      candidate_minister=next_candidate_minister,
-                     candidate_director=next_candidate_minister)
+                     candidate_director=next_candidate_minister,
+                     taken_cards=False)
 
         #Generate the first set of cards
         order = 1
@@ -85,14 +97,14 @@ def player_voted(game_id, player_id):
     turn_number = len(game.turn)
     turn = get_turn_in_game(game_id, turn_number)
 
-    vote = Vote.get(lambda v: v.turn.turn_number==turn.turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number==turn.turn_number and v.turn.game.id==game_id)
 
     voted = False
     # No one voted yet in this turn
     if vote is None:
         return voted
 
-    if Player_vote.get(lambda pv: pv.player.id==player_id and pv.vote.id==vote.id) is not None:
+    if Player_vote.get(lambda pv: pv.player.id==player_id and pv.vote.turn==turn) is not None:
         voted = True
 
     return voted
@@ -104,7 +116,7 @@ def vote_turn(game_id, player_id, player_vote):
     turn_number = len(game.turn)
     turn = get_turn_in_game(game_id, turn_number)
     player = get_player_in_game(game_id, player_id)
-    vote = Vote.get(lambda v: v.turn.turn_number == turn.turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number == turn.turn_number and v.turn.game.id==game_id)
 
     # Is the first vote in the current turn
     if vote is None:
@@ -168,6 +180,14 @@ def get_result(game_id):
     return [result, player_ids]
 
 
+@db_session()
+def taked_cards(game_id):
+    game = Game[game_id]
+    turn = get_turn_in_game(game_id, len(game.turn))
+
+    return turn.taken_cards
+
+
 '''
 Generate 3 new cards and return the previous 3 cards type
 '''
@@ -175,10 +195,9 @@ Generate 3 new cards and return the previous 3 cards type
 def generate_3_cards(game_id):
     game = Game[game_id]
     turn = get_turn_in_game(game_id, len(game.turn))
-
     game_deck_cuantity = len(game.card)
 
-    cards = Card.select(lambda c: c.game.id==game_id and c.turn.turn_number==turn.turn_number and c.order > (game_deck_cuantity - 3)).order_by(Card.order)[:3]
+    cards = Card.select(lambda c: c.game.id==game_id and c.order > (game_deck_cuantity - 3)).order_by(Card.order)[:3]
 
     for _ in range(3):
         game_deck_cuantity += 1
@@ -188,4 +207,5 @@ def generate_3_cards(game_id):
              turn=turn,
              game=game)
 
+    turn.taken_cards = True
     return [cards[0].type, cards[1].type, cards[2].type]
