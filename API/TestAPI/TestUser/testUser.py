@@ -3,7 +3,7 @@ from pathlib import Path
 from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
-from user_data import users, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING
+from testUserData import users, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING, UPDATE_ICON_DIR, UPDATE_ICON_FILE
 
 from main import app
 
@@ -179,8 +179,6 @@ Escenario exitoso: 200 Ok
 Error: 400 Bad Request, 401 Unauthorized, 403 Forbidden
 
 """
-UPDATE_ICON_DIR = "img"
-UPDATE_ICON_FILE = "grumpycat.jpeg"
 def test_update_icons(users):
     for user in users:
         cookie = SimpleCookie()
@@ -189,20 +187,16 @@ def test_update_icons(users):
         for key, obj in cookie.items():
             cookies[key] = obj.value
         
-        #user_data = { "update_data": { "email": user["email"],"password": user["password"] + UPDATE_PASSWORD_STRING } }
-        user_data = { "email": user["email"],"password": user["password"] + UPDATE_PASSWORD_STRING }
+        user_data = { "email": user["email"], "password": user["password"] + UPDATE_PASSWORD_STRING }
         file_to_upload = (Path(__file__).parent / (UPDATE_ICON_DIR + "/" + UPDATE_ICON_FILE) ).resolve()
-        file_to_upload_open = open(file_to_upload , "rb")
 
         response = client.put(
             "/user/update/icon/",
-            headers = { "accept": "application/json", "content-type": "multipart/form-data" },
+            headers = { "accept": "application/json" },
             cookies = cookies,
             data = user_data,
-            files = { "new_icon": (UPDATE_ICON_FILE, file_to_upload_open, "image/jpeg") }
-
+            files = { "new_icon": (UPDATE_ICON_FILE, file_to_upload.open("rb"), "image/jpeg") }
         )
-        file_to_upload_open.close()
 
         assert response.status_code == 200, f'Error: {response.content.decode()}\n'
         assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
