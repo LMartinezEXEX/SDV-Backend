@@ -4,7 +4,8 @@ UPDATE_USERNAME_STRING = "update_username"
 
 UPDATE_PASSWORD_STRING = "update_pass"
 
-
+UPDATE_ICON_DIR = "img"
+UPDATE_ICON_FILE = "grumpycat.jpeg"
 
 """ Necesito compartir usuarios para las pruebas.
 """
