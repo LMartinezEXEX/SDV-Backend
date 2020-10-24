@@ -1,28 +1,31 @@
 # Imports
+from io import BytesIO
 from itertools import chain
 from datetime  import datetime, timedelta
 from typing    import Optional
 from pydantic  import EmailStr
-from fastapi   import FastAPI, Cookie, Depends, File, UploadFile, Response, status
+from fastapi   import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
 from fastapi.responses import RedirectResponse
 
-from fastapi.security  import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from API.Model.auth    import DOMAIN, TOKEN_SEP
+from fastapi.security   import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from API.Model.authData import DOMAIN, TOKEN_SEP
 
 # User Model
-from API.Model.userModel import UserRegisterIn, UserOperationOut, UserProfile, UserUpdateUsername, UserUpdatePassword, UserUpdateIcon, Token,\
-     oauth2_scheme, get_user_profile_by_email, register, authenticate, deauthenticate, new_access_token, get_this_user,\
+from API.Model.userModel import UserRegisterIn, UserOperationOut, UserProfile,\
+     UserUpdateUsername, UserUpdatePassword, UserUpdateIcon, Token,\
+     oauth2_scheme, get_user_profile_by_email, get_user_icon_by_email, register,\
+     authenticate, deauthenticate, new_access_token, get_this_user,\
      change_username, change_password, change_icon
 
-from API.Model.userExceptions import register_exception, update_exception
+from API.Model.userExceptions import not_found_exception, register_exception, update_exception, update_icon_exception
 
-from API.Model.userMetadata import user_metadata, user_metadata_testing
+from API.Model.userMetadata import user_metadata
 
 # Add metadata tags for each module
 tags_metadata = list(
     chain.from_iterable([
         [ { "name": "Root", "description": "", } ],
-        user_metadata_testing, user_metadata,
+        user_metadata,
         ]
     )
 )
@@ -46,14 +49,29 @@ app = FastAPI(
 async def get_root():
     return "Secret Voldemort API"
 
-# Get by email
+# Get public profile by email
 @app.get(
-    "/user/{email}",
+    "/user/{email}/",
     status_code = status.HTTP_200_OK,
-    tags = ["User data (Testing)"]
+    tags = ["User public data"]
 )
-async def get_user(email: EmailStr):
-    return get_user_profile_by_email(email)
+async def get_user_public_profile(email: EmailStr):
+    try:
+        return get_user_profile_by_email(email)
+    except:
+        raise not_found_exception
+
+# Get icon by email
+@app.get(
+    "/user/{email}/icon/",
+    status_code = status.HTTP_200_OK,
+    tags = ["User icon"]
+)
+async def get_user_icon(email: EmailStr):
+    try:
+        return Response(get_user_icon_by_email(email))
+    except:
+        raise not_found_exception
 
 # Register
 @app.post(
@@ -68,9 +86,8 @@ async def user_register(new_user: UserRegisterIn):
             username = new_user.username, 
             operation_result = "success"
         )
-    except Exception as e:
-        #raise register_exception
-        return str(e)
+    except:
+        raise register_exception
 
 # Login
 @app.post(
@@ -112,7 +129,7 @@ async def user_logout(Authorization: str = Cookie(...), user: UserProfile = Depe
 @app.get(
     "/user/profile/",
     status_code = status.HTTP_200_OK,
-    tags = ["Profile"]
+    tags = ["Private profile"]
 )
 async def profile(Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     return user
@@ -123,7 +140,7 @@ async def profile(Authorization: str = Cookie(...), user: UserProfile = Depends(
     status_code = status.HTTP_200_OK,
     tags = ["Update username"]
 )
-async def user_update(
+async def user_update_username(
     update_data: UserUpdateUsername, 
     Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and change_username(update_data):
@@ -141,7 +158,7 @@ async def user_update(
     status_code = status.HTTP_200_OK,
     tags = ["Update password"]
 )
-async def user_update(
+async def user_update_password(
     update_data: UserUpdatePassword, 
     Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and change_password(update_data):
@@ -158,15 +175,18 @@ async def user_update(
     status_code = status.HTTP_200_OK,
     tags = ["Update icon"]
 )
-async def user_update(
-    email: EmailStr, password: str, new_icon: UploadFile = File(...),
+async def user_update_icon(
+    email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
     Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
-
-    update_data = UserUpdateIcon(email, password)
     
-    if new_icon.content_type not in ["image/jpeg", "image/png"]:
-        raise update_exception
-    if update_data.email == user.email and change_icon(update_data, new_icon):
+    update_data = UserUpdateIcon(email = email, password = password)
+
+    if new_icon.content_type not in ["image/jpeg", "image/png", "image/bmp", "image/webp"]:
+        raise update_icon_exception
+
+    raw_icon = new_icon.file.read()
+
+    if update_data.email == user.email and change_icon(update_data, raw_icon):
         return UserOperationOut(
             username = user.username,
             operation_result = "success"
