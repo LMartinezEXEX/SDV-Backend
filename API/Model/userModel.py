@@ -10,8 +10,10 @@ from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from jose import JWTError, ExpiredSignatureError, jwt
 
-from API.Model.userExceptions import credentials_exception, not_authenticated_exception, unauthorized_exception, profile_exception
-from API.Model.auth import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN, ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, EXPIRES_REFRESH, REFRESH_TOKEN_LENGTH
+from API.Model.userExceptions import credentials_exception, not_authenticated_exception, \
+    unauthorized_exception, profile_exception
+from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN,\
+     ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, EXPIRES_REFRESH, REFRESH_TOKEN_LENGTH
 
 # Database
 import Database.user_functions
@@ -29,7 +31,7 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
         flows = OAuthFlowsModel(password = {"tokenUrl": tokenUrl, "scopes": scopes})
         super().__init__(flows = flows, scheme_name = scheme_name, auto_error = auto_error)
 
-    async def __call__(self, request: Request) -> Optional[str]:
+    async def __call__(self, request: Request):
         cookie_authorization: str = request.cookies.get("Authorization")
 
         authorization_splitted = cookie_authorization.split(TOKEN_SEP)
@@ -104,7 +106,6 @@ class UserOperationOut(BaseModel):
 class UserProfile(BaseModel):
     email: EmailStr = ""
     username: str   = ""
-    icon: bytes     = "".encode()
     is_validated: bool = False
 
 class UserProfileExtended(UserProfile):
@@ -127,15 +128,15 @@ class UserUpdateIcon(BaseModel):
 
 def get_user_profile_by_email(email: EmailStr):
     user = Database.user_functions.get_user_by_email(email)
-    if user:
-        return UserProfile(
-            email    = user.email,
-            username = user.username,
-            icon     = user.icon,
-            is_validated = user.is_validated
-        )
-    else:
-        return UserProfile()
+    return UserProfile(
+        email    = user.email,
+        username = user.username,
+        is_validated = user.is_validated
+    )
+
+def get_user_icon_by_email(email: EmailStr):
+    user = Database.user_functions.get_user_by_email(email)
+    return user.icon
 
 def register(new_user: UserRegisterIn):
     user = User(
@@ -168,16 +169,23 @@ def get_user_auth(email: EmailStr):
 def authenticate(email: EmailStr, password: str):
     if Database.user_functions.auth_user_password(email, password):
         user = get_user_auth(email)
-        if user.refresh_token == "empty":
+        # Dos casos a considerar:
+        # 1) El usuario no está logueado, como estado
+        # 2) El browser pudo haber borrado las cookies expiradas pero la aplicación no lo sabe,
+        #    entonces me fijo si había una posible sesión pero está vencida
+        if user.refresh_token == "empty" or (user.refresh_token != "empty" and user.refresh_token_expires < datetime.utcnow()):
             access_token = new_access_token(
                 data = { "sub": email }, expires_delta = timedelta(minutes = ACCESS_TOKEN_EXPIRES_MINUTES)
             )
             access_token_json = jsonable_encoder(access_token)
 
             refresh_token_value = token_hex(REFRESH_TOKEN_LENGTH)
-            refresh_token_expires = datetime.utcnow() + timedelta(minutes = REFRESH_TOKEN_EXPIRES_MINUTES)
+            
+            last_access_date = datetime.utcnow()
+            
+            refresh_token_expires = last_access_date + timedelta(minutes = REFRESH_TOKEN_EXPIRES_MINUTES)
 
-            Database.user_functions.activate_user(email, refresh_token_value, refresh_token_expires)
+            Database.user_functions.activate_user(email, refresh_token_value, refresh_token_expires, last_access_date)
             
             response = Response(
                 status_code = status.HTTP_302_FOUND,
@@ -230,12 +238,7 @@ async def get_this_user(tokens: Tuple[str, str] = Depends(oauth2_scheme)):
             raise credentials_exception
         if user.refresh_token == "empty" or user.refresh_token != refresh_token:
             raise profile_exception
-        return UserProfile(
-            email    = user.email,
-            username = user.username,
-            icon     = user.icon,
-            is_validated = user.is_validated
-        )
+        return user
     except ExpiredSignatureError:
         # This is the case where signature expired
         # Signature expired, but we need to know if refresh expired too
@@ -256,9 +259,13 @@ async def get_this_user(tokens: Tuple[str, str] = Depends(oauth2_scheme)):
                     data = { "sub": user.email }, expires_delta = timedelta(minutes = ACCESS_TOKEN_EXPIRES_MINUTES)
                 )
                 access_token_json = jsonable_encoder(access_token)
+
                 refresh_token_value = token_hex(REFRESH_TOKEN_LENGTH)
+
                 refresh_token_expires = datetime.utcnow() + timedelta(minutes = REFRESH_TOKEN_EXPIRES_MINUTES)
+
                 Database.user_functions.activate_user(email, refresh_token_value, refresh_token_expires)
+                
                 response = Response(
                     status_code = status.HTTP_302_FOUND,
                     headers = {"WWW-Authenticate": "Bearer"}
@@ -271,7 +278,7 @@ async def get_this_user(tokens: Tuple[str, str] = Depends(oauth2_scheme)):
                     max_age  = EXPIRES_REFRESH,
                     expires  = EXPIRES_REFRESH,
                 )
-                response.content = get_user_profile_by_email(user.email)
+                response.content = get_user_auth(user.email)
                 return user
         else:
             # Refresh token is not tracked, then token is being replayed somehow
