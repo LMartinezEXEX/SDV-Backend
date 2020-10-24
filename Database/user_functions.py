@@ -1,4 +1,5 @@
-from pony import orm
+from pony   import orm
+from typing import Optional
 from Database.database import User
 
 from datetime import datetime
@@ -31,8 +32,10 @@ def auth_user_password(email: str, password: str):
         return False
 
 @orm.db_session
-def activate_user(email: str, refresh_token_value: str, refresh_token_expires: datetime):
+def activate_user(email: str, refresh_token_value: str, refresh_token_expires: datetime, last_access_date: Optional[datetime] = None):
     user = User.get(email = email)
+    if last_access_date:
+        user.last_access_date = last_access_date
     user.refresh_token = refresh_token_value
     user.refresh_token_expires = refresh_token_expires
 
@@ -58,7 +61,7 @@ def change_password(update_data):
 
 @orm.db_session
 def change_icon(update_data, new_icon: bytes):
-    if auth_user_password(update_data.email, update_data.old_password):
+    if auth_user_password(update_data.email, update_data.password):
         user = User.get(email = update_data.email)
         user.icon = new_icon
         return user.icon
