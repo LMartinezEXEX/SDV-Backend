@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from typing   import Optional
 from pydantic import EmailStr
 from fastapi  import FastAPI, Depends, Body, File, UploadFile, HTTPException, status
+from API.Model.gameModel import GameParams, JoinModel, OpResponse, InitGameIds
+from Database.game_functions import create_new_game, join_game_with_ids, init_game_with_ids
 
 # Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -28,18 +30,18 @@ async def get_user(email: EmailStr):
 @app.post(
     "/user/register/",
     response_model = UserRegisterOut,
-    status_code = status.HTTP_201_CREATED  
+    status_code = status.HTTP_201_CREATED
     )
 async def user_register(new_user: UserRegisterIn):
     dict_register = register(new_user)
     if dict_register["created"]:
         return UserRegisterOut(
-            username = new_user.username, 
+            username = new_user.username,
             operation_result = "Ok"
         )
     else:
         raise HTTPException(
-            status_code = status.HTTP_409_CONFLICT, 
+            status_code = status.HTTP_409_CONFLICT,
             detail = dict_register["message"]
         )
 
@@ -59,7 +61,7 @@ async def user_login(email: EmailStr = Body(...), password: str = Body(...)):
             detail = "Incorrect email or password",
             headers = {"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = new_access_token(
         data = { "sub": email }, expires_delta = access_token_expires
@@ -92,31 +94,66 @@ async def user_update(email: EmailStr = Body(...), new_username: str = Body(...)
         )
 
 # Update password
-@app.put(
-    "/user/update/",
-    status_code = status.HTTP_200_OK
-    )
-async def user_update(email: EmailStr = Body(...), old_password: str = Body(...), new_password: str = Body(...)):
-    if change_password(email, old_password, new_password):
-        return { "success": True }
-    else:
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            success = False,
-            detail = "Failed to update"
-        )
+#@app.put(
+#    "/user/update/",
+#    status_code = status.HTTP_200_OK
+#    )
+#async def user_update(email: EmailStr = Body(...), old_password: str = Body(...), new_password: str = Body(...)):
+#    if change_password(email, old_password, new_password):
+#        return { "success": True }
+#    else:
+#        raise HTTPException(
+#            status_code = status.HTTP_400_BAD_REQUEST,
+#            success = False,
+#            detail = "Failed to update"
+#        )
 
 # Update icon
-@app.put(
-    "/user/update/",
-    status_code = status.HTTP_200_OK
-    )
-async def user_update(email: EmailStr, new_icon: UploadFile = File(...) ):
-    if change_icon(email, new_icon):
-        return { "success": True }
-    else:
+#@app.put(
+#    "/user/update/",
+#    status_code = status.HTTP_200_OK
+#    )
+#async def user_update(email: EmailStr, new_icon: UploadFile = File(...) ):
+#    if change_icon(email, new_icon):
+#        return { "success": True }
+#    else:
+#        raise HTTPException(
+#            status_code = status.HTTP_400_BAD_REQUEST,
+#            success = False,
+#            detail = "Failed to update"
+#        )
+
+
+# Create Game
+@app.post("/game/create/", status_code = status.HTTP_200_OK)
+async def create_game(params: GameParams):
+    new_game_id = create_new_game(game_params=params)
+    if not new_game_id:
         raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            success = False,
-            detail = "Failed to update"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cant create game"
         )
+    return new_game_id
+
+# Join Game
+@app.put("/game/join/{id}", status_code = status.HTTP_200_OK)
+async def join_game(ids: JoinModel):
+    res = join_game_with_ids(ids=ids)
+    if not res.op:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=res.message
+        )
+    return {"message": res.message}
+
+
+# Init Game
+@app.put("/game/init/", status_code = status.HTTP_200_OK)
+async def init_game(ids: InitGameIds):
+    res = init_game_with_ids(ids)
+    if not res.op:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=res.message
+        )
+    return {"message": res.message}

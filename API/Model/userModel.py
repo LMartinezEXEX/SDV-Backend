@@ -10,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 
 # Database
-import Database.db_user
+#import Database.db_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl = "/user/login/")
 
