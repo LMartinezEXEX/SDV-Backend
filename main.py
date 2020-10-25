@@ -196,18 +196,23 @@ async def select_MM(id: int):
 # Submit a vote
 @app.put("/game/{id}/vote",
         status_code = status.HTTP_200_OK)
-async def vote(id: int,
-               player_vote: PlayerVote = Body(..., description="Player data: id and vote")):
-    return vote_candidate(id, player_vote.id, player_vote.vote)
+async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player data: id and vote")):
+    return check_and_vote_candidate(id, player_vote.id, player_vote.vote)
 
 # Get the vote result
 @app.put("/game/{id}/result",
         status_code = status.HTTP_200_OK)
 async def vote_result(id: int):
-    return get_vote_result(id)
+    return check_and_get_vote_result(id)
 
 # Get three cards
 @app.put("/game/{id}/get_cards",
         status_code = status.HTTP_200_OK)
 async def get_cards(id: int):
-    return get_3_cards(id)
+    return check_and_get_3_cards(id)
+
+# Promulgate a card
+@app.put("/game/{id}/promulgate",
+        status_code = status.HTTP_200_OK)
+async def promulgate_card(id: int, promulgate: PlayerPromulgate):
+    return promulgate_in_game(id, promulgate.id, promulgate.to_promulgate)

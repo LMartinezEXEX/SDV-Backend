@@ -21,6 +21,20 @@ def is_alive(game_id, player_id):
 
 
 @db_session()
+def is_current_minister(game_id, player_id):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    return True if turn.current_minister.id==player_id else False
+
+
+@db_session()
+def already_promulgate_in_current_turn(game_id):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    return turn.promulgated
+
+
+@db_session()
 def get_current_turn_number_in_game(game_id):
     game = Game[game_id]
     return len(game.turn)
@@ -60,10 +74,18 @@ def select_MM_candidate(game_id):
              last_director=last_turn.current_director,
              candidate_minister=next_candidate_minister,
              candidate_director=next_candidate_minister,
-             taken_cards=False)
+             taken_cards=False,
+             promulgated=False)
 
     # Is the first turn in the game
     else:
+
+        # This should be done in game creation
+        board = Board(game=game,
+                      fenix_promulgation=0,
+                      death_eater_promulgation=0,
+                      election_counter=0)
+
         next_candidate_minister = players_set.select(lambda p: p.is_alive).order_by(Player.turn).first()
 
         turn = Turn(game=game,
@@ -74,7 +96,8 @@ def select_MM_candidate(game_id):
                      last_director=next_candidate_minister,
                      candidate_minister=next_candidate_minister,
                      candidate_director=next_candidate_minister,
-                     taken_cards=False)
+                     taken_cards=False,
+                     promulgated=False)
 
         #Generate the first set of cards
         order = 1
@@ -209,3 +232,20 @@ def generate_3_cards(game_id):
 
     turn.taken_cards = True
     return [cards[0].type, cards[1].type, cards[2].type]
+
+
+# Card type = 0 -> Fenix | Card type = 1 -> Death Eaters
+@db_session()
+def promulgate(game_id, card_type):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    board = Board[game_id]
+
+    if card_type:
+        board.death_eater_promulgation += 1
+    else:
+        board.fenix_promulgation += 1
+
+    turn.promulgated = True
+    return [board.fenix_promulgation, board.death_eater_promulgation]

@@ -1,16 +1,20 @@
 import Database.turn_functions
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictInt
 from fastapi import HTTPException, status
 
 class PlayerVote(BaseModel):
     id: int
     vote: bool
 
+class PlayerPromulgate(BaseModel):
+    id: int
+    to_promulgate: StrictInt
+
 def get_next_MM(game_id: int):
     return {"candidate_minister_id": Database.turn_functions.select_MM_candidate(game_id)}
 
 
-def vote_candidate(game_id: int, player_id: int, vote: bool):
+def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
 
     # player isn't in this game
     if not Database.turn_functions.is_player_in_game(game_id, player_id):
@@ -34,7 +38,7 @@ def vote_candidate(game_id: int, player_id: int, vote: bool):
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
                             detail = "Player already voted")
 
-def get_vote_result(game_id: int):
+def check_and_get_vote_result(game_id: int):
     current_alive_players = Database.turn_functions.alive_players(game_id)
     current_votes = Database.turn_functions.current_votes(game_id)
 
@@ -52,7 +56,7 @@ def get_vote_result(game_id: int):
                             detail = "Vote's missing")
 
 
-def get_3_cards(game_id):
+def check_and_get_3_cards(game_id):
 
     # Game has at least one turn
     if Database.turn_functions.get_current_turn_number_in_game(game_id) != 0:
@@ -69,3 +73,21 @@ def get_3_cards(game_id):
     else:
         raise HTTPException(status_code = status.HTTP_409_CONFLICT,
                             detail = "No turn started yet")
+
+
+def promulgate_in_game(game_id, minister_id, card_type):
+
+    # Already promulgated in this turn
+    if Database.turn_functions.already_promulgate_in_current_turn(game_id):
+        raise HTTPException(status_code = status.HTTP_409_CONFLICT,
+        detail = "Minister already promulgated in this turn")
+
+    # Player is not current minister
+    if not Database.turn_functions.is_current_minister(game_id, minister_id):
+        raise HTTPException(status_code = status.HTTP_409_CONFLICT,
+                            detail = "Player is not minister")
+
+
+    board_state = Database.turn_functions.promulgate(game_id, card_type)
+
+    return {"fenix promulgations": board_state[0], "death eater promulgations": board_state[1]}

@@ -5,7 +5,7 @@ import datetime
 db = Database()
 db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
-# Agregar entidades antes del mapping
+# Declare PonyORM entities before mapping
 
 # User
 
@@ -33,6 +33,7 @@ class Turn(db.Entity):
     vote = Optional('Vote')
     card = Set('Card')
     taken_cards = Required(bool)
+    promulgated = Required(bool)
     PrimaryKey(game, turn_number)
 
 class Player(db.Entity):
@@ -60,6 +61,7 @@ class Game(db.Entity):
     player = Set('Player')
     turn = Set('Turn')
     card = Set('Card')
+    board = Optional('Board')
 
 class Vote(db.Entity):
     result = Required(bool)
@@ -78,6 +80,13 @@ class Card(db.Entity):
     turn = Required('Turn')
     game = Required('Game')
     PrimaryKey(order, game)
+
+class Board(db.Entity):
+    game = PrimaryKey('Game')
+    fenix_promulgation = Required(int)
+    death_eater_promulgation = Required(int)
+    election_counter = Required(int)
+
 #
 
 db.generate_mapping(create_tables=True)

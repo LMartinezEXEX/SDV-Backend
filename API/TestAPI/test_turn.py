@@ -349,3 +349,52 @@ def test_player_vote_in_invalid_game():
                          )
 
     assert response.status_code == 400
+
+'''
+Test candidate promulgate fenix and get right board status
+'''
+def test_promulgate_fenix():
+    client.put("/game/2/select_MM")
+
+    response = client.put("/game/2/promulgate", json={"id": 7, "to_promulgate": 0})
+
+    assert response.status_code == 200
+    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 0}
+
+
+'''
+Test candidate promulgate death eater and get right board status
+'''
+def test_promulgate_death_eater():
+    client.put("/game/2/select_MM")
+
+    response = client.put("/game/2/promulgate", json={"id": 5, "to_promulgate": 1})
+
+    assert response.status_code == 200
+    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 1}
+
+'''
+Test a minister can't promulgate twice in the same turn
+'''
+def test_promulgate_twice():
+    client.put("/game/2/select_MM")
+
+    response = client.put("/game/2/promulgate", json={"id": 6, "to_promulgate": 1})
+
+    assert response.status_code == 200
+    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 2}
+
+    response = client.put("/game/2/promulgate", json={"id": 6, "to_promulgate": 0})
+
+    assert response.status_code == 409
+
+
+'''
+Test a player that is not the current minister can not promulgate
+'''
+def test_promulgate_regular_player():
+    client.put("/game/2/select_MM")
+
+    response = client.put("/game/2/promulgate", json={"id": 5, "to_promulgate": 1})
+
+    assert response.status_code == 409
