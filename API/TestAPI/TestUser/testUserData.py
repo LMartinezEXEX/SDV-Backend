@@ -4,14 +4,18 @@ UPDATE_USERNAME_STRING = "update_username"
 
 UPDATE_PASSWORD_STRING = "update_pass"
 
-UPDATE_ICON_DIR = "img"
+UPDATE_XML_DIR  = "img"
+UPDATE_XML_FILE = "note.xml"
+
+UPDATE_HTML_DIR  = "img"
+UPDATE_HTML_FILE = "note.html"
+
+UPDATE_ICON_DIR  = "img"
 UPDATE_ICON_FILE = "grumpycat.jpeg"
 
 """ Necesito compartir usuarios para las pruebas.
 """
-@pytest.fixture
-def users():
-    return [
+USERS = [
     {
         "email": "superman@justiceleague.com",
         "username": "ClarkKent",
@@ -44,3 +48,7 @@ def users():
     },
 
 ]
+
+@pytest.fixture
+def users():
+    return USERS
