@@ -3,7 +3,8 @@ from pathlib import Path
 from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
-from testUserData import users, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING, UPDATE_ICON_DIR, UPDATE_ICON_FILE
+from API.TestAPI.TestUser.testUserData import users, \
+    UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING, UPDATE_ICON_DIR, UPDATE_ICON_FILE
 
 from main import app
 
@@ -37,7 +38,7 @@ def test_register_users(users):
         assert response.status_code == 201, f'Conflict with {user_register["email"]}'
 
 """
-Endpoint test: "/user/{email}"
+Endpoint test: "/user/profile/{email}"
 
 Descripción:
 Una vez registrados nuestros usuarios, testeamos si son accesibles por un query.
@@ -48,9 +49,8 @@ Error: 404 Not Found
 """
 def test_get_users(users):
     for user in users:
-        user_data = { "email": user["email"], "username": user["username"] }
         response = client.get(
-            "/user/" + user_data["email"],
+            "/user/profile/" + user["email"],
             headers = { "accept": "application/json" }
         )
 
@@ -76,7 +76,7 @@ def test_login_users(users):
             data = user_data
         )
 
-        assert response.status_code == 302, f'Unauthorized: {user_data["username"]}\n'
+        assert response.status_code == 302, f'Unauthorized: {user["email"]}\n'
 
         USERS_AUTH_DICT.update({ user_data["username"]: ( response.status_code, dict(response.headers)["set-cookie"] ) })
     
@@ -108,8 +108,7 @@ def test_profile_users(users):
             cookies = cookies
         )
 
-        assert response.status_code == 200, f'Error: {response.content.decode()}\n'
-        assert response.json() == { "email": user["email"], "username": user["username"], "icon": "", "is_validated": False }
+        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
 
 """
 Endpoint test: "/user/update/username/"
@@ -137,7 +136,7 @@ def test_update_usernames(users):
             json = user_data
         )
         
-        assert response.status_code == 200, f'Error: {response.content.decode()}\n'
+        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
 
 """
@@ -166,7 +165,7 @@ def test_update_passwords(users):
             json = user_data
         )
 
-        assert response.status_code == 200, f'Error: {response.content.decode()}\n'
+        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
 
 """
@@ -198,7 +197,7 @@ def test_update_icons(users):
             files = { "new_icon": (UPDATE_ICON_FILE, file_to_upload.open("rb"), "image/jpeg") }
         )
 
-        assert response.status_code == 200, f'Error: {response.content.decode()}\n'
+        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
 
 """
@@ -225,5 +224,4 @@ def test_logout_users(users):
             cookies = cookies
         )
 
-        assert response.status_code == 302, f'Error: {response.content.decode()}\n'
-        assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+        assert response.status_code == 302, f'Error {user["email"]}: {response.content.decode()}\n'
