@@ -1,16 +1,17 @@
 from pony   import orm
 from typing import Optional
-from Database.database import User
+from pydantic import EmailStr
+from Database.database import User 
 
 from datetime import datetime
 import bcrypt
 
 @orm.db_session
-def get_user_by_email(email: str):
+def get_user_by_email(email: EmailStr):
     return User.get(email = email)
 
 @orm.db_session
-def register_user(new_user: User):
+def register_user(new_user):
     User(
         email    = new_user.email,
         username = new_user.username,
@@ -24,7 +25,7 @@ def register_user(new_user: User):
     )
 
 @orm.db_session
-def auth_user_password(email: str, password: str):
+def auth_user_password(email: EmailStr, password: str):
     try:
         user = User.get(email = email)
         return bcrypt.checkpw(password.encode(), user.password)
@@ -32,15 +33,15 @@ def auth_user_password(email: str, password: str):
         return False
 
 @orm.db_session
-def activate_user(email: str, refresh_token_value: str, refresh_token_expires: datetime, last_access_date: Optional[datetime] = None):
+def activate_user(email: EmailStr, refresh_token_value: str, refresh_token_expires: datetime, last_access_date: Optional[datetime] = None):
     user = User.get(email = email)
-    if last_access_date:
+    if not (last_access_date is None):
         user.last_access_date = last_access_date
     user.refresh_token = refresh_token_value
     user.refresh_token_expires = refresh_token_expires
 
 @orm.db_session
-def deactivate_user(email: str):
+def deactivate_user(email: EmailStr):
     user = User.get(email = email)
     user.refresh_token = "empty"
     user.refresh_token_expires = datetime(year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0, microsecond = 0)
