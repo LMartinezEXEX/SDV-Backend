@@ -1,23 +1,28 @@
 # Imports
-from io import BytesIO
-from itertools import chain
-from datetime  import datetime, timedelta
-from typing    import Optional
-from pydantic  import EmailStr
-from fastapi   import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
+import json
+from imghdr       import what
+from itertools    import chain
+from datetime     import datetime, timedelta
+from typing       import Optional
+from http.cookies import SimpleCookie
+from pydantic     import EmailStr
+from fastapi      import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
 from fastapi.responses import RedirectResponse
 
 from fastapi.security   import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from API.Model.authData import DOMAIN, TOKEN_SEP
+from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PUBLIC_PROFILE_URL,\
+     USER_PRIVATE_PROFILE_URL, USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
 
 # User Model
-from API.Model.userModel import UserRegisterIn, UserOperationOut, UserProfile,\
-     UserUpdateUsername, UserUpdatePassword, UserUpdateIcon, Token,\
-     oauth2_scheme, get_user_profile_by_email, get_user_icon_by_email, register,\
-     authenticate, deauthenticate, new_access_token, get_this_user,\
+from API.Model.userModel import UserRegisterIn, UserProfileExtended,\
+     UserUpdateUsername, UserUpdatePassword, UserUpdateIcon,\
+     get_user_profile_by_email, get_user_icon_by_email, register,\
+     authenticate, deauthenticate, get_this_user,\
      change_username, change_password, change_icon
 
-from API.Model.userExceptions import not_found_exception, register_exception, update_exception, update_icon_exception
+from API.Model.userExceptions import not_found_exception, credentials_exception,\
+     profile_exception, register_exception, update_exception, update_icon_exception
 
 from API.Model.userMetadata import user_metadata
 
@@ -49,49 +54,25 @@ app = FastAPI(
 async def get_root():
     return "Secret Voldemort API"
 
-# Get public profile by email
-@app.get(
-    "/user/{email}/",
-    status_code = status.HTTP_200_OK,
-    tags = ["User public data"]
-)
-async def get_user_public_profile(email: EmailStr):
-    try:
-        return get_user_profile_by_email(email)
-    except:
-        raise not_found_exception
-
-# Get icon by email
-@app.get(
-    "/user/{email}/icon/",
-    status_code = status.HTTP_200_OK,
-    tags = ["User icon"]
-)
-async def get_user_icon(email: EmailStr):
-    try:
-        return Response(get_user_icon_by_email(email))
-    except:
-        raise not_found_exception
-
 # Register
 @app.post(
-    "/user/register/",
+    USER_REGISTER_URL,
     status_code = status.HTTP_201_CREATED,
     tags = ["Register"]
 )
 async def user_register(new_user: UserRegisterIn):
     try:
-        register(new_user)
-        return UserOperationOut(
-            username = new_user.username, 
-            operation_result = "success"
-        )
+        await register(new_user)
     except:
         raise register_exception
+    return {
+        "username": new_user.username,
+        "operation_result": "success"
+    }
 
 # Login
 @app.post(
-    "/user/login/",
+    USER_LOGIN_URL,
     status_code = status.HTTP_302_FOUND,
     tags = ["Login"]
 )
@@ -99,86 +80,118 @@ async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
     # Spec requires the field username, but there we store the email
     email    = form_data.username
     password = form_data.password
-    return authenticate(email, password)
+    return await authenticate(email, password)
+
+# Get public profile by email
+@app.get(
+    USER_PUBLIC_PROFILE_URL,
+    status_code = status.HTTP_200_OK,
+    tags = ["User public data"]
+)
+async def get_user_public_profile(email: EmailStr):
+    try:
+        return await get_user_profile_by_email(email)
+    except:
+        raise not_found_exception
+
+# Get icon by email
+@app.get(
+    USER_ICON_URL,
+    status_code = status.HTTP_200_OK,
+    tags = ["User icon"]
+)
+async def get_user_icon(email: EmailStr):
+    try:
+        return Response(await get_user_icon_by_email(email))
+    except:
+        raise not_found_exception
+
+# Profile
+@app.get(
+    USER_PRIVATE_PROFILE_URL,
+    status_code = status.HTTP_200_OK,
+    tags = ["Private profile"]
+)
+async def profile(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    return response
 
 # Logout
 @app.post(
-    "/user/logout/",
+    USER_LOGOUT_URL,
     status_code = status.HTTP_302_FOUND,
     tags = ["Logout"]
 )
-async def user_logout(Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
+async def user_logout(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
     authorization_splitted = Authorization.split(TOKEN_SEP)
     if len(authorization_splitted) != 2:
-        raise not_authenticated_exception        
+        raise not_authenticated_exception
     refresh = authorization_splitted[1].strip()
     refresh_splitted = refresh.split(" ")
     if len(refresh_splitted) != 2:
         raise not_authenticated_exception
     refresh_token  = refresh_splitted[1]
-
-    deauthenticate(user.email, refresh_token)
-    response = RedirectResponse(url = "/")
-    response.delete_cookie("Authorization", domain = DOMAIN)
-    return UserOperationOut(
-        username = user.username,
-        operation_result = "success"
+    await deauthenticate(user.email, refresh_token)
+    response = Response(
+        content = json.dumps({
+            "username": user.username,
+            "operation_result": "success"
+        }).encode(),
+        status_code = status.HTTP_302_FOUND,
+        headers = { "Location": DOMAIN + "/" }
     )
-
-# Profile
-@app.get(
-    "/user/profile/",
-    status_code = status.HTTP_200_OK,
-    tags = ["Private profile"]
-)
-async def profile(Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
-    return user
+    response.delete_cookie("Authorization", domain = DOMAIN)
+    return response
 
 # Update username
 @app.put(
-    "/user/update/username/",
+    USER_UPDATE_USERNAME_URL,
     status_code = status.HTTP_200_OK,
     tags = ["Update username"]
 )
 async def user_update_username(
     update_data: UserUpdateUsername, 
-    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
+    Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
     if update_data.email == user.email and change_username(update_data):
-        user = get_user_profile_by_email(user.email)
-        return UserOperationOut(
-            username = user.username,
-            operation_result = "success"
-        )
+        user = await get_user_profile_by_email(user.email)
+        response.body = json.dumps({
+            "username": user.username,
+            "operation_result": "success"
+        }).encode()
+        return response
     else:
         raise update_exception
 
 # Update password
 @app.put(
-    "/user/update/password/",
+    USER_UPDATE_PASSWORD_URL,
     status_code = status.HTTP_200_OK,
     tags = ["Update password"]
 )
 async def user_update_password(
     update_data: UserUpdatePassword, 
-    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
+    Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
     if update_data.email == user.email and change_password(update_data):
-        return UserOperationOut(
-            username = user.username,
-            operation_result = "success"
-        )
+        response.body = json.dumps({
+            "username": user.username,
+            "operation_result": "success"
+        }).encode()
+        return response
     else:
         raise update_exception
 
 # Update icon
 @app.put(
-    "/user/update/icon/",
+    USER_UPDATE_ICON_URL,
     status_code = status.HTTP_200_OK,
     tags = ["Update icon"]
 )
 async def user_update_icon(
     email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
-    Authorization: str = Cookie(...), user: UserProfile = Depends(get_this_user)):
-    
+    Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
     update_data = UserUpdateIcon(email = email, password = password)
 
     if new_icon.content_type not in ["image/jpeg", "image/png", "image/bmp", "image/webp"]:
@@ -186,10 +199,15 @@ async def user_update_icon(
 
     raw_icon = new_icon.file.read()
 
-    if update_data.email == user.email and change_icon(update_data, raw_icon):
-        return UserOperationOut(
-            username = user.username,
-            operation_result = "success"
-        )
+    if what(new_icon.filename ,h = raw_icon) not in ["jpeg", "png", "bmp", "webp"]:
+        raise update_icon_exception
+
+    if update_data.email == user.email:
+        change_icon(update_data, raw_icon)
+        response.body = json.dumps({
+            "username": user.username,
+            "operation_result": "success"
+        }).encode()
+        return response
     else:
-        raise update_exception
+        raise credentials_exception
