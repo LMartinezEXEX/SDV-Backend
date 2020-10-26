@@ -216,3 +216,9 @@ async def get_cards(id: int):
         status_code = status.HTTP_200_OK)
 async def promulgate_card(id: int, promulgate: PlayerPromulgate):
     return promulgate_in_game(id, promulgate.id, promulgate.to_promulgate)
+
+# Check the game status
+@app.get("/game/{id}/check_game",
+        status_code = status.HTTP_200_OK)
+async def get_game_status(id: int):
+    return game_status(id)

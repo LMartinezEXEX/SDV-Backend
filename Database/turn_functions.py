@@ -3,6 +3,19 @@ from Database.database import *
 import random
 
 
+#-GAME-FUNCTION-----------------------------------------------------------------
+@db_session()
+def get_game_state(game_id):
+    try:
+        game = Game[game_id]
+        state = game.state
+    except:
+        state = -1
+
+    return state
+#-------------------------------------------------------------------------------
+
+
 @db_session()
 def get_player_in_game(game_id, player_id):
     game = Game[game_id]
@@ -211,9 +224,7 @@ def taked_cards(game_id):
     return turn.taken_cards
 
 
-'''
-Generate 3 new cards and return the previous 3 cards type
-'''
+#Generate 3 new cards and return the previous 3 cards type
 @db_session()
 def generate_3_cards(game_id):
     game = Game[game_id]
@@ -249,3 +260,19 @@ def promulgate(game_id, card_type):
 
     turn.promulgated = True
     return [board.fenix_promulgation, board.death_eater_promulgation]
+
+
+@db_session()
+def check_status(game_id):
+    game = Game[game_id]
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    board = Board[game_id]
+
+    game_finished = False
+
+    if board.fenix_promulgation==5 or board.death_eater_promulgation==6 or (board.death_eater_promulgation >= 3 and turn.current_director.rol=="Voldemort"):
+        game_finished = True
+        game.state = 2
+
+    return [game_finished, board.fenix_promulgation, board.death_eater_promulgation, turn.current_minister.id, turn.current_director.id]

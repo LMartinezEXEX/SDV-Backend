@@ -2,43 +2,73 @@ import Database.turn_functions
 from pydantic import BaseModel, StrictInt
 from fastapi import HTTPException, status
 
+
 class PlayerVote(BaseModel):
     id: int
     vote: bool
+
 
 class PlayerPromulgate(BaseModel):
     id: int
     to_promulgate: StrictInt
 
+
+def check_game_state(game_id):
+    state = Database.turn_functions.get_game_state(game_id)
+
+    # Game not found
+    if state == -1:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail="Game doesn't exist")
+
+    # Game not started
+    if state == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Game hasn't started")
+
+    # Game finished
+    if state == 2:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Game finished")
+
+
 def get_next_MM(game_id: int):
-    return {"candidate_minister_id": Database.turn_functions.select_MM_candidate(game_id)}
+    check_game_state(game_id)
+    return {
+        "candidate_minister_id": Database.turn_functions.select_MM_candidate(game_id)}
 
 
 def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
+    check_game_state(game_id)
 
     # player isn't in this game
     if not Database.turn_functions.is_player_in_game(game_id, player_id):
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
-                            detail = "Player is not in this game")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Player is not in this game")
 
     is_alive = Database.turn_functions.is_alive(game_id, player_id)
 
     # Player is alive and hasn't vote
-    if is_alive and not Database.turn_functions.player_voted(game_id, player_id):
-        current_vote_cuantity = Database.turn_functions.vote_turn(game_id, player_id, vote)
+    if is_alive and not Database.turn_functions.player_voted(
+            game_id, player_id):
+        current_vote_cuantity = Database.turn_functions.vote_turn(
+            game_id, player_id, vote)
         return {"votes": current_vote_cuantity}
 
     # Player is dead
     elif not is_alive:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
-                            detail = "Player is dead")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Player is dead")
 
     # Player already voted
     else:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
-                            detail = "Player already voted")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Player already voted")
+
 
 def check_and_get_vote_result(game_id: int):
+    check_game_state(game_id)
+
     current_alive_players = Database.turn_functions.alive_players(game_id)
     current_votes = Database.turn_functions.current_votes(game_id)
 
@@ -52,42 +82,56 @@ def check_and_get_vote_result(game_id: int):
 
     # Some player hasn't voted
     else:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
-                            detail = "Vote's missing")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Vote's missing")
 
 
 def check_and_get_3_cards(game_id):
+    check_game_state(game_id)
 
     # Game has at least one turn
     if Database.turn_functions.get_current_turn_number_in_game(game_id) != 0:
 
-        # No cards were taken in this turn
+        # Cards were taken in this turn
         if Database.turn_functions.taked_cards(game_id):
 
-            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST,
-                                detail = "Already taken the cards in this turn")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Already taken the cards in this turn")
 
         else:
             return {"cards": Database.turn_functions.generate_3_cards(game_id)}
 
     else:
-        raise HTTPException(status_code = status.HTTP_409_CONFLICT,
-                            detail = "No turn started yet")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="No turn started yet")
 
 
 def promulgate_in_game(game_id, minister_id, card_type):
+    check_game_state(game_id)
 
     # Already promulgated in this turn
     if Database.turn_functions.already_promulgate_in_current_turn(game_id):
-        raise HTTPException(status_code = status.HTTP_409_CONFLICT,
-        detail = "Minister already promulgated in this turn")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Minister already promulgated in this turn")
 
     # Player is not current minister
     if not Database.turn_functions.is_current_minister(game_id, minister_id):
-        raise HTTPException(status_code = status.HTTP_409_CONFLICT,
-                            detail = "Player is not minister")
-
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Player is not minister")
 
     board_state = Database.turn_functions.promulgate(game_id, card_type)
 
-    return {"fenix promulgations": board_state[0], "death eater promulgations": board_state[1]}
+    return {"fenix promulgations": board_state[0],
+            "death eater promulgations": board_state[1]}
+
+
+def game_status(game_id):
+    check_game_state(game_id)
+
+    status = Database.turn_functions.check_status(game_id)
+
+    return {"finished": status[0],
+            "fenix promulgations": status[1],
+            "death eater promulgations": status[2],
+            "current minister id": status[3],
+            "current director id": status[4]}

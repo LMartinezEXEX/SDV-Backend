@@ -10,12 +10,13 @@ client = TestClient(app)
 
 '''
 Tests need to be executed with an empty database!
+Tests need to be executed in order!
 '''
 
 #TEST-DATA----------------------------------------------------------------------
 with db_session:
 
-# Three games instances for test purpose
+# Five games instances for test purpose, three 'in game', 1 unitiliatlized, 1 finished
     Game(name='LOL',
           min_players=5,
           max_players=5,
@@ -33,6 +34,18 @@ with db_session:
         max_players=8,
         creation_date = datetime.datetime.today(),
         state=1)
+
+    Game(name='Forest',
+        min_players=4,
+        max_players=8,
+        creation_date = datetime.datetime.today(),
+        state=0)
+
+    Game(name='Habbo',
+        min_players=6,
+        max_players=6,
+        creation_date = datetime.datetime.today(),
+        state=2)
 
 
 
@@ -144,7 +157,7 @@ with db_session:
     Player(turn=5,
             rol=2,
             loyalty='Mortifago',
-            is_alive=False,
+            is_alive=True,
             chat_enabled=True,
             is_investigated=False,
             game_in=game3.id)
@@ -168,7 +181,7 @@ with db_session:
     Player(turn=8,
             rol=2,
             loyalty='Mortifago',
-            is_alive=False,
+            is_alive=True,
             chat_enabled=True,
             is_investigated=False,
             game_in=game3.id)
@@ -176,7 +189,7 @@ with db_session:
     Player(turn=9,
             rol=1,
             loyalty='Fenix',
-            is_alive=False,
+            is_alive=True,
             chat_enabled=True,
             is_investigated=False,
             game_in=game3.id)
@@ -192,6 +205,35 @@ with db_session:
 #TESTS--------------------------------------------------------------------------
 
 '''
+Test correct response when trying to take action in a game that hasn't started
+'''
+def test_action_in_uninitialized_game():
+    response = client.put("/game/4/select_MM")
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Game hasn't started"}
+
+'''
+Test correct response when trying to take action in a finished game
+'''
+def test_action_in_finished_game():
+    response = client.put("/game/5/select_MM")
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Game finished"}
+
+
+'''
+Test correct response when trying to take action in a unexisting game
+'''
+def test_action_in_unexisting_game():
+    response = client.put("/game/64/select_MM")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Game doesn't exist"}
+
+
+'''
 Test correct response when asked for next minister candidate
 '''
 def test_candidate_minister():
@@ -199,6 +241,7 @@ def test_candidate_minister():
 
     assert response.status_code == 200
     assert response.json() == {"candidate_minister_id": 1}
+
 
 
 '''
@@ -282,6 +325,7 @@ def test_get_cards_twice_in_same_turn():
     response = client.put("/game/1/get_cards")
 
     assert response.status_code == 400
+    assert response.json() == {"detail": "Already taken the cards in this turn"}
 
 
 '''
@@ -291,6 +335,7 @@ def test_get_cards_with_no_turn():
     response = client.put("/game/3/get_cards")
 
     assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
 
 
 '''
@@ -349,6 +394,7 @@ def test_player_vote_in_invalid_game():
                          )
 
     assert response.status_code == 400
+    assert response.json() == {"detail": "Player is not in this game"}
 
 '''
 Test candidate promulgate fenix and get right board status
@@ -366,12 +412,12 @@ def test_promulgate_fenix():
 Test candidate promulgate death eater and get right board status
 '''
 def test_promulgate_death_eater():
-    client.put("/game/2/select_MM")
+    client.put("/game/1/select_MM")
 
-    response = client.put("/game/2/promulgate", json={"id": 5, "to_promulgate": 1})
+    response = client.put("/game/1/promulgate", json={"id": 1, "to_promulgate": 1})
 
     assert response.status_code == 200
-    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 1}
+    assert response.json() == {"fenix promulgations": 0, "death eater promulgations": 1}
 
 '''
 Test a minister can't promulgate twice in the same turn
@@ -379,14 +425,15 @@ Test a minister can't promulgate twice in the same turn
 def test_promulgate_twice():
     client.put("/game/2/select_MM")
 
-    response = client.put("/game/2/promulgate", json={"id": 6, "to_promulgate": 1})
+    response = client.put("/game/2/promulgate", json={"id": 5, "to_promulgate": 1})
 
     assert response.status_code == 200
-    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 2}
+    assert response.json() == {"fenix promulgations": 1, "death eater promulgations": 1}
 
     response = client.put("/game/2/promulgate", json={"id": 6, "to_promulgate": 0})
 
     assert response.status_code == 409
+    assert response.json() == {"detail": "Minister already promulgated in this turn"}
 
 
 '''
@@ -398,3 +445,88 @@ def test_promulgate_regular_player():
     response = client.put("/game/2/promulgate", json={"id": 5, "to_promulgate": 1})
 
     assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not minister"}
+
+
+'''
+Test correct game status response
+'''
+def test_initial_game_check():
+    client.put("game/3/select_MM")
+
+    response = client.get("game/3/check_game")
+
+    assert response.status_code == 200
+    assert response.json() == {"finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 0,
+                               "current minister id": 10,
+                               "current director id": 10}
+
+
+'''
+Test correct game status when fenix should win with 5 promulgations
+'''
+def test_game_check_fenix_five_promulgations():
+    client.put("game/3/select_MM")
+    client.put("/game/3/promulgate", json={"id": 11, "to_promulgate": 0})
+
+    client.put("game/3/select_MM")
+    client.put("/game/3/promulgate", json={"id": 13, "to_promulgate": 0})
+
+    client.put("game/3/select_MM")
+    client.put("/game/3/promulgate", json={"id": 15, "to_promulgate": 0})
+
+    client.put("game/3/select_MM")
+    client.put("/game/3/promulgate", json={"id": 16, "to_promulgate": 0})
+
+    client.put("game/3/select_MM")
+    client.put("/game/3/promulgate", json={"id": 17, "to_promulgate": 0})
+
+    response = client.get("game/3/check_game")
+
+    assert response.status_code == 200
+    assert response.json() == {"finished": True,
+                               "fenix promulgations": 5,
+                               "death eater promulgations": 0,
+                               "current minister id": 17,
+                               "current director id": 17}
+
+
+'''
+Test correct game status when death eaters should win with 6 promulgations
+'''
+def test_game_check_six_death_eater_promulgations():
+
+    response = client.get("game/1/check_game")
+
+    assert response.status_code == 200
+    assert response.json() == {"finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 1,
+                               "current minister id": 1,
+                               "current director id": 1}
+
+    client.put("game/1/select_MM")
+    client.put("/game/1/promulgate", json={"id": 2, "to_promulgate": 1})
+
+    client.put("game/1/select_MM")
+    client.put("/game/1/promulgate", json={"id": 3, "to_promulgate": 1})
+
+    client.put("game/1/select_MM")
+    client.put("/game/1/promulgate", json={"id": 1, "to_promulgate": 1})
+
+    client.put("game/1/select_MM")
+    client.put("/game/1/promulgate", json={"id": 2, "to_promulgate": 1})
+
+    client.put("game/1/select_MM")
+    client.put("/game/1/promulgate", json={"id": 3, "to_promulgate": 1})
+
+    response = client.get("game/1/check_game")
+
+    assert response.status_code == 200
+    assert response.json() == {"finished": True,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 6,
+                               "current minister id": 3,
+                               "current director id": 3}
