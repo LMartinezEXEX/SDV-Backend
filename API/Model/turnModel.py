@@ -9,7 +9,7 @@ class PlayerVote(BaseModel):
 
 
 class PlayerPromulgate(BaseModel):
-    id: int
+    candidate_id: int
     to_promulgate: StrictInt
 
 
