@@ -186,39 +186,61 @@ async def user_update(update_data: UserUpdateIcon, user: UserProfile = Depends(g
 
 
 #-------------------------------------------------------------------------------
-#Get next player id candidate for minister
+# Get next player id candidate for minister
 @app.put("/game/{id}/select_MM",
-         status_code = status.HTTP_200_OK
+         status_code=status.HTTP_200_OK,
+         tags=["Next minister candidate"]
          )
 async def select_MM(id: int):
     return get_next_MM(id)
 
+
 # Submit a vote
+
 @app.put("/game/{id}/vote",
-        status_code = status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Submit a vote"]
+         )
 async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player data: id and vote")):
     return check_and_vote_candidate(id, player_vote.id, player_vote.vote)
 
+
 # Get the vote result
+
 @app.put("/game/{id}/result",
-        status_code = status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Vote result"]
+         )
 async def vote_result(id: int):
     return check_and_get_vote_result(id)
 
+
 # Get three cards
+
 @app.put("/game/{id}/get_cards",
-        status_code = status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Take three cards"]
+         )
 async def get_cards(id: int):
     return check_and_get_3_cards(id)
 
+
 # Promulgate a card
+
 @app.put("/game/{id}/promulgate",
-        status_code = status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Promulgate card"]
+         )
 async def promulgate_card(id: int, promulgate: PlayerPromulgate):
-    return promulgate_in_game(id, promulgate.candidate_id, promulgate.to_promulgate)
+    return promulgate_in_game(
+        id, promulgate.candidate_id, promulgate.to_promulgate)
+
 
 # Check the game status
+
 @app.get("/game/{id}/check_game",
-        status_code = status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Game state"]
+         )
 async def get_game_status(id: int):
     return game_status(id)
