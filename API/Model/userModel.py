@@ -7,72 +7,24 @@ from http.cookies import SimpleCookie
 from pydantic import BaseModel, Field, EmailStr, validator
 from fastapi  import Cookie, Header, Depends, Request, Response, status
 from fastapi.encoders       import jsonable_encoder
-from fastapi.security       import OAuth2, OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.security.utils import get_authorization_scheme_param
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from jose import JWTError, ExpiredSignatureError, jwt
 
+# Exceptions
 from API.Model.userExceptions import credentials_exception, not_authenticated_exception, \
     unauthorized_exception, profile_exception, not_found_exception
+# Data for user management
 from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN,\
      ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, EXPIRES_REFRESH, REFRESH_TOKEN_LENGTH
-
+from USER_URLS import USER_LOGIN_URL
+# Security scheme
+from API.Model.securityScheme import OAuth2PasswordBearerWithCookie
 # Database
 import Database.user_functions
 
-class OAuth2PasswordBearerWithCookie(OAuth2):
-    def __init__(
-        self,
-        tokenUrl: str,
-        scheme_name: str = None,
-        scopes: dict     = None,
-        auto_error: bool = True,
-    ):
-        if not scopes:
-            scopes = {}
-        flows = OAuthFlowsModel(password = {"tokenUrl": tokenUrl, "scopes": scopes})
-        super().__init__(flows = flows, scheme_name = scheme_name, auto_error = auto_error)
+# Actual security scheme
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl = USER_LOGIN_URL)
 
-    async def __call__(self, request: Request):
-        cookie_authorization = request.cookies.get("Authorization")
-         
-        try:
-            authorization_splitted = cookie_authorization.split(TOKEN_SEP)
-        except:
-            raise not_authenticated_exception
-        
-        if len(authorization_splitted) != 2:
-            raise not_authenticated_exception
-        
-        bearer  = authorization_splitted[0].strip()
-        refresh = authorization_splitted[1].strip()
-
-        refresh_splitted = refresh.split(" ")
-        if len(refresh_splitted) != 2:
-            raise not_authenticated_exception
-
-        refresh_scheme = refresh_splitted[0]
-        refresh_token  = refresh_splitted[1]
-
-        access_scheme, access_token = get_authorization_scheme_param(
-            bearer
-        )
-
-        if access_scheme.lower() == "bearer" and refresh_scheme.lower() == "refresh":
-            authorization = True
-        else:
-            authorization = False
-
-        if not authorization or access_scheme.lower() != "bearer" or refresh_scheme.lower() != "refresh":
-            if self.auto_error:
-                raise not_authenticated_exception
-            else:
-                return None
-        
-        return access_token, refresh_token
-
-oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl = "/user/login/")
-
+# User models
 class User(BaseModel):
     email: EmailStr
     username: str = Field(min_length = 8, max_length = 35)
@@ -136,18 +88,19 @@ async def get_user_icon_by_email(email: EmailStr):
     return user.icon
 
 async def register(new_user: UserRegisterIn):
-    user = User(
-        email    = new_user.email,
-        username = new_user.username,
-        password = new_user.password,
-        icon     = "".encode(),
-        creation_date    = datetime.utcnow(),
-        last_access_date = datetime.utcnow(),
-        is_validated  = False,
-        refresh_token = "empty",
-        refresh_token_expires = datetime(year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0, microsecond = 0)
+    Database.user_functions.register_user(
+        User(
+            email    = new_user.email,
+            username = new_user.username,
+            password = new_user.password,
+            icon     = "".encode(),
+            creation_date    = datetime.utcnow(),
+            last_access_date = datetime.utcnow(),
+            is_validated  = False,
+            refresh_token = "empty",
+            refresh_token_expires = datetime(year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0, microsecond = 0)
+        )
     )
-    Database.user_functions.register_user(user)
 
 async def get_user_auth(email: EmailStr):
     user = Database.user_functions.get_user_by_email(email)
@@ -311,13 +264,19 @@ async def get_this_user(request: Request, cookie: str = Header(...), tokens: Tup
         # Any other exception
         raise credentials_exception
 
-def change_username(update_data: UserUpdateUsername):
-    return update_data.new_username == Database.user_functions.change_username(update_data)
-
-def change_password(update_data: UserUpdatePassword):
-    if update_data.old_password == update_data.new_password:
+async def change_username(update_data: UserUpdateUsername):
+    if Database.user_functions.auth_user_password(update_data.email, update_data.password):
+        return update_data.new_username == Database.user_functions.change_username(update_data)
+    else:
         return False
-    return Database.user_functions.change_password(update_data)
 
-def change_icon(update_data: UserUpdateIcon, new_icon: bytes):
-    Database.user_functions.change_icon(update_data, new_icon)
+async def change_password(update_data: UserUpdatePassword):
+    if update_data.old_password != update_data.new_password and Database.user_functions.auth_user_password(update_data.email, update_data.old_password):
+        return Database.user_functions.change_password(update_data)
+    return False
+
+async def change_icon(update_data: UserUpdateIcon, new_icon: bytes):
+    if Database.user_functions.auth_user_password(update_data.email, update_data.password):
+        return new_icon == Database.user_functions.change_icon(update_data, new_icon)
+    else:
+        return False
