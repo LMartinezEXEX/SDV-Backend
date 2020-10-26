@@ -109,7 +109,7 @@ def test_update_icon(email, password, dir_file, file, expected_codes, fail_messa
         "/user/update/icon/",
         headers = { "accept": "application/json" },
         cookies = cookies,
-        data = { "email": email, "password": password + UPDATE_PASSWORD_STRING },
+        data = { "email": email, "password": password },
         files = { "new_icon": (file, file_to_upload.open("rb"), "image/jpeg") }
     )
     assert response.status_code in expected_codes, f'Error: {response.content.decode()}\n'
@@ -157,3 +157,10 @@ def test_profile_after_logout():
         cookies = cookies
     )
     assert response.status_code in [400, 401, 403, 422], f'Error: {response.content.decode()}\n'
+
+""" Running with python3.8 -m pytest -s API/TestAPI/TestUser/<this_file_name>
+"""
+print(f'Check for user with:')
+print(f'"email": {single_user["email"]}')
+print(f'"username": {single_user["username"] + UPDATE_USERNAME_STRING}')
+print(f'"password": {single_user["password"] + UPDATE_PASSWORD_STRING}')
