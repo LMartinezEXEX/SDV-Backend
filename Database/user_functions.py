@@ -48,21 +48,18 @@ def deactivate_user(email: EmailStr):
 
 @orm.db_session
 def change_username(update_data):
-    if auth_user_password(update_data.email, update_data.password):
-        user = User.get(email = update_data.email)
-        user.username = update_data.new_username
-        return user.username
+    user = User.get(email = update_data.email)
+    user.username = update_data.new_username
+    return user.username
 
 @orm.db_session
 def change_password(update_data):
-    if auth_user_password(update_data.email, update_data.old_password):
-        user = User.get(email = update_data.email)
-        user.password = bcrypt.hashpw(update_data.new_password.encode(), bcrypt.gensalt(rounds = 6))
-        return bcrypt.checkpw(update_data.new_password.encode(), user.password)
+    user = User.get(email = update_data.email)
+    user.password = bcrypt.hashpw(update_data.new_password.encode(), bcrypt.gensalt(rounds = 6))
+    return bcrypt.checkpw(update_data.new_password.encode(), user.password)
 
 @orm.db_session
 def change_icon(update_data, new_icon: bytes):
-    if auth_user_password(update_data.email, update_data.password):
-        user = User.get(email = update_data.email)
-        user.icon = new_icon
-        return user.icon
+    user = User.get(email = update_data.email)
+    user.icon = new_icon
+    return user.icon
