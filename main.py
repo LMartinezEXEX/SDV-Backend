@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from typing   import Optional
 from pydantic import EmailStr
 from fastapi  import FastAPI, Depends, Body, File, UploadFile, HTTPException, status
-from API.Model.gameModel import GameParams, JoinModel, OpResponse, InitGameIds
-from Database.game_functions import create_new_game, join_game_with_ids, init_game_with_ids
+from API.Model.gameModel import *
+#from Database.game_functions import join_game_with_ids, init_game_with_ids
 
 # Security
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -125,7 +125,8 @@ async def user_update(email: EmailStr = Body(...), new_username: str = Body(...)
 
 
 # Create Game
-@app.post("/game/create/", status_code = status.HTTP_200_OK)
+@app.post("/game/create/",
+          status_code = status.HTTP_200_OK)
 async def create_game(params: GameParams):
     new_game_id = create_new_game(game_params=params)
     if not new_game_id:
@@ -136,9 +137,10 @@ async def create_game(params: GameParams):
     return new_game_id
 
 # Join Game
-@app.put("/game/join/{id}", status_code = status.HTTP_200_OK)
-async def join_game(ids: JoinModel):
-    res = join_game_with_ids(ids=ids)
+@app.put("/game/join/{id}",
+         status_code = status.HTTP_200_OK)
+async def join_game(keys: JoinModel):
+    res = join_game_with_keys(keys=keys)
     if not res.op:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
