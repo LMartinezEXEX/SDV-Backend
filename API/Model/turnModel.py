@@ -63,7 +63,7 @@ def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
 def check_and_get_vote_result(game_id: int):
     check_game_state(game_id)
 
-    current_alive_players = Database.turn_functions.alive_players(game_id)
+    current_alive_players = Database.turn_functions.alive_players_count(game_id)
     current_votes = Database.turn_functions.current_votes(game_id)
 
     # Every player voted

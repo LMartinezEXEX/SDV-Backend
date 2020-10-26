@@ -5,21 +5,24 @@ import datetime
 db = Database()
 db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
+
 # Declare PonyORM entities before mapping
 
 # User
 
-class User(db.Entity):
-    email    = PrimaryKey(str, 100)
-    username = Required(str, 20, unique = True)
-    password = Required(bytes)
-    icon     = Required(bytes)
-    creation_date    = Required(datetime.datetime)
-    last_access_date = Required(datetime.datetime)
-    is_validated     = Required(bool)
-    active           = Required(bool)
 
-#-------------------------------------------------------------------------------\
+class User(db.Entity):
+    email = PrimaryKey(str, 100)
+    username = Required(str, 20, unique=True)
+    password = Required(bytes)
+    icon = Required(bytes)
+    creation_date = Required(datetime.datetime)
+    last_access_date = Required(datetime.datetime)
+    is_validated = Required(bool)
+    active = Required(bool)
+
+# -------------------------------------------------------------------------------\
+
 
 class Turn(db.Entity):
     turn_number = Required(int)
@@ -35,6 +38,7 @@ class Turn(db.Entity):
     taken_cards = Required(bool)
     promulgated = Required(bool)
     PrimaryKey(game, turn_number)
+
 
 class Player(db.Entity):
     turn = Required(int)
@@ -52,6 +56,7 @@ class Player(db.Entity):
     game_in = Required('Game')
     vote = Set('Player_vote')
 
+
 class Game(db.Entity):
     name = Required(str, 40)
     min_players = Required(int)
@@ -63,16 +68,19 @@ class Game(db.Entity):
     card = Set('Card')
     board = Optional('Board')
 
+
 class Vote(db.Entity):
     result = Required(bool)
     turn = PrimaryKey('Turn')
     player_vote = Set('Player_vote')
+
 
 class Player_vote(db.Entity):
     player = Required('Player')
     vote = Required('Vote')
     is_lumos = Required(bool)
     PrimaryKey(vote, player)
+
 
 class Card(db.Entity):
     order = Required(int, auto=True)
@@ -81,6 +89,7 @@ class Card(db.Entity):
     game = Required('Game')
     PrimaryKey(order, game)
 
+
 class Board(db.Entity):
     game = PrimaryKey('Game')
     fenix_promulgation = Required(int)
@@ -88,5 +97,6 @@ class Board(db.Entity):
     election_counter = Required(int)
 
 #
+
 
 db.generate_mapping(create_tables=True)
