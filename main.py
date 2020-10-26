@@ -9,7 +9,7 @@ from pydantic     import EmailStr
 from fastapi      import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
 from fastapi.responses import RedirectResponse
 
-from fastapi.security   import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security   import OAuth2PasswordRequestForm
 from API.Model.authData import DOMAIN, TOKEN_SEP
 from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PUBLIC_PROFILE_URL,\
      USER_PRIVATE_PROFILE_URL, USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
@@ -153,10 +153,9 @@ async def user_update_username(
     update_data: UserUpdateUsername, 
     Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
-    if update_data.email == user.email and change_username(update_data):
-        user = await get_user_profile_by_email(user.email)
+    if update_data.email == user.email and (await change_username(update_data)):
         response.body = json.dumps({
-            "username": user.username,
+            "username": update_data.new_username,
             "operation_result": "success"
         }).encode()
         return response
@@ -173,7 +172,7 @@ async def user_update_password(
     update_data: UserUpdatePassword, 
     Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
-    if update_data.email == user.email and change_password(update_data):
+    if update_data.email == user.email and (await change_password(update_data)):
         response.body = json.dumps({
             "username": user.username,
             "operation_result": "success"
@@ -201,9 +200,8 @@ async def user_update_icon(
 
     if what(new_icon.filename ,h = raw_icon) not in ["jpeg", "png", "bmp", "webp"]:
         raise update_icon_exception
-
-    if update_data.email == user.email:
-        change_icon(update_data, raw_icon)
+    
+    if update_data.email == user.email and (await change_icon(update_data, raw_icon)):
         response.body = json.dumps({
             "username": user.username,
             "operation_result": "success"
