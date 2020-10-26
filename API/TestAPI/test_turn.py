@@ -257,7 +257,7 @@ Test correct response when trying to take action in a game that hasn't started
 def test_action_in_uninitialized_game():
     response = start_new_turn(game_id=4)
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {"detail": "Game hasn't started"}
 
 
@@ -374,7 +374,7 @@ def test_get_cards_twice_in_same_turn():
 
     response = get_3_cards(game_id=1)
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {
         "detail": "Already taken the cards in this turn"}
 
@@ -433,7 +433,7 @@ Test a player can't vote in a game it is not in
 def test_player_vote_in_invalid_game():
     response = player_vote(game_id=2, player_id=20, vote=True)
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json() == {"detail": "Player is not in this game"}
 
 
