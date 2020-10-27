@@ -160,7 +160,7 @@ def test_profile_after_logout():
 
 """ Running with python3.8 -m pytest -s API/TestAPI/TestUser/<this_file_name>
 """
-print(f'Check for user with:')
+print('If you\'re running this file alone and not deleting the DB you can check for the user with:')
 print(f'"email": {single_user["email"]}')
 print(f'"username": {single_user["username"] + UPDATE_USERNAME_STRING}')
 print(f'"password": {single_user["password"] + UPDATE_PASSWORD_STRING}')
