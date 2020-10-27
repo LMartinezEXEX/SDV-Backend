@@ -8,6 +8,7 @@ from http.cookies import SimpleCookie
 from pydantic     import EmailStr
 from fastapi      import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.security   import OAuth2PasswordRequestForm
 from API.Model.authData import DOMAIN, TOKEN_SEP
@@ -44,6 +45,18 @@ app = FastAPI(
     redoc_url    = "/api/redoc",
     openapi_tags = tags_metadata,
     debug = True
+)
+
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = origins,
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"],
 )
 
 # Root
