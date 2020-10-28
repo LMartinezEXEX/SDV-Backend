@@ -110,6 +110,46 @@ def get_turn_in_game(game_id, turn_number):
 
 
 '''
+Generate 'quantity' new cards for a game
+'''
+
+
+@db_session()
+def generate_card(quantity, order_in_deck, turn, game_id):
+    game = Game[game_id]
+
+    for _ in range(quantity):
+        card_type = random.randint(0, 1)
+        Card(order=order_in_deck,
+             type=card_type,
+             turn=turn,
+             game=game)
+        order_in_deck += 1
+
+
+'''
+Get the next candidate for minister based on players turns and state
+'''
+
+
+@db_session()
+def get_next_candidate(players, last_candidate=None):
+    next_candidate = None
+
+    if not last_candidate is None:
+        next_candidate = players.select(
+            lambda p: p.is_alive and p.turn > last_candidate.turn).order_by(
+            Player.turn).first()
+
+    if next_candidate is None:
+        next_candidate = players.select(
+            lambda p: p.is_alive).order_by(
+            Player.turn).first()
+
+    return next_candidate
+
+
+'''
 Start a new turn and return the candidate for minister in mentioned turn.
 If it's the first turn in the game, create three cards to keep always before
 giving to the legislative session
@@ -120,25 +160,16 @@ giving to the legislative session
 def select_MM_candidate(game_id):
     game = Game[game_id]
     players_set = game.player
-    next_candidate_minister = None
     game_turns = get_current_turn_number_in_game(game_id)
 
     if game_turns > 0:
         last_turn = get_turn_in_game(game_id=game_id,
                                      turn_number=game_turns)
 
-        print(last_turn)
         last_candidate_minister = last_turn.candidate_minister
 
-        next_candidate_minister = players_set.select(
-            lambda p: p.is_alive and p.turn > last_candidate_minister.turn).order_by(
-            Player.turn).first()
-
-        # Start the round again
-        if next_candidate_minister is None:
-            next_candidate_minister = players_set.select(
-                lambda p: p.is_alive).order_by(
-                Player.turn).first()
+        next_candidate_minister = get_next_candidate(
+            players_set, last_candidate_minister)
 
         Turn(game=game,
              turn_number=game_turns + 1,
@@ -160,9 +191,7 @@ def select_MM_candidate(game_id):
                       death_eater_promulgation=0,
                       election_counter=0)
 
-        next_candidate_minister = players_set.select(
-            lambda p: p.is_alive).order_by(
-            Player.turn).first()
+        next_candidate_minister = get_next_candidate(players=players_set)
 
         turn = Turn(game=game,
                     turn_number=game_turns + 1,
@@ -176,14 +205,7 @@ def select_MM_candidate(game_id):
                     promulgated=False)
 
         # Generate the first set of cards
-        order = 1
-        for _ in range(3):
-            card_type = random.randint(0, 1)
-            Card(order=order,
-                 type=card_type,
-                 turn=turn,
-                 game=game)
-            order += 1
+        generate_card(3, 1, turn, game_id)
 
     return next_candidate_minister.id
 
@@ -326,13 +348,7 @@ def generate_3_cards(game_id):
         Card.order)[
                 :3]
 
-    for _ in range(3):
-        game_deck_cuantity += 1
-        card_type = random.randint(0, 1)
-        Card(order=game_deck_cuantity,
-             type=card_type,
-             turn=turn,
-             game=game)
+    generate_card(3, game_deck_cuantity + 1, turn, game_id)
 
     turn.taken_cards = True
     return [cards[0].type, cards[1].type, cards[2].type]
