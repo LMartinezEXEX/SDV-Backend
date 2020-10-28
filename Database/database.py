@@ -34,7 +34,6 @@ class Turn(db.Entity):
     candidate_minister = Required('Player')
     candidate_director = Required('Player')
     vote = Optional('Vote')
-    card = Set('Card')
     taken_cards = Required(bool)
     promulgated = Required(bool)
     PrimaryKey(game, turn_number)
@@ -85,7 +84,6 @@ class Player_vote(db.Entity):
 class Card(db.Entity):
     order = Required(int, auto=True)
     type = Required(int)
-    turn = Required('Turn')
     game = Required('Game')
     PrimaryKey(order, game)
 

@@ -115,14 +115,13 @@ Generate 'quantity' new cards for a game
 
 
 @db_session()
-def generate_card(quantity, order_in_deck, turn, game_id):
+def generate_card(quantity, order_in_deck, game_id):
     game = Game[game_id]
 
     for _ in range(quantity):
         card_type = random.randint(0, 1)
         Card(order=order_in_deck,
              type=card_type,
-             turn=turn,
              game=game)
         order_in_deck += 1
 
@@ -205,7 +204,7 @@ def select_MM_candidate(game_id):
                     promulgated=False)
 
         # Generate the first set of cards
-        generate_card(3, 1, turn, game_id)
+        generate_card(3, 1, game_id)
 
     return next_candidate_minister.id
 
@@ -348,7 +347,7 @@ def generate_3_cards(game_id):
         Card.order)[
                 :3]
 
-    generate_card(3, game_deck_cuantity + 1, turn, game_id)
+    generate_card(3, game_deck_cuantity + 1, game_id)
 
     turn.taken_cards = True
     return [cards[0].type, cards[1].type, cards[2].type]
