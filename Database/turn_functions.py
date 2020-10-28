@@ -124,7 +124,6 @@ def select_MM_candidate(game_id):
     game_turns = get_current_turn_number_in_game(game_id)
 
     if game_turns > 0:
-
         last_turn = get_turn_in_game(game_id=game_id,
                                      turn_number=game_turns)
 
@@ -279,9 +278,9 @@ def get_result(game_id):
     vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
 
     lumos = Player_vote.select(
-        lambda pv: pv.vote.id == vote.id and pv.is_lumos).count()
+        lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
     lumos_votes = select(
-        pv for pv in Player_vote if pv.vote.id == vote.id and pv.is_lumos)[:]
+        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos)[:]
 
     player_ids = []
     for _vote_ in lumos_votes:
@@ -377,7 +376,7 @@ def check_status(game_id):
     game_finished = False
 
     if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 or (
-        board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
+            board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
         game_finished = True
         game.state = 2
 

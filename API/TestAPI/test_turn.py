@@ -438,6 +438,33 @@ def test_player_vote_in_invalid_game():
 
 
 '''
+Assert all players voted before giving the final result
+'''
+
+
+def test_get_result_when_votes_missing():
+    response = client.put("game/1/result")
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Vote's missing"}
+
+
+'''
+Test correct result when all players voted
+'''
+
+
+def test_get_result():
+    player_vote(game_id=1, player_id=2, vote=True)
+    player_vote(game_id=1, player_id=3, vote=False)
+
+    response = client.put("game/1/result")
+
+    assert response.status_code == 200
+    assert response.json() == {"result": True, "voted_lumos": [1, 2]}
+
+
+'''
 Test candidate promulgate fenix and get right board status
 '''
 
