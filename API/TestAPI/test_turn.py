@@ -426,6 +426,18 @@ def test_several_vote_count():
 
 
 '''
+Test a player cant vote when the game just started and no turn is given yet
+'''
+
+
+def test_vote_with_no_turn_in_game():
+    response = player_vote(game_id=3, player_id=7, vote=True)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
 Test a player can't vote in a game it is not in
 '''
 

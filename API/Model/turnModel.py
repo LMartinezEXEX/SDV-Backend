@@ -38,6 +38,10 @@ def get_next_MM(game_id: int):
 def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
     check_game_state(game_id)
 
+    # Game started, but not the first turn yet
+    if Database.turn_functions.get_current_turn_number_in_game(game_id) == 0:
+        raise turn_hasnt_started_exception
+
     # player isn't in this game
     if not Database.turn_functions.is_player_in_game(game_id, player_id):
         raise invalid_player_in_game_exception
