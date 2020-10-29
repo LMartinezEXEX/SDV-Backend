@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from http.cookies import SimpleCookie
 from pydantic import EmailStr
-from fastapi import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
+from fastapi import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status, Body
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -26,6 +26,7 @@ from API.Model.userExceptions import not_found_exception, credentials_exception,
     profile_exception, register_exception, update_exception, update_icon_exception
 
 from API.Model.turnModel import *
+from API.Model.gameModel import *
 
 from API.Model.userMetadata import user_metadata
 
@@ -227,7 +228,7 @@ async def user_update_icon(
         return response
     else:
         raise credentials_exception
-        
+
 
 @app.post("/game/create/",
           status_code=status.HTTP_201_CREATED)
@@ -308,4 +309,4 @@ async def promulgate_card(id: int, promulgate: PlayerPromulgate):
          tags=["Game state"]
          )
 async def get_game_status(id: int):
-    return game_status(id)   
+    return game_status(id)
