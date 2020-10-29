@@ -1,6 +1,6 @@
 from pony.orm import *
-
 import datetime
+
 
 db = Database()
 db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
@@ -8,22 +8,55 @@ db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
 # Declare PonyORM entities before mapping
 
-# User
 
 
 class User(db.Entity):
-    email = PrimaryKey(str, 100)
-    username = Required(str, 20, unique=True)
+    email    = PrimaryKey(str, 100)
+    username = Required(str, 35, unique = True)
     password = Required(bytes)
     icon = Required(bytes)
     creation_date = Required(datetime.datetime)
     last_access_date = Required(datetime.datetime)
-    is_validated = Required(bool)
-    active = Required(bool)
+    is_validated     = Required(bool)
+    refresh_token    = Required(str)
+    refresh_token_expires = Required(datetime.datetime)
+    owner_of = Set('Game')
+    playing_in = Set('Player')
+    
+    
+class Player(db.Entity):
+    id = PrimaryKey(int, auto=True)
+    user = Required('User')
+    turn = Required(int)
+    rol = Optional(str)
+    loyalty = Optional(str)
+    is_alive = Required(bool)
+    chat_enabled = Required(bool)
+    is_investigated = Required(bool)
+    current_minister = Set('Turn', reverse='current_minister')
+    current_director = Set('Turn', reverse='current_director')
+    last_minister = Set('Turn', reverse='last_minister')
+    last_director = Set('Turn', reverse='last_director')
+    candidate_minister = Set('Turn', reverse='candidate_minister')
+    candidate_director = Set('Turn', reverse='candidate_director')
+    game_in = Required('Game')
+    vote = Set('Player_vote')
+    
+    
+class Game(db.Entity):
+    id = PrimaryKey(int, auto=True)
+    owner = Required('User')
+    name = Required(str, 40)
+    min_players = Required(int)
+    max_players = Required(int)
+    creation_date = Required(datetime.datetime)
+    state = Required(int)
+    players = Set('Player')
+    turn = Set('Turn')
+    card = Set('Card')
+    board = Optional('Board')
 
-# -------------------------------------------------------------------------------\
-
-
+    
 class Turn(db.Entity):
     turn_number = Required(int)
     game = Required('Game')
@@ -37,35 +70,6 @@ class Turn(db.Entity):
     taken_cards = Required(bool)
     promulgated = Required(bool)
     PrimaryKey(game, turn_number)
-
-
-class Player(db.Entity):
-    turn = Required(int)
-    rol = Required(int)
-    loyalty = Required(str)
-    is_alive = Required(bool)
-    chat_enabled = Required(bool)
-    is_investigated = Required(bool)
-    current_minister = Set('Turn', reverse='current_minister')
-    current_director = Set('Turn', reverse='current_director')
-    last_minister = Set('Turn', reverse='last_minister')
-    last_director = Set('Turn', reverse='last_director')
-    candidate_minister = Set('Turn', reverse='candidate_minister')
-    candidate_director = Set('Turn', reverse='candidate_director')
-    game_in = Required('Game')
-    vote = Set('Player_vote')
-
-
-class Game(db.Entity):
-    name = Required(str, 40)
-    min_players = Required(int)
-    max_players = Required(int)
-    creation_date = Required(datetime.datetime)
-    state = Required(int)
-    player = Set('Player')
-    turn = Set('Turn')
-    card = Set('Card')
-    board = Optional('Board')
 
 
 class Vote(db.Entity):
