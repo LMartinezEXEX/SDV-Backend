@@ -1,142 +1,229 @@
 # Imports
+import json
+from imghdr import what
+from itertools import chain
 from datetime import datetime, timedelta
 from typing import Optional
+from http.cookies import SimpleCookie
 from pydantic import EmailStr
-from fastapi import FastAPI, Depends, Body, File, UploadFile, HTTPException, status
-from API.Model.gameModel import *
-#from Database.game_functions import join_game_with_ids, init_game_with_ids
+from fastapi import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status
+from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 
-# Security
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from API.Model.auth import ACCESS_TOKEN_EXPIRE_MINUTES
+from fastapi.security import OAuth2PasswordRequestForm
+from API.Model.authData import DOMAIN, TOKEN_SEP
+from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PUBLIC_PROFILE_URL,\
+    USER_PRIVATE_PROFILE_URL, USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
 
 # User Model
-from API.Model.userModel import UserRegisterIn, UserRegisterOut, UserLoginData, Token, TokenData,\
-    oauth2_scheme, get_user_by_email, register, authenticate, new_access_token, get_user_if_active, change_username, change_password, change_icon
+from API.Model.userModel import UserRegisterIn, UserProfileExtended,\
+    UserUpdateUsername, UserUpdatePassword, UserUpdateIcon,\
+    get_user_profile_by_email, get_user_icon_by_email, register,\
+    authenticate, deauthenticate, get_this_user,\
+    change_username, change_password, change_icon
 
-app = FastAPI()
+from API.Model.userExceptions import not_found_exception, credentials_exception,\
+    profile_exception, register_exception, update_exception, update_icon_exception
 
-# Root
+from API.Model.userMetadata import user_metadata
 
-
-@app.get("/")
-async def get_root():
-    return "Secret Voldemort API"
-
-# Get by email
-
-
-@app.get("/user/{email}")
-async def get_user(email: EmailStr):
-    return get_user_by_email(email)
-
-# Register
-
-
-@app.post(
-    "/user/register/",
-    response_model=UserRegisterOut,
-    status_code=status.HTTP_201_CREATED
-)
-async def user_register(new_user: UserRegisterIn):
-    dict_register = register(new_user)
-    if dict_register["created"]:
-        return UserRegisterOut(
-            username=new_user.username,
-            operation_result="Ok"
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=dict_register["message"]
-        )
-
-# Login
-
-
-@app.post(
-    "/user/login/",
-    response_model=Token,
-    status_code=status.HTTP_302_FOUND
-)
-async def user_login(email: EmailStr = Body(...), password: str = Body(...)):
-    user = None
-    # Spec requires the field username, but there we store the email
-    user = authenticate(email, password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = new_access_token(
-        data={"sub": email}, expires_delta=access_token_expires
+# Add metadata tags for each module
+tags_metadata = list(
+    chain.from_iterable([
+        [{"name": "Root", "description": "", }],
+        user_metadata,
+    ]
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+)
 
-# Logout
+app = FastAPI(
+    title="Secret Voldemort API",
+    description="Secret Voldemort is a multiplayer game based on Secret Hitler where two teams compete against each other for the control of Hogwarts.",
+    version="0.0.0",
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_tags=tags_metadata,
+    debug=True
+)
 
-# Profile
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get(
-    "/user/profile/",
-    response_model=UserLoginData
+    "/",
+    tags=["Root"]
 )
-async def profile(user: UserLoginData = Depends(get_user_if_active)):
-    return user
+async def get_root():
+    return "Secret Voldemort API"
 
-# Update username
+
+@app.post(
+    USER_REGISTER_URL,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Register"]
+)
+async def user_register(new_user: UserRegisterIn):
+    try:
+        await register(new_user)
+    except BaseException:
+        raise register_exception
+    return {
+        "email": new_user.email,
+        "result": "success"
+    }
+
+
+@app.post(
+    USER_LOGIN_URL,
+    status_code=status.HTTP_302_FOUND,
+    tags=["Login"]
+)
+async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # Spec requires the field username, but there we store the email
+    email = form_data.username
+    password = form_data.password
+    return await authenticate(email, password)
+
+
+@app.get(
+    USER_PUBLIC_PROFILE_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["User public data"]
+)
+async def get_user_public_profile(email: EmailStr):
+    try:
+        return await get_user_profile_by_email(email)
+    except BaseException:
+        raise not_found_exception
+
+
+@app.get(
+    USER_ICON_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["User icon"]
+)
+async def get_user_icon(email: EmailStr):
+    try:
+        return Response(await get_user_icon_by_email(email))
+    except BaseException:
+        raise not_found_exception
+
+
+@app.get(
+    USER_PRIVATE_PROFILE_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["Private profile"]
+)
+async def profile(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    return response
+
+
+@app.post(
+    USER_LOGOUT_URL,
+    status_code=status.HTTP_302_FOUND,
+    tags=["Logout"]
+)
+async def user_logout(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
+    authorization_splitted = Authorization.split(TOKEN_SEP)
+    if len(authorization_splitted) != 2:
+        raise not_authenticated_exception
+    refresh = authorization_splitted[1].strip()
+    refresh_splitted = refresh.split(" ")
+    if len(refresh_splitted) != 2:
+        raise not_authenticated_exception
+    refresh_token = refresh_splitted[1]
+    await deauthenticate(user.email, refresh_token)
+    response = Response(
+        content=json.dumps({
+            "email": user.email,
+            "result": "success"
+        }).encode(),
+        status_code=status.HTTP_302_FOUND,
+        headers={"Location": DOMAIN + "/"}
+    )
+    response.delete_cookie("Authorization", domain=DOMAIN)
+    return response
 
 
 @app.put(
-    "/user/update/",
-    status_code=status.HTTP_200_OK
+    USER_UPDATE_USERNAME_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["Update username"]
 )
-async def user_update(email: EmailStr = Body(...), new_username: str = Body(...)):
-    if change_username(email, new_username):
-        return {"success": True}
+async def user_update_username(
+        update_data: UserUpdateUsername,
+        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
+    if update_data.email == user.email and (await change_username(update_data)):
+        response.body = json.dumps({
+            "email": update_data.email,
+            "result": "success"
+        }).encode()
+        return response
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            success=False,
-            detail="Failed to update"
-        )
+        raise update_exception
 
-# Update password
-#@app.put(
-#    "/user/update/",
-#    status_code = status.HTTP_200_OK
-#    )
-# async def user_update(email: EmailStr = Body(...), old_password: str = Body(...), new_password: str = Body(...)):
-#    if change_password(email, old_password, new_password):
-#        return { "success": True }
-#    else:
-#        raise HTTPException(
-#            status_code = status.HTTP_400_BAD_REQUEST,
-#            success = False,
-#            detail = "Failed to update"
-#        )
 
-# Update icon
-#@app.put(
-#    "/user/update/",
-#    status_code = status.HTTP_200_OK
-#    )
-# async def user_update(email: EmailStr, new_icon: UploadFile = File(...) ):
-#    if change_icon(email, new_icon):
-#        return { "success": True }
-#    else:
-#        raise HTTPException(
-#            status_code = status.HTTP_400_BAD_REQUEST,
-#            success = False,
-#            detail = "Failed to update"
-#        )
+@app.put(
+    USER_UPDATE_PASSWORD_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["Update password"]
+)
+async def user_update_password(
+        update_data: UserUpdatePassword,
+        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
+    if update_data.email == user.email and (await change_password(update_data)):
+        response.body = json.dumps({
+            "email": user.email,
+            "result": "success"
+        }).encode()
+        return response
+    else:
+        raise update_exception
 
-# ------------------------ GAME ENDPOINTS
-# Create Game
+
+@app.put(
+    USER_UPDATE_ICON_URL,
+    status_code=status.HTTP_200_OK,
+    tags=["Update icon"]
+)
+async def user_update_icon(
+        email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
+        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+    user = UserProfileExtended(**json.loads(response.body.decode()))
+    update_data = UserUpdateIcon(email=email, password=password)
+
+    if new_icon.content_type not in [
+            "image/jpeg", "image/png", "image/bmp", "image/webp"]:
+        raise update_icon_exception
+
+    raw_icon = new_icon.file.read()
+
+    if what(new_icon.filename, h=raw_icon) not in [
+            "jpeg", "png", "bmp", "webp"]:
+        raise update_icon_exception
+
+    if update_data.email == user.email and (await change_icon(update_data, raw_icon)):
+        response.body = json.dumps({
+            "email": user.email,
+            "result": "success"
+        }).encode()
+        return response
+    else:
+        raise credentials_exception
 
 
 @app.post("/game/create/",
@@ -159,6 +246,3 @@ async def join_game(id: int, user_email: EmailStr):
          status_code=status.HTTP_200_OK)
 async def init_game(id: int, player_id: int):
     return init_game_with_ids(game_id=id, player_id=player_id)
-
-
-# ------------------------------- GAME ENDPOINTS
