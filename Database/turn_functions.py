@@ -149,6 +149,29 @@ def get_next_candidate(players, last_candidate=None):
 
 
 '''
+Generate a new turn with its Vote instance
+'''
+
+
+@db_session()
+def generate_turn(game_instance, turn_number, candidate_minister, candidate_director,
+                  current_minister, current_director, last_minister=None, last_director=None):
+    turn = Turn(game=game_instance,
+                turn_number=turn_number,
+                current_minister=current_minister,
+                current_director=current_director,
+                last_minister=last_minister if last_minister is not None else candidate_minister,
+                last_director=last_director if last_director is not None else candidate_director,
+                candidate_minister=candidate_minister,
+                candidate_director=candidate_director,
+                taken_cards=False,
+                promulgated=False)
+
+    Vote(result=False,
+         turn=turn)
+
+
+'''
 Start a new turn and return the candidate for minister in mentioned turn.
 If it's the first turn in the game, create three cards to keep always before
 giving to the legislative session
@@ -170,16 +193,15 @@ def select_MM_candidate(game_id):
         next_candidate_minister = get_next_candidate(
             players_set, last_candidate_minister)
 
-        Turn(game=game,
-             turn_number=game_turns + 1,
-             current_minister=next_candidate_minister,
-             current_director=next_candidate_minister,
-             last_minister=last_turn.current_minister,
-             last_director=last_turn.current_director,
-             candidate_minister=next_candidate_minister,
-             candidate_director=next_candidate_minister,
-             taken_cards=False,
-             promulgated=False)
+        turn = generate_turn(
+            game_instance=game,
+            turn_number=game_turns + 1,
+            candidate_minister=next_candidate_minister,
+            candidate_director=next_candidate_minister,
+            last_minister=last_turn.current_minister,
+            last_director=last_turn.current_director,
+            current_minister=next_candidate_minister,
+            current_director=next_candidate_minister)
 
     # Is the first turn in the game
     else:
@@ -192,16 +214,15 @@ def select_MM_candidate(game_id):
 
         next_candidate_minister = get_next_candidate(players=players_set)
 
-        turn = Turn(game=game,
-                    turn_number=game_turns + 1,
-                    current_minister=next_candidate_minister,
-                    current_director=next_candidate_minister,
-                    last_minister=next_candidate_minister,
-                    last_director=next_candidate_minister,
-                    candidate_minister=next_candidate_minister,
-                    candidate_director=next_candidate_minister,
-                    taken_cards=False,
-                    promulgated=False)
+        turn = generate_turn(
+            game_instance=game,
+            turn_number=game_turns + 1,
+            candidate_minister=next_candidate_minister,
+            candidate_director=next_candidate_minister,
+            last_minister=None,
+            last_director=None,
+            current_minister=next_candidate_minister,
+            current_director=next_candidate_minister)
 
         # Generate the first set of cards
         generate_card(3, 1, game_id)
@@ -251,19 +272,9 @@ def vote_turn(game_id, player_id, player_vote):
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
 
-    # Is the first vote in the current turn
-    if vote is None:
-        vote = Vote(result=False,
-                    turn=turn)
-
-        Player_vote(player=player,
-                    vote=vote,
-                    is_lumos=True if player_vote else False)
-
-    else:
-        Player_vote(player=player,
-                    vote=vote,
-                    is_lumos=True if player_vote else False)
+    Player_vote(player=player,
+                vote=vote,
+                is_lumos=True if player_vote else False)
 
     return len(vote.player_vote)
 
@@ -279,10 +290,6 @@ def current_votes(game_id):
     turn = get_turn_in_game(game_id, turn_number)
 
     vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
-
-    # No one voted yet
-    if vote is None:
-        return 0
 
     return len(vote.player_vote)
 

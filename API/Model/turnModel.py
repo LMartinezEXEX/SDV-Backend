@@ -29,6 +29,17 @@ def check_game_state(game_id):
         raise game_finished_exception
 
 
+# Check game is 'IN GAME' and has at least one turn started
+
+def check_game_with_at_least_one_turn(game_id):
+    check_game_state(game_id)
+
+    turns = Database.turn_functions.get_current_turn_number_in_game(game_id)
+
+    if turns == 0:
+        raise turn_hasnt_started_exception
+
+
 def get_next_MM(game_id: int):
     check_game_state(game_id)
     return {
@@ -36,11 +47,7 @@ def get_next_MM(game_id: int):
 
 
 def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
-    check_game_state(game_id)
-
-    # Game started, but not the first turn yet
-    if Database.turn_functions.get_current_turn_number_in_game(game_id) == 0:
-        raise turn_hasnt_started_exception
+    check_game_with_at_least_one_turn(game_id)
 
     # player isn't in this game
     if not Database.turn_functions.is_player_in_game(game_id, player_id):
@@ -65,9 +72,10 @@ def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
 
 
 def check_and_get_vote_result(game_id: int):
-    check_game_state(game_id)
+    check_game_with_at_least_one_turn(game_id)
 
-    current_alive_players = Database.turn_functions.alive_players_count(game_id)
+    current_alive_players = Database.turn_functions.alive_players_count(
+        game_id)
     current_votes = Database.turn_functions.current_votes(game_id)
 
     # Every player voted
@@ -84,25 +92,19 @@ def check_and_get_vote_result(game_id: int):
 
 
 def check_and_get_3_cards(game_id):
-    check_game_state(game_id)
+    check_game_with_at_least_one_turn(game_id)
 
-    # Game has at least one turn
-    if Database.turn_functions.get_current_turn_number_in_game(game_id) != 0:
+    # Cards were taken in this turn
+    if Database.turn_functions.taked_cards(game_id):
 
-        # Cards were taken in this turn
-        if Database.turn_functions.taked_cards(game_id):
-
-            raise cards_taken_in_current_turn_exception
-
-        else:
-            return {"cards": Database.turn_functions.generate_3_cards(game_id)}
+        raise cards_taken_in_current_turn_exception
 
     else:
-        raise turn_hasnt_started_exception
+        return {"cards": Database.turn_functions.generate_3_cards(game_id)}
 
 
 def promulgate_in_game(game_id, minister_id, card_type):
-    check_game_state(game_id)
+    check_game_with_at_least_one_turn(game_id)
 
     # Already promulgated in this turn
     if Database.turn_functions.already_promulgate_in_current_turn(game_id):
