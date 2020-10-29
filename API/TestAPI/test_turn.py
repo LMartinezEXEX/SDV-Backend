@@ -462,6 +462,19 @@ def test_get_result_when_votes_missing():
 
 
 '''
+Test correct response when trying to get a vote result when the gama has
+no turn started and therefore a vote session
+'''
+
+
+def test_get_result_when_no_turn():
+    response = client.put("game/3/result")
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
 Test correct result when all players voted
 '''
 
@@ -474,6 +487,19 @@ def test_get_result():
 
     assert response.status_code == 200
     assert response.json() == {"result": True, "voted_lumos": [1, 2]}
+
+
+'''
+Test correct response when trying to promulgate when the gama has
+no turn started and therefore no legislative session
+'''
+
+
+def test_promulgate_with_no_turn():
+    response = minister_promulgate(game_id=3, minister_id=10, card_type=0)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
 
 
 '''
