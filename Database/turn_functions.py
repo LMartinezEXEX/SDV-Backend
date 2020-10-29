@@ -117,6 +117,8 @@ Generate 'quantity' new cards for a game
 @db_session()
 def generate_card(quantity, order_in_deck, game_id):
     game = Game[game_id]
+    
+    random.seed()
 
     for _ in range(quantity):
         card_type = random.randint(0, 1)
