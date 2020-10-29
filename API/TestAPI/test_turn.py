@@ -17,33 +17,50 @@ def init_data(request):
     db.create_tables()
     with db_session:
 
+        User(email="lautaro@gmail.br",
+             username="pepo",
+             password="fachero".encode(),
+             icon="".encode(),
+             creation_date=datetime.datetime.today(),
+             last_access_date=datetime.datetime.today(),
+             is_validated=True,
+             refresh_token="HolaKappa",
+             refresh_token_expires=datetime.datetime.today())
+
+        user = User["lautaro@gmail.br"]
+
         # Five games instances for test purpose, three 'in game', 1
         # unitiliatlized, 1 finished
         Game(name='LOL',
+             owner=user,
              min_players=5,
              max_players=5,
              creation_date=datetime.datetime.today(),
              state=1)
 
         Game(name='WOW',
+             owner=user,
              min_players=5,
              max_players=10,
              creation_date=datetime.datetime.today(),
              state=1)
 
         Game(name='Among Us',
+             owner=user,
              min_players=6,
              max_players=8,
              creation_date=datetime.datetime.today(),
              state=1)
 
         Game(name='Forest',
+             owner=user,
              min_players=4,
              max_players=8,
              creation_date=datetime.datetime.today(),
              state=0)
 
         Game(name='Habbo',
+             owner=user,
              min_players=6,
              max_players=6,
              creation_date=datetime.datetime.today(),
@@ -53,7 +70,8 @@ def init_data(request):
         game1 = Game[1]
 
         Player(turn=1,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -61,7 +79,8 @@ def init_data(request):
                game_in=game1.id)
 
         Player(turn=2,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -69,7 +88,8 @@ def init_data(request):
                game_in=game1.id)
 
         Player(turn=3,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=True,
                chat_enabled=True,
@@ -80,7 +100,8 @@ def init_data(request):
         game2 = Game[2]
 
         Player(turn=1,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=False,
                chat_enabled=True,
@@ -88,7 +109,8 @@ def init_data(request):
                game_in=game2.id)
 
         Player(turn=2,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -96,7 +118,8 @@ def init_data(request):
                game_in=game2.id)
 
         Player(turn=3,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=True,
                chat_enabled=True,
@@ -104,7 +127,8 @@ def init_data(request):
                game_in=game2.id)
 
         Player(turn=4,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -112,7 +136,8 @@ def init_data(request):
                game_in=game2.id)
 
         Player(turn=5,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=False,
                chat_enabled=True,
@@ -123,7 +148,8 @@ def init_data(request):
         game3 = Game[3]
 
         Player(turn=1,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=False,
                chat_enabled=True,
@@ -131,7 +157,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=2,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -139,7 +166,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=3,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=True,
                chat_enabled=True,
@@ -147,7 +175,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=4,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=False,
                chat_enabled=True,
@@ -155,7 +184,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=5,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=True,
                chat_enabled=True,
@@ -163,7 +193,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=6,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=False,
                chat_enabled=True,
@@ -171,7 +202,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=7,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -179,7 +211,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=8,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=True,
                chat_enabled=True,
@@ -187,7 +220,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=9,
-               rol=1,
+               user=user,
+               rol='Fenix',
                loyalty='Fenix',
                is_alive=True,
                chat_enabled=True,
@@ -195,7 +229,8 @@ def init_data(request):
                game_in=game3.id)
 
         Player(turn=10,
-               rol=2,
+               user=user,
+               rol='Mortifago',
                loyalty='Mortifago',
                is_alive=False,
                chat_enabled=True,

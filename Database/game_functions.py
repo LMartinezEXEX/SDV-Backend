@@ -22,7 +22,8 @@ def get_player_by_id(player_id: int):
 
 
 @db_session
-def save_new_game(owner: EmailStr, name: str, min_players: int, max_players: int):
+def save_new_game(owner: EmailStr, name: str,
+                  min_players: int, max_players: int):
     owner = get_user_by_email(email=owner)
     game = Game(
         owner=owner,
@@ -55,7 +56,7 @@ def put_new_player_in_game(user: EmailStr, game_id: int):
     new_player = Player(
         user=creator,
         is_alive=True,
-        game=game,
+        game_in=game,
         chat_enabled=True,
         investigated=False
     )
@@ -70,7 +71,7 @@ def check_init_conditions(game_id: int, player_id: int):
     player_owner = get_player_by_id(player_id=player_id)
     # This should not happen, only the owner is able to start the match
     if game.owner == player_owner.user:
-        #-----------------------------------
+        # -----------------------------------
         if game.min_players <= game.players.count():
             return 1
     return 0

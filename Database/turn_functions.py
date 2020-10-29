@@ -24,7 +24,7 @@ Get player instance in game. Should previously assert player is in the game
 @db_session()
 def get_player_in_game(game_id, player_id):
     game = Game[game_id]
-    return game.player.select(lambda p: p.id == player_id).first()
+    return game.players.select(lambda p: p.id == player_id).first()
 
 
 '''
@@ -181,7 +181,7 @@ giving to the legislative session
 @db_session()
 def select_MM_candidate(game_id):
     game = Game[game_id]
-    players_set = game.player
+    players_set = game.players
     game_turns = get_current_turn_number_in_game(game_id)
 
     if game_turns > 0:
