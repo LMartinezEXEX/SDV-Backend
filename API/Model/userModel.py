@@ -19,7 +19,9 @@ from USER_URLS import USER_LOGIN_URL
 # Security scheme
 from API.Model.securityScheme import OAuth2PasswordBearerWithCookie
 # Database
+
 import Database.user_functions
+
 
 # Actual security scheme
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl=USER_LOGIN_URL)

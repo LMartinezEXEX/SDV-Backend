@@ -224,3 +224,25 @@ async def user_update_icon(
         return response
     else:
         raise credentials_exception
+
+
+@app.post("/game/create/",
+          status_code=status.HTTP_201_CREATED)
+async def create_game(params: GameParams):
+    return create_new_game(game_params=params)
+
+# Join Game
+
+
+@app.put("/game/join/{id}",
+         status_code=status.HTTP_200_OK)
+async def join_game(id: int, user_email: EmailStr):
+    return join_game_with_keys(game_id=id, user_email=user_email)
+
+# Init Game
+
+
+@app.put("/game/init/{id}",
+         status_code=status.HTTP_200_OK)
+async def init_game(id: int, player_id: int):
+    return init_game_with_ids(game_id=id, player_id=player_id)
