@@ -20,7 +20,7 @@ class User(db.Entity):
     is_validated     = Required(bool)
     refresh_token    = Required(str)
     refresh_token_expires = Required(datetime.datetime)
-    owner_of = Set('Game')
+    owner_of   = Set('Game')
     playing_in = Set('Player')
     
     
