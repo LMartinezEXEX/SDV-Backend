@@ -25,7 +25,10 @@ from API.Model.userModel import UserRegisterIn, UserProfileExtended,\
 from API.Model.userExceptions import not_found_exception, credentials_exception,\
     profile_exception, register_exception, update_exception, update_icon_exception
 
+from API.Model.turnModel import *
+
 from API.Model.userMetadata import user_metadata
+
 
 # Add metadata tags for each module
 tags_metadata = list(
@@ -224,7 +227,7 @@ async def user_update_icon(
         return response
     else:
         raise credentials_exception
-
+        
 
 @app.post("/game/create/",
           status_code=status.HTTP_201_CREATED)
@@ -246,3 +249,63 @@ async def join_game(id: int, user_email: EmailStr):
          status_code=status.HTTP_200_OK)
 async def init_game(id: int, player_id: int):
     return init_game_with_ids(game_id=id, player_id=player_id)
+
+
+# Get next player id candidate for minister
+@app.put("/game/{id}/select_MM",
+         status_code=status.HTTP_200_OK,
+         tags=["Next minister candidate"]
+         )
+async def select_MM(id: int):
+    return get_next_MM(id)
+
+
+# Submit a vote
+
+@app.put("/game/{id}/vote",
+         status_code=status.HTTP_200_OK,
+         tags=["Submit a vote"]
+         )
+async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player data: id and vote")):
+    return check_and_vote_candidate(id, player_vote.id, player_vote.vote)
+
+
+# Get the vote result
+
+@app.put("/game/{id}/result",
+         status_code=status.HTTP_200_OK,
+         tags=["Vote result"]
+         )
+async def vote_result(id: int):
+    return check_and_get_vote_result(id)
+
+
+# Get three cards
+
+@app.put("/game/{id}/get_cards",
+         status_code=status.HTTP_200_OK,
+         tags=["Take three cards"]
+         )
+async def get_cards(id: int):
+    return check_and_get_3_cards(id)
+
+
+# Promulgate a card
+
+@app.put("/game/{id}/promulgate",
+         status_code=status.HTTP_200_OK,
+         tags=["Promulgate card"]
+         )
+async def promulgate_card(id: int, promulgate: PlayerPromulgate):
+    return promulgate_in_game(
+        id, promulgate.candidate_id, promulgate.to_promulgate)
+
+
+# Check the game status
+
+@app.get("/game/{id}/check_game",
+         status_code=status.HTTP_200_OK,
+         tags=["Game state"]
+         )
+async def get_game_status(id: int):
+    return game_status(id)   
