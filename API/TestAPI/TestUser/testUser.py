@@ -137,7 +137,7 @@ def test_update_usernames(users):
         )
         
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
-        assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+        assert response.json() == { "email": user["email"], "result": "success" }
 
 """
 Endpoint test: "/user/update/password/"
@@ -166,7 +166,7 @@ def test_update_passwords(users):
         )
 
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
-        assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+        assert response.json() == { "email": user["email"], "result": "success" }
 
 """
 Endpoint test: "/user/update/icon/"
@@ -198,7 +198,7 @@ def test_update_icons(users):
         )
 
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
-        assert response.json() == { "username": user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+        assert response.json() == { "email": user["email"], "result": "success" }
 
 """
 Endpoint test: "/user/logout/"

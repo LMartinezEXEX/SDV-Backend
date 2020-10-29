@@ -89,7 +89,7 @@ def test_update_password(email, old_password, new_password, expected_codes, fail
     assert response.status_code in expected_codes, fail_message
 
 json_upload_file_fail    = {'detail': 'Failed to update icon. Formats allowed: jpeg, png, bmp, webp'}
-json_upload_file_success = { "username": single_user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+json_upload_file_success = { "email": single_user["email"], "result": "success" }
 
 @pytest.mark.parametrize(
     "email, password, dir_file, file, expected_codes, fail_message, compare_message", [
@@ -142,7 +142,7 @@ def test_logout():
         cookies = cookies
     )
     assert response.status_code == 302, f'Error: {response.content.decode()}\n'
-    assert response.json() == { "username": single_user["username"] + UPDATE_USERNAME_STRING, "operation_result": "success" }
+    assert response.json() == { "email": single_user["email"], "result": "success" }
 
 def test_profile_after_logout():
     cookie = SimpleCookie()
