@@ -22,8 +22,6 @@ def register_user(new_user):
         is_validated     = new_user.is_validated,
         refresh_token    = new_user.refresh_token,
         refresh_token_expires = new_user.refresh_token_expires,
-        owner_of   = None,
-        playing_in = None
     )
 
 @orm.db_session
