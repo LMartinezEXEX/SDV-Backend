@@ -134,6 +134,16 @@ async def get_user_auth(email: EmailStr):
         raise not_found_exception
 
 
+async def is_valid_user(email: EmailStr):
+    user = await get_user_auth(email)
+    return user.is_validated
+
+
+async def is_active_user(email: EmailStr):
+    user = await get_user_auth(email)
+    return user.refresh_token != "empty" and user.refresh_token_expires > datetime.utcnow()
+
+
 async def authenticate(email: EmailStr, password: str):
     if Database.user_functions.auth_user_password(email, password):
         user = await get_user_auth(email)
