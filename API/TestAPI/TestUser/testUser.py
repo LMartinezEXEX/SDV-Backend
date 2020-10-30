@@ -1,5 +1,5 @@
 import pytest
-from pathlib import Path
+from os  import path
 from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
@@ -187,16 +187,16 @@ def test_update_icons(users):
             cookies[key] = obj.value
         
         user_data = { "email": user["email"], "password": user["password"] + UPDATE_PASSWORD_STRING }
-        file_to_upload = (Path(__file__).parent / (UPDATE_ICON_DIR + "/" + UPDATE_ICON_FILE) ).resolve()
+        file_to_upload = open(path.join(path.dirname(__file__), UPDATE_ICON_DIR, UPDATE_ICON_FILE), "rb")
 
         response = client.put(
             "/user/update/icon/",
             headers = { "accept": "application/json" },
             cookies = cookies,
             data = user_data,
-            files = { "new_icon": (UPDATE_ICON_FILE, file_to_upload.open("rb"), "image/jpeg") }
+            files = { "new_icon": (UPDATE_ICON_FILE, file_to_upload, "image/jpeg") }
         )
-
+        file_to_upload.close()
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "email": user["email"], "result": "success" }
 

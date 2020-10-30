@@ -37,7 +37,7 @@ sleep 2
 echo -e "\e[93m\e[1mTesting many users..."
 echo "Running command: python3.8 -m pytest API/TestAPI/TestUser/testUser.py"
 
-python3.8 -m pytest API/TestAPI/TestUser/testUser.py
+python3.8 -m pytest --maxfail=1 API/TestAPI/TestUser/testUser.py
 
 echo "Cleaning for testing user related module"
 
@@ -53,7 +53,7 @@ sleep 2
 echo -e "\e[93m\e[1mTesting a single user..."
 echo "Running command: python3.8 -m pytest -s API/TestAPI/TestUser/testSingleUser.py"
 
-python3.8 -m pytest -s API/TestAPI/TestUser/testSingleUser.py
+python3.8 -m pytest -s --maxfail=1 API/TestAPI/TestUser/testSingleUser.py
 
 echo "Cleaning..."
 

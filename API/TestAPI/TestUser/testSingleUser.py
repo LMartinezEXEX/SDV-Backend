@@ -1,5 +1,6 @@
 import pytest
 import random
+from os  import path
 from pathlib import Path
 from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
@@ -104,14 +105,16 @@ def test_update_icon(email, password, dir_file, file, expected_codes, fail_messa
     for key, obj in cookie.items():
         cookies[key] = obj.value
     
-    file_to_upload = (Path(__file__).parent / (dir_file + "/" + file) ).resolve()
+    file_to_upload = open(path.join(path.dirname(__file__), dir_file, file) , "rb")
+    
     response = client.put(
         "/user/update/icon/",
         headers = { "accept": "application/json" },
         cookies = cookies,
         data = { "email": email, "password": password },
-        files = { "new_icon": (file, file_to_upload.open("rb"), "image/jpeg") }
+        files = { "new_icon": (file, file_to_upload, "image/jpeg") }
     )
+    file_to_upload.close()
     assert response.status_code in expected_codes, f'Error: {response.content.decode()}\n'
     assert response.json() == compare_message
 
