@@ -13,19 +13,11 @@ class GameParams(BaseModel):
     max_players: int
 
 
-class OpResponse(BaseModel):
-    op: int
-    message: str
-
-
 def create_new_game(game_params: GameParams):
     if game_params.min_players < 5:
         raise less_than_five_players_exception
     if game_params.max_players < game_params.min_players:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The maximum amount of players must me less than the minimum"
-        )
+        raise incoherent_amount_of_players_exception
     if game_params.max_players > 10:
         raise more_than_ten_players_exception
     user = get_user_by_email(game_params.email)
@@ -34,8 +26,8 @@ def create_new_game(game_params: GameParams):
     game_id = save_new_game(owner=game_params.email, name=game_params.name,
                             min_players=game_params.min_players,
                             max_players=game_params.max_players)
-    put_new_player_in_game(user=game_params.email, game_id=game_id)
-    return game_id
+    player_id = put_new_player_in_game(user=game_params.email, game_id=game_id)
+    return {"Game_Id": game_id, "Player_Id": player_id}
 
 
 def join_game_with_keys(game_id: int, user_email: EmailStr):
@@ -45,7 +37,8 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
     user = get_user_by_email(email=user_email)
     if not user:
         raise user_not_found_exception
-    put_new_player_in_game(user=user_email, game_id=game_id)
+    player_id = put_new_player_in_game(user=user_email, game_id=game_id)
+    return {"Player_Id": player_id}
 
 
 def init_game_with_ids(game_id: int, player_id: int):

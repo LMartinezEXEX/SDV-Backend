@@ -231,7 +231,8 @@ async def user_update_icon(
 
 
 @app.post("/game/create/",
-          status_code=status.HTTP_201_CREATED)
+          status_code=status.HTTP_201_CREATED,
+          tags=["Create Game"])
 async def create_game(params: GameParams):
     return create_new_game(game_params=params)
 
@@ -239,7 +240,8 @@ async def create_game(params: GameParams):
 
 
 @app.put("/game/join/{id}",
-         status_code=status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Join Game"])
 async def join_game(id: int, user_email: EmailStr):
     return join_game_with_keys(game_id=id, user_email=user_email)
 
@@ -247,7 +249,8 @@ async def join_game(id: int, user_email: EmailStr):
 
 
 @app.put("/game/init/{id}",
-         status_code=status.HTTP_200_OK)
+         status_code=status.HTTP_200_OK,
+         tags=["Init Game"])
 async def init_game(id: int, player_id: int):
     return init_game_with_ids(game_id=id, player_id=player_id)
 

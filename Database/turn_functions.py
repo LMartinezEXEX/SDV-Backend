@@ -207,13 +207,7 @@ def select_MM_candidate(game_id):
 
     # Is the first turn in the game
     else:
-
-        # This should be done in game creation
-        board = Board(game=game,
-                      fenix_promulgation=0,
-                      death_eater_promulgation=0,
-                      election_counter=0)
-
+        
         next_candidate_minister = get_next_candidate(players=players_set)
 
         turn = generate_turn(
