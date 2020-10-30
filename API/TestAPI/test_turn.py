@@ -69,6 +69,11 @@ def init_data(request):
         # Three players in LOL alives
         game1 = Game[1]
 
+        Board(game=game1,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
+
         Player(turn=1,
                user=user,
                rol='Fenix',
@@ -98,6 +103,11 @@ def init_data(request):
 
         # Five players in WOW, two of them dead
         game2 = Game[2]
+
+        Board(game=game2,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
 
         Player(turn=1,
                user=user,
@@ -146,6 +156,11 @@ def init_data(request):
 
         # Ten players in Among Us, three of them dead
         game3 = Game[3]
+
+        Board(game=game3,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
 
         Player(turn=1,
                user=user,
