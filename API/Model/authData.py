@@ -7,7 +7,7 @@ ALGORITHM = "HS256"
 # Session related parameters
 # Domain for testing purposes, recommended practice. localtest.me resolves
 # to 127.0.0.1
-DOMAIN = "localtest.me"
+DOMAIN = "localhost"
 
 TOKEN_SEP = "|"
 

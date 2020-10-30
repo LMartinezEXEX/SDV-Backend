@@ -13,7 +13,7 @@ from jose import JWTError, ExpiredSignatureError, jwt
 from API.Model.userExceptions import credentials_exception, not_authenticated_exception, \
     unauthorized_exception, profile_exception, not_found_exception
 # Data for user management
-from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN,\
+from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN \
     ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, EXPIRES_REFRESH, REFRESH_TOKEN_LENGTH
 from USER_URLS import USER_LOGIN_URL
 # Security scheme
@@ -174,7 +174,7 @@ async def authenticate(email: EmailStr, password: str):
             response = Response(
                 status_code=status.HTTP_302_FOUND,
                 headers={
-                    "Location": DOMAIN + "/",
+                    "Location": "/",
                     "WWW-Authenticate": "Bearer"}
             )
             response.set_cookie(
@@ -305,7 +305,7 @@ async def get_this_user(
             response.set_cookie(
                 key="Authorization",
                 value=f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}",
-                domain=DOMAIN,
+                domain= DOMAIN,
                 httponly=True,
                 max_age=EXPIRES_REFRESH,
                 expires=EXPIRES_REFRESH,
