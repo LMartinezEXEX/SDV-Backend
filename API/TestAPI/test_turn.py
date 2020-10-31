@@ -615,6 +615,17 @@ def test_promulgate_regular_player():
     assert response.json() == {"detail": "Player is not minister"}
 
 
+def test_game_ckeck_with_no_turn():
+    response = check_game_state(game_id=3)
+
+    assert response.status_code == 200
+    assert response.json() == {"finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 0,
+                               "current minister id": None,
+                               "current director id": None}
+
+
 '''
 Test correct game status response
 '''
