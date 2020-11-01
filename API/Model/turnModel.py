@@ -1,4 +1,5 @@
-import Database.turn_functions
+import Database.turn_functions as db_turn
+from Database.game_functions import get_game_state, is_player_in_game_by_id
 from pydantic import BaseModel, StrictInt
 from API.Model.turnExceptions import *
 
@@ -13,8 +14,8 @@ class PlayerPromulgate(BaseModel):
     to_promulgate: StrictInt
 
 
-def check_game_state(game_id):
-    state = Database.turn_functions.get_game_state(game_id)
+def check_game_state(game_id: int):
+    state = get_game_state(game_id)
 
     # Game not found
     if state == -1:
@@ -31,10 +32,10 @@ def check_game_state(game_id):
 
 # Check game is 'IN GAME' and has at least one turn started
 
-def check_game_with_at_least_one_turn(game_id):
+def check_game_with_at_least_one_turn(game_id: int):
     check_game_state(game_id)
 
-    turns = Database.turn_functions.get_current_turn_number_in_game(game_id)
+    turns = db_turn.get_current_turn_number_in_game(game_id)
 
     if turns == 0:
         raise turn_hasnt_started_exception
@@ -43,22 +44,22 @@ def check_game_with_at_least_one_turn(game_id):
 def get_next_MM(game_id: int):
     check_game_state(game_id)
     return {
-        "candidate_minister_id": Database.turn_functions.select_MM_candidate(game_id)}
+        "candidate_minister_id": db_turn.select_MM_candidate(game_id)}
 
 
 def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
     check_game_with_at_least_one_turn(game_id)
 
     # player isn't in this game
-    if not Database.turn_functions.is_player_in_game(game_id, player_id):
+    if not is_player_in_game_by_id(game_id, player_id):
         raise invalid_player_in_game_exception
 
-    is_alive = Database.turn_functions.is_alive(game_id, player_id)
+    is_alive = db_turn.is_alive(game_id, player_id)
 
     # Player is alive and hasn't vote
-    if is_alive and not Database.turn_functions.player_voted(
+    if is_alive and not db_turn.player_voted(
             game_id, player_id):
-        current_vote_cuantity = Database.turn_functions.vote_turn(
+        current_vote_cuantity = db_turn.vote_turn(
             game_id, player_id, vote)
         return {"votes": current_vote_cuantity}
 
@@ -74,13 +75,13 @@ def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):
 def check_and_get_vote_result(game_id: int):
     check_game_with_at_least_one_turn(game_id)
 
-    current_alive_players = Database.turn_functions.alive_players_count(
+    current_alive_players = db_turn.alive_players_count(
         game_id)
-    current_votes = Database.turn_functions.current_votes(game_id)
+    current_votes = db_turn.current_votes(game_id)
 
     # Every player voted
     if current_votes == current_alive_players:
-        vote_result = Database.turn_functions.get_result(game_id)
+        vote_result = db_turn.get_result(game_id)
         result = vote_result[0]
         voted_lumos = vote_result[1]
 
@@ -91,39 +92,39 @@ def check_and_get_vote_result(game_id: int):
         raise votes_missing_exception
 
 
-def check_and_get_3_cards(game_id):
+def check_and_get_3_cards(game_id: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Cards were taken in this turn
-    if Database.turn_functions.taked_cards(game_id):
+    if db_turn.taked_cards(game_id):
 
         raise cards_taken_in_current_turn_exception
 
     else:
-        return {"cards": Database.turn_functions.generate_3_cards(game_id)}
+        return {"cards": db_turn.generate_3_cards(game_id)}
 
 
-def promulgate_in_game(game_id, minister_id, card_type):
+def promulgate_in_game(game_id: int, minister_id: int, card_type: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Already promulgated in this turn
-    if Database.turn_functions.already_promulgate_in_current_turn(game_id):
+    if db_turn.already_promulgate_in_current_turn(game_id):
         raise already_promulgated_in_turn_exception
 
     # Player is not current minister
-    if not Database.turn_functions.is_current_minister(game_id, minister_id):
+    if not db_turn.is_current_minister(game_id, minister_id):
         raise player_isnt_minister_exception
 
-    board_state = Database.turn_functions.promulgate(game_id, card_type)
+    board_state = db_turn.promulgate(game_id, card_type)
 
     return {"fenix promulgations": board_state[0],
             "death eater promulgations": board_state[1]}
 
 
-def game_status(game_id):
+def game_status(game_id: int):
     check_game_state(game_id)
 
-    status = Database.turn_functions.check_status(game_id)
+    status = db_turn.check_status(game_id)
 
     return {"game id": game_id,
             "finished": status[0],

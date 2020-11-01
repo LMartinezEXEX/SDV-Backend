@@ -1,41 +1,7 @@
 from pony.orm import *
 from Database.database import *
+from Database.game_functions import get_player_by_id
 import random
-
-
-# -GAME-FUNCTION-----------------------------------------------------------------
-@db_session()
-def get_game_state(game_id):
-    try:
-        game = Game[game_id]
-        state = game.state
-    except BaseException:
-        state = -1
-
-    return state
-# -------------------------------------------------------------------------------
-
-
-'''
-Get player instance in game. Should previously assert player is in the game
-'''
-
-
-@db_session()
-def get_player_in_game(game_id, player_id):
-    game = Game[game_id]
-    return game.players.select(lambda p: p.id == player_id).first()
-
-
-'''
-Assert if a player is in the game
-'''
-
-
-@db_session()
-def is_player_in_game(game_id, player_id):
-    return True if Player.get(
-        lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
 
 
 '''
@@ -44,7 +10,7 @@ Assert if player is alive
 
 
 @db_session()
-def is_alive(game_id, player_id):
+def is_alive(game_id: int, player_id: int):
     player = Player.get(lambda p: p.game_in.id ==
                         game_id and p.id == player_id)
     return player.is_alive
@@ -56,7 +22,7 @@ Get the number of alive players at the moment in the game
 
 
 @db_session()
-def alive_players_count(game_id):
+def alive_players_count(game_id: int):
     game = Game[game_id]
     alive_players = Player.select(
         lambda p: p.game_in.id == game_id and p.is_alive)
@@ -69,7 +35,7 @@ Assert if player is the current minister in the current turn
 
 
 @db_session()
-def is_current_minister(game_id, player_id):
+def is_current_minister(game_id: int, player_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     return True if turn.current_minister.id == player_id else False
@@ -81,7 +47,7 @@ Assert if there was already a promulgation in the current turn
 
 
 @db_session()
-def already_promulgate_in_current_turn(game_id):
+def already_promulgate_in_current_turn(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     return turn.promulgated
@@ -93,7 +59,7 @@ Get cuantity of turns in the game
 
 
 @db_session()
-def get_current_turn_number_in_game(game_id):
+def get_current_turn_number_in_game(game_id: int):
     game = Game[game_id]
     return len(game.turn)
 
@@ -104,7 +70,7 @@ Get some turn instance in the game depending the number
 
 
 @db_session()
-def get_turn_in_game(game_id, turn_number):
+def get_turn_in_game(game_id: int, turn_number: int):
     return Turn.get(lambda t: t.game.id ==
                     game_id and t.turn_number == turn_number)
 
@@ -115,7 +81,7 @@ Generate 'quantity' new cards for a game
 
 
 @db_session()
-def generate_card(quantity, order_in_deck, game_id):
+def generate_card(quantity: int, order_in_deck: int, game_id: int):
     game = Game[game_id]
 
     random.seed()
@@ -134,7 +100,7 @@ Get the next candidate for minister based on players turns and state
 
 
 @db_session()
-def get_next_candidate(players, last_candidate=None):
+def get_next_candidate(players: Set(Player), last_candidate: Player = None):
     next_candidate = None
 
     if not last_candidate is None:
@@ -156,8 +122,8 @@ Generate a new turn with its Vote instance
 
 
 @db_session()
-def generate_turn(game_instance, turn_number, candidate_minister, candidate_director,
-                  current_minister, current_director, last_minister=None, last_director=None):
+def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Player, candidate_director: Player,
+                  current_minister: Player, current_director: Player, last_minister: Player = None, last_director: Player = None):
     turn = Turn(game=game_instance,
                 turn_number=turn_number,
                 current_minister=current_minister,
@@ -181,7 +147,7 @@ giving to the legislative session
 
 
 @db_session()
-def select_MM_candidate(game_id):
+def select_MM_candidate(game_id: int):
     game = Game[game_id]
     players_set = game.players
     game_turns = get_current_turn_number_in_game(game_id)
@@ -232,9 +198,9 @@ Assert if a player already voted
 
 
 @db_session()
-def player_voted(game_id, player_id):
+def player_voted(game_id: int, player_id: int):
     game = Game[game_id]
-    player = get_player_in_game(game_id, player_id)
+    player = get_player_by_id(player_id)
 
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
@@ -261,10 +227,10 @@ If it is the first vote in the turn, create the Vote instance for the turn.
 
 
 @db_session()
-def vote_turn(game_id, player_id, player_vote):
+def vote_turn(game_id: int, player_id: int, player_vote: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
-    player = get_player_in_game(game_id, player_id)
+    player = get_player_by_id(player_id)
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
 
@@ -281,7 +247,7 @@ Get the number of votes currently
 
 
 @db_session()
-def current_votes(game_id):
+def current_votes(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
 
@@ -297,7 +263,7 @@ Get the result from the current Vote and an array of player id's who voted lumos
 
 
 @db_session()
-def get_result(game_id):
+def get_result(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     vote = Vote.get(lambda v: v.turn.turn_number ==
@@ -326,7 +292,7 @@ Assert if the three cards for legislative session have been taken
 
 
 @db_session()
-def taked_cards(game_id):
+def taked_cards(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
 
@@ -339,7 +305,7 @@ Return the three cards in order, and create three new cards for future turns
 
 
 @db_session()
-def generate_3_cards(game_id):
+def generate_3_cards(game_id: int):
     game = Game[game_id]
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
@@ -366,7 +332,7 @@ If card_type = 1, promulgate for the Death Eaters
 
 
 @db_session()
-def promulgate(game_id, card_type):
+def promulgate(game_id: int, card_type: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
 
@@ -387,7 +353,7 @@ Get the state of the 'in Game' game, to know if a team won or not
 
 
 @db_session()
-def check_status(game_id):
+def check_status(game_id: int):
     game = Game[game_id]
     turn_number = get_current_turn_number_in_game(game_id)
     game_finished = False
