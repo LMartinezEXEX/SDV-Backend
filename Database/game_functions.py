@@ -84,4 +84,6 @@ def check_init_conditions(game_id: int, player_id: int):
     if game.owner == player_owner.user:
         if game.min_players <= game.players.count():
             return 1
-    return 0
+        else:
+            return 0
+    raise not_the_owner_exception
