@@ -13,8 +13,8 @@ from jose import JWTError, ExpiredSignatureError, jwt
 from API.Model.userExceptions import credentials_exception, not_authenticated_exception, \
     unauthorized_exception, profile_exception, not_found_exception
 # Data for user management
-from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, DOMAIN, \
-    ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, EXPIRES_REFRESH, REFRESH_TOKEN_LENGTH
+from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, \
+    ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_LENGTH
 from USER_URLS import USER_LOGIN_URL
 # Security scheme
 from API.Model.securityScheme import OAuth2PasswordBearerWithCookie
