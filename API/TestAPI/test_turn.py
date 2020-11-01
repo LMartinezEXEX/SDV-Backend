@@ -69,6 +69,11 @@ def init_data(request):
         # Three players in LOL alives
         game1 = Game[1]
 
+        Board(game=game1,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
+
         Player(turn=1,
                user=user,
                rol='Fenix',
@@ -98,6 +103,11 @@ def init_data(request):
 
         # Five players in WOW, two of them dead
         game2 = Game[2]
+
+        Board(game=game2,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
 
         Player(turn=1,
                user=user,
@@ -146,6 +156,11 @@ def init_data(request):
 
         # Ten players in Among Us, three of them dead
         game3 = Game[3]
+
+        Board(game=game3,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
 
         Player(turn=1,
                user=user,
@@ -601,6 +616,23 @@ def test_promulgate_regular_player():
 
 
 '''
+Test correct response when getting the initial game state without turn started
+'''
+
+
+def test_game_ckeck_with_no_turn():
+    response = check_game_state(game_id=3)
+
+    assert response.status_code == 200
+    assert response.json() == {"game id": 3,
+                               "finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 0,
+                               "current minister id": None,
+                               "current director id": None}
+
+
+'''
 Test correct game status response
 '''
 
@@ -611,7 +643,8 @@ def test_initial_game_check():
     response = check_game_state(game_id=3)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": False,
+    assert response.json() == {"game id": 3,
+                               "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
                                "current minister id": 10,
@@ -636,7 +669,8 @@ def test_game_check_fenix_five_promulgations():
     response = check_game_state(game_id=3)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": True,
+    assert response.json() == {"game id": 3,
+                               "finished": True,
                                "fenix promulgations": 5,
                                "death eater promulgations": 0,
                                "current minister id": 17,
@@ -653,7 +687,8 @@ def test_game_check_six_death_eater_promulgations():
     response = check_game_state(game_id=1)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": False,
+    assert response.json() == {"game id": 1,
+                               "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 1,
                                "current minister id": 1,
@@ -670,7 +705,8 @@ def test_game_check_six_death_eater_promulgations():
     response = check_game_state(game_id=1)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": True,
+    assert response.json() == {"game id": 1,
+                               "finished": True,
                                "fenix promulgations": 0,
                                "death eater promulgations": 6,
                                "current minister id": 3,

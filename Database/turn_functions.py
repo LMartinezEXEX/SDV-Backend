@@ -117,7 +117,7 @@ Generate 'quantity' new cards for a game
 @db_session()
 def generate_card(quantity, order_in_deck, game_id):
     game = Game[game_id]
-    
+
     random.seed()
 
     for _ in range(quantity):
@@ -207,7 +207,7 @@ def select_MM_candidate(game_id):
 
     # Is the first turn in the game
     else:
-        
+
         next_candidate_minister = get_next_candidate(players=players_set)
 
         turn = generate_turn(
@@ -285,7 +285,8 @@ def current_votes(game_id):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
 
-    vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn_number and v.turn.game.id == game_id)
 
     return len(vote.player_vote)
 
@@ -299,7 +300,8 @@ Get the result from the current Vote and an array of player id's who voted lumos
 def get_result(game_id):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
-    vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn_number and v.turn.game.id == game_id)
 
     lumos = Player_vote.select(
         lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
@@ -388,10 +390,13 @@ Get the state of the 'in Game' game, to know if a team won or not
 def check_status(game_id):
     game = Game[game_id]
     turn_number = get_current_turn_number_in_game(game_id)
+    game_finished = False
+
+    if turn_number == 0:
+        return [game_finished, 0, 0, None, None]
+
     turn = get_turn_in_game(game_id, turn_number)
     board = Board[game_id]
-
-    game_finished = False
 
     if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 or (
             board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
