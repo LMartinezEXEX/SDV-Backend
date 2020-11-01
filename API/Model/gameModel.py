@@ -13,6 +13,10 @@ class GameParams(BaseModel):
     max_players: int
 
 
+class EmailParameter(BaseModel):
+    email: EmailStr
+
+
 def create_new_game(game_params: GameParams):
     if game_params.min_players < 5:
         raise less_than_five_players_exception

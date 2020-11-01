@@ -161,25 +161,30 @@ Tests for joining game
 def test_join_game_with_invalid_email():
      game_id = 1
      response = client.put(
-          'game/join/{}?user_email=fake_email@gmail.com'.format(game_id))
+          'game/join/{}'.format(game_id),
+          json= {"email": "fakeemail@gmail.com" })
      
      assert response.status_code == 404
      assert response.json() == {"detail": "User not found"}
 
 
 def test_join_game_with_invalid_game_id():
+     user = {'email': 'tomasosiecki@gmail.com' }
      game_id = 3
      response = client.put(
-          'game/join/{}?user_email=tomasosiecki@gmail.com'.format(game_id))
+          'game/join/{}'.format(game_id),
+          json=user)
      
      assert response.status_code == 404
      assert response.json() == {"detail": "Game not found"}
 
 
 def test_join_game():
+     user={"email": "aguschapuis@gmail.com"}
      game_id = 1
      response = client.put(
-         'game/join/{}?user_email=aguschapuis@gmail.com'.format(game_id))
+         'game/join/{}'.format(game_id),
+         json=user)
      
      assert response.status_code == 200
      assert response.json() == {"Player_Id": 2}
@@ -207,13 +212,19 @@ def test_init_game_without_minimum_players():
 Test putting three more players in game 1 (with the minimum and maximum of players is 5)
 '''
 def test_add_players_to_reach_the_min_and_max():
+     user1 = {"email": "lautimartinez@gmail.com" }
+     user2 = {"email": "danireynuaba@gmail.com"}
+     user3 = {"email": "sofigalfre@gmail.com"}
      game_id = 1
      response1 =  client.put(
-         'game/join/{}?user_email=lautimartinez@gmail.com'.format(game_id))
+         'game/join/{}'.format(game_id),
+         json=user1)
      response2 =  client.put(
-         'game/join/{}?user_email=danireynuaba@gmail.com'.format(game_id))
+         'game/join/{}'.format(game_id),
+         json=user2)
      response3 =  client.put(
-         'game/join/{}?user_email=sofigalfre@gmail.com'.format(game_id))
+         'game/join/{}'.format(game_id),
+         json=user3)
 
      assert response1.status_code == 200
      assert response2.status_code == 200
@@ -221,9 +232,11 @@ def test_add_players_to_reach_the_min_and_max():
 
 
 def test_join_game_with_maximum_reached():
+     user = {"email": "franjoray@gmail.com"}
      game_id = 1
      response = client.put(
-         'game/join/{}?user_email=franjoray@gmail.com'.format(game_id))
+         'game/join/{}'.format(game_id),
+         json=user)
      
      assert response.status_code == 409
      assert response.json() == {"detail": "The game has reach the maximum amount of players"}
