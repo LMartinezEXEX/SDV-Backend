@@ -615,6 +615,11 @@ def test_promulgate_regular_player():
     assert response.json() == {"detail": "Player is not minister"}
 
 
+'''
+Test correct response when getting the initial game state without turn started
+'''
+
+
 def test_game_ckeck_with_no_turn():
     response = check_game_state(game_id=3)
 

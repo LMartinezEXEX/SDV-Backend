@@ -5,25 +5,23 @@ import datetime
 db = Database()
 db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
-
 # Declare PonyORM entities before mapping
 
 
-
 class User(db.Entity):
-    email    = PrimaryKey(str, 100)
-    username = Required(str, 35, unique = True)
+    email = PrimaryKey(str, 100)
+    username = Required(str, 35, unique=True)
     password = Required(bytes)
     icon = Required(bytes)
     creation_date = Required(datetime.datetime)
     last_access_date = Required(datetime.datetime)
-    is_validated     = Required(bool)
-    refresh_token    = Required(str)
+    is_validated = Required(bool)
+    refresh_token = Required(str)
     refresh_token_expires = Required(datetime.datetime)
-    owner_of   = Set('Game')
+    owner_of = Set('Game')
     playing_in = Set('Player')
-    
-    
+
+
 class Player(db.Entity):
     id = PrimaryKey(int, auto=True)
     user = Required('User')
@@ -41,8 +39,8 @@ class Player(db.Entity):
     candidate_director = Set('Turn', reverse='candidate_director')
     game_in = Required('Game')
     vote = Set('Player_vote')
-    
-    
+
+
 class Game(db.Entity):
     id = PrimaryKey(int, auto=True)
     owner = Required('User')
@@ -56,7 +54,7 @@ class Game(db.Entity):
     card = Set('Card')
     board = Optional('Board')
 
-    
+
 class Turn(db.Entity):
     turn_number = Required(int)
     game = Required('Game')

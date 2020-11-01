@@ -285,7 +285,8 @@ def current_votes(game_id):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
 
-    vote = Vote.get(lambda v: v.turn.turn_number == turn_number)
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn_number and v.turn.game.id == game_id)
 
     return len(vote.player_vote)
 
@@ -299,7 +300,8 @@ Get the result from the current Vote and an array of player id's who voted lumos
 def get_result(game_id):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
-    vote = Vote.get(lambda v: v.turn.turn_number == turn_number and v.turn.game.id == game_id)
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn_number and v.turn.game.id == game_id)
 
     lumos = Player_vote.select(
         lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
