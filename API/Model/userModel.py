@@ -172,21 +172,11 @@ async def authenticate(email: EmailStr, password: str):
                 last_access_date)
 
             response = Response(
-                status_code=status.HTTP_302_FOUND,
+                status_code=status.HTTP_200_OK,
                 headers={
-                    "Location": "/",
-                    "WWW-Authenticate": "Bearer"}
-            )
-            response.set_cookie(
-                key="Authorization",
-                value=f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}",
-                domain=DOMAIN,
-                path="/",
-                httponly=False,
-                #samesite="None",
-                #secure=True,
-                max_age=EXPIRES_REFRESH,
-                expires=EXPIRES_REFRESH,
+                    "WWW-Authenticate": "Bearer",
+                    "Authorization": f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}" 
+                }
             )
 
             return response
@@ -223,18 +213,8 @@ async def new_access_token(data: dict, expires_delta: Optional[timedelta] = None
 
 async def get_this_user(
     request: Request,
-    cookie: str = Header(...),
+    Authorization: str = Header(...),
     tokens: Tuple[str, str] = Depends(oauth2_scheme)):
-    cookie_authorization_value = ""
-    cookie_max_age = ""
-    cookie_expires = ""
-    cookie_from_string = SimpleCookie()
-    cookie_from_string.load(cookie)
-    # We need to take things from Morsel objects
-    for k, v in cookie_from_string.items():
-        cookie_authorization_value = v.value
-        cookie_max_age = v["max-age"]
-        cookie_expires = v["expires"]
 
     access_token = tokens[0]
     refresh_token = tokens[1]
@@ -254,18 +234,7 @@ async def get_this_user(
         response = Response(
             content=json.dumps(user.__dict__, default=str).encode(),
             status_code=status.HTTP_200_OK,
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-        response.set_cookie(
-            key="Authorization",
-            value=cookie_authorization_value,
-            domain=DOMAIN,
-            path="/",
-            httponly=False,
-            #samesite="None",
-            #secure=True,
-            max_age=cookie_max_age,
-            expires=cookie_expires,
+            headers={ "WWW-Authenticate": "Bearer", "Authorization": Authorization }
         )
         return response
     except ExpiredSignatureError:
@@ -306,18 +275,7 @@ async def get_this_user(
             response = Response(
                 content=json.dumps(user.__dict__, default=str).encode,
                 status_code=status.HTTP_200_OK,
-                headers={"WWW-Authenticate": "Bearer"}
-            )
-            response.set_cookie(
-                key="Authorization",
-                value=f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}",
-                domain= DOMAIN,
-                path="/",
-                httponly=False,
-                #samesite="None",
-                #secure=True,
-                max_age=EXPIRES_REFRESH,
-                expires=EXPIRES_REFRESH,
+                headers={ "WWW-Authenticate": "Bearer", "Authorization": f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}" }
             )
             return response
         else:

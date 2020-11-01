@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from http.cookies import SimpleCookie
 from pydantic import EmailStr
-from fastapi import FastAPI, Cookie, Depends, Form, File, UploadFile, Response, status, Body
+from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, Response, status, Body
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -53,6 +53,7 @@ app = FastAPI(
 
 origins = [
     "http://localhost:3000",
+    "http://127.0.0.1"
 ]
 
 app.add_middleware(
@@ -90,13 +91,10 @@ async def user_register(new_user: UserRegisterIn):
 
 @app.post(
     USER_LOGIN_URL,
-    status_code=status.HTTP_302_FOUND,
+    status_code=status.HTTP_200_OK,
     tags=["Login"]
 )
-async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
-    # Spec requires the field username, but there we store the email
-    email = form_data.username
-    password = form_data.password
+async def user_login(email: EmailStr = Form(...), password: str = Form(...)):
     return await authenticate(email, password)
 
 
@@ -129,16 +127,16 @@ async def get_user_icon(email: EmailStr):
     status_code=status.HTTP_200_OK,
     tags=["Private profile"]
 )
-async def profile(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+async def profile(Authorization: str = Header(...), response: Response = Depends(get_this_user)):
     return response
 
 
 @app.post(
     USER_LOGOUT_URL,
-    status_code=status.HTTP_302_FOUND,
+    status_code=status.HTTP_200_OK,
     tags=["Logout"]
 )
-async def user_logout(Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+async def user_logout(Authorization: str = Header(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
     authorization_splitted = Authorization.split(TOKEN_SEP)
     if len(authorization_splitted) != 2:
@@ -154,10 +152,9 @@ async def user_logout(Authorization: str = Cookie(...), response: Response = Dep
             "email": user.email,
             "result": "success"
         }).encode(),
-        status_code=status.HTTP_302_FOUND,
-        headers={"Location": DOMAIN + "/"}
+        status_code=status.HTTP_200_OK,
+        headers={ "Authorization": ""}
     )
-    response.delete_cookie("Authorization", domain=DOMAIN)
     return response
 
 
@@ -168,7 +165,7 @@ async def user_logout(Authorization: str = Cookie(...), response: Response = Dep
 )
 async def user_update_username(
         update_data: UserUpdateUsername,
-        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
     if update_data.email == user.email and (await change_username(update_data)):
         response.body = json.dumps({
@@ -187,7 +184,7 @@ async def user_update_username(
 )
 async def user_update_password(
         update_data: UserUpdatePassword,
-        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
     if update_data.email == user.email and (await change_password(update_data)):
         response.body = json.dumps({
@@ -206,7 +203,7 @@ async def user_update_password(
 )
 async def user_update_icon(
         email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
-        Authorization: str = Cookie(...), response: Response = Depends(get_this_user)):
+        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
     user = UserProfileExtended(**json.loads(response.body.decode()))
     update_data = UserUpdateIcon(email=email, password=password)
 

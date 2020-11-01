@@ -24,10 +24,10 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=auto_error)
 
     async def __call__(self, request: Request):
-        cookie_authorization = request.cookies.get("Authorization")
+        authorization = request.headers.get("Authorization")
 
         try:
-            authorization_splitted = cookie_authorization.split(TOKEN_SEP)
+            authorization_splitted = authorization.split(TOKEN_SEP)
         except BaseException:
             raise not_authenticated_exception
 
