@@ -21,14 +21,36 @@ def get_player_by_id(player_id: int):
     return Player.get(id=player_id)
 
 
+@db_session()
+def get_game_state(game_id):
+    try:
+        game = Game[game_id]
+        state = game.state
+    except BaseException:
+        state = -1
+
+    return state
+
+
 @db_session
-def is_player_in_game(user_email: EmailStr, game_id: int):
+def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
     user_joining = get_user_by_email(email=user_email)
     game = get_game_by_id(game_id=game_id)
     for player in game.players:
         if player.user == user_joining:
             return 1
     return 0
+
+
+'''
+Assert if a player is in the game
+'''
+
+
+@db_session()
+def is_player_in_game_by_id(game_id: int, player_id: int):
+    return True if Player.get(
+        lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
 
 
 @db_session
@@ -55,7 +77,7 @@ def save_new_game(owner: EmailStr, name: str,
 
 @db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
-    if is_player_in_game(user, game_id):
+    if is_player_in_game_by_email(user, game_id):
         raise player_already_in_game_exception
     game = get_game_by_id(game_id=game_id)
     if game.players.count() == game.max_players:
