@@ -13,7 +13,7 @@ from main import app
 client = TestClient(app)
 
 single_user = USERS[ random.randrange(len(USERS)) ]
-pytest.USER_AUTH_COOKIE = None
+pytest.USER_AUTH = None
 
 @pytest.mark.parametrize(
     "email, username, password, expected_codes, fail_message", [
@@ -40,33 +40,26 @@ def test_register(email, username, password, expected_codes, fail_message):
     "email, password, expected_codes, fail_message", [
     ("", single_user["password"], [401, 422], "Login with empty email"),
     (single_user["email"], "",    [401, 422], "Login with empty password"),
-    (single_user["email"], single_user["password"], [302], "Couldn't login user")
+    (single_user["email"], single_user["password"], [200], "Couldn't login user")
 ])
 def test_login(email, password, expected_codes, fail_message):
     response = client.post(
         "/user/login/",
-        headers = { "accept": "application/json", "content-type": "application/x-www-form-urlencoded" },
-        # OAuth scheme convention
-        data = { "username": email, "password": password }
+        headers = { "accept": "application/json" },
+        data = { "email": email, "password": password }
     )
-    assert response.status_code in expected_codes, fail_message
-    if response.status_code == 302 and dict(response.headers)["set-cookie"]:
-        pytest.USER_AUTH_COOKIE = dict(response.headers)["set-cookie"]
+    assert response.status_code in expected_codes, fail_message + f'\nError: {response.content.decode()}'
+    if response.status_code == 200 and response.headers["Authorization"]:
+        pytest.USER_AUTH = response.headers["Authorization"]
 
 def test_update_username():
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
     
     response = client.put(
         "/user/update/username/",
-        headers = { "accept": "application/json" },
-        cookies = cookies,
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
         json = { "email": single_user["email"], "new_username": single_user["username"] + UPDATE_USERNAME_STRING, "password": single_user["password"] }
     )
-    assert response.status_code == 200, f'Error: {response.content.decode()}\n'
+    assert response.status_code == 200, f'Error: {response.content.decode()} && Authorization: {pytest.USER_AUTH}\n'
 
 @pytest.mark.parametrize(
     "email, old_password, new_password, expected_codes, fail_message", [
@@ -75,16 +68,9 @@ def test_update_username():
     (single_user["email"], single_user["password"], single_user["password"] + UPDATE_PASSWORD_STRING, [200], "Password should have been updated")
 ])
 def test_update_password(email, old_password, new_password, expected_codes, fail_message):
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
-    
     response = client.put(
         "/user/update/password/",
-        headers = { "accept": "application/json" },
-        cookies = cookies,
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
         json = { "email": email, "old_password": old_password, "new_password": new_password }
     )
     assert response.status_code in expected_codes, fail_message
@@ -99,18 +85,12 @@ json_upload_file_success = { "email": single_user["email"], "result": "success" 
     (single_user["email"], single_user["password"] + UPDATE_PASSWORD_STRING, UPDATE_ICON_DIR, UPDATE_ICON_FILE, [200] , "Didn't upload the jpeg file", json_upload_file_success)
 ])
 def test_update_icon(email, password, dir_file, file, expected_codes, fail_message, compare_message):
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
-    
+
     file_to_upload = open(path.join(path.dirname(__file__), dir_file, file) , "rb")
     
     response = client.put(
         "/user/update/icon/",
-        headers = { "accept": "application/json" },
-        cookies = cookies,
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
         data = { "email": email, "password": password },
         files = { "new_icon": (file, file_to_upload, "image/jpeg") }
     )
@@ -119,45 +99,25 @@ def test_update_icon(email, password, dir_file, file, expected_codes, fail_messa
     assert response.json() == compare_message
 
 def test_profile():
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
-    
     response = client.get(
         "/user/profile/",
-        headers = { "accept": "application/json" },
-        cookies = cookies
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
     )
     assert response.status_code == 200, f'Error: {response.content.decode()}\n'
 
 def test_logout():
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
-
     response = client.post(
         "/user/logout/",
-        headers = { "accept": "application/json" },
-        cookies = cookies
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
     )
-    assert response.status_code == 302, f'Error: {response.content.decode()}\n'
+    assert response.status_code == 200, f'Error: {response.content.decode()}\n'
     assert response.json() == { "email": single_user["email"], "result": "success" }
 
 def test_profile_after_logout():
-    cookie = SimpleCookie()
-    cookie.load(pytest.USER_AUTH_COOKIE)
-    cookies = {}
-    for key, obj in cookie.items():
-        cookies[key] = obj.value
     
     response = client.get(
         "/user/profile/",
-        headers = { "accept": "application/json" },
-        cookies = cookies
+        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
     )
     assert response.status_code in [400, 401, 403, 422], f'Error: {response.content.decode()}\n'
 
