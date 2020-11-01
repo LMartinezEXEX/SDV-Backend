@@ -619,7 +619,8 @@ def test_game_ckeck_with_no_turn():
     response = check_game_state(game_id=3)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": False,
+    assert response.json() == {"game id": 3,
+                               "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
                                "current minister id": None,
@@ -637,7 +638,8 @@ def test_initial_game_check():
     response = check_game_state(game_id=3)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": False,
+    assert response.json() == {"game id": 3,
+                               "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
                                "current minister id": 10,
@@ -662,7 +664,8 @@ def test_game_check_fenix_five_promulgations():
     response = check_game_state(game_id=3)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": True,
+    assert response.json() == {"game id": 3,
+                               "finished": True,
                                "fenix promulgations": 5,
                                "death eater promulgations": 0,
                                "current minister id": 17,
@@ -679,7 +682,8 @@ def test_game_check_six_death_eater_promulgations():
     response = check_game_state(game_id=1)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": False,
+    assert response.json() == {"game id": 1,
+                               "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 1,
                                "current minister id": 1,
@@ -696,7 +700,8 @@ def test_game_check_six_death_eater_promulgations():
     response = check_game_state(game_id=1)
 
     assert response.status_code == 200
-    assert response.json() == {"finished": True,
+    assert response.json() == {"game id": 1,
+                               "finished": True,
                                "fenix promulgations": 0,
                                "death eater promulgations": 6,
                                "current minister id": 3,

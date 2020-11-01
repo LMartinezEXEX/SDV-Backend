@@ -125,7 +125,8 @@ def game_status(game_id):
 
     status = Database.turn_functions.check_status(game_id)
 
-    return {"finished": status[0],
+    return {"game id": game_id,
+            "finished": status[0],
             "fenix promulgations": status[1],
             "death eater promulgations": status[2],
             "current minister id": status[3],
