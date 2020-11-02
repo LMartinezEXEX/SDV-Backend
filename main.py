@@ -173,6 +173,7 @@ async def user_update_username(
             "email": update_data.email,
             "result": "success"
         }).encode()
+        response.headers["content-length"] = str(len(response.body))
         return response
     else:
         raise update_exception
@@ -192,6 +193,7 @@ async def user_update_password(
             "email": user.email,
             "result": "success"
         }).encode()
+        response.headers["content-length"] = str(len(response.body))
         return response
     else:
         raise update_exception
@@ -223,6 +225,7 @@ async def user_update_icon(
             "email": user.email,
             "result": "success"
         }).encode()
+        response.headers["content-length"] = str(len(response.body))
         return response
     else:
         raise credentials_exception
@@ -240,8 +243,8 @@ async def create_game(params: GameParams):
 @app.put("/game/join/{id}",
          status_code=status.HTTP_200_OK,
          tags=["Join Game"])
-async def join_game(id: int, user_email: EmailParameter):
-    return join_game_with_keys(game_id=id, user_email=user_email.email)
+async def join_game(id: int, user_email: EmailStr):
+    return join_game_with_keys(game_id=id, user_email=user_email)
 
 # Init Game
 
