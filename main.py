@@ -243,8 +243,8 @@ async def create_game(params: GameParams):
 @app.put("/game/join/{id}",
          status_code=status.HTTP_200_OK,
          tags=["Join Game"])
-async def join_game(id: int, user_email: EmailStr):
-    return join_game_with_keys(game_id=id, user_email=user_email)
+async def join_game(id: int, user_email: EmailParameter):
+    return join_game_with_keys(game_id=id, user_email=user_email.email)
 
 # Init Game
 
