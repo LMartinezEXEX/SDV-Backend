@@ -204,9 +204,13 @@ def director_available_candidates(game_id):
     current_turn_number = get_current_turn_number_in_game(game_id)
     current_turn = get_turn_in_game(game_id, current_turn_number)
 
-    regular_alive_players = Player.select(lambda p: p.is_alive and p.game_in.id==game_id and p.id != current_turn.candidate_minister.id)[:]
+    regular_alive_players = Player.select(
+        lambda p: p.is_alive and p.game_in.id == game_id and p.id != current_turn.candidate_minister.id)[:]
 
-    previous_accepted_formula = Vote.select(lambda v: v.result and v.turn.turn_number < current_turn_number).order_by(desc(Vote.turn)).first()
+    previous_accepted_formula = Vote.select(
+        lambda v: v.result and v.turn.turn_number < current_turn_number).order_by(
+        desc(
+            Vote.turn)).first()
 
     player_ids = []
 
@@ -249,8 +253,6 @@ def select_DD_candidate(game_id, player_id):
     return [turn.candidate_minister.id, director_candidate_player.id]
 
 
-
-
 '''
 Assert if a player already voted
 '''
@@ -273,7 +275,7 @@ def player_voted(game_id: int, player_id: int):
         return voted
 
     if Player_vote.get(lambda pv: pv.player.id ==
-                       player_id and pv.vote.turn == turn) is not None:
+                       player_id and pv.vote.turn == turn and pv.vote.turn.game.id == game_id) is not None:
         voted = True
 
     return voted
@@ -331,7 +333,7 @@ def get_result(game_id: int):
     lumos = Player_vote.select(
         lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
     lumos_votes = select(
-        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos)[:]
+        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
 
     player_ids = []
     for _vote_ in lumos_votes:

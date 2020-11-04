@@ -8,269 +8,107 @@ from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
-# -TEST-CLEARS-THE-DATABASE-BEFORE-STARTING--------------------------------------
 
+# -SET-UP-----------------------------------------------------------------------
 
 @pytest.fixture(scope="session", autouse=True)
 def init_data(request):
     db.drop_all_tables(with_all_data=True)
     db.create_tables()
-    with db_session:
-
-        User(email="lautaro@gmail.br",
-             username="pepo",
-             password="fachero".encode(),
-             icon="".encode(),
-             creation_date=datetime.datetime.today(),
-             last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
-
-        user = User["lautaro@gmail.br"]
-
-        # Five games instances for test purpose, three 'in game', 1
-        # unitiliatlized, 1 finished
-        Game(name='LOL',
-             owner=user,
-             min_players=5,
-             max_players=5,
-             creation_date=datetime.datetime.today(),
-             state=1)
-
-        Game(name='WOW',
-             owner=user,
-             min_players=5,
-             max_players=10,
-             creation_date=datetime.datetime.today(),
-             state=1)
-
-        Game(name='Among Us',
-             owner=user,
-             min_players=6,
-             max_players=8,
-             creation_date=datetime.datetime.today(),
-             state=1)
-
-        Game(name='Forest',
-             owner=user,
-             min_players=4,
-             max_players=8,
-             creation_date=datetime.datetime.today(),
-             state=0)
-
-        Game(name='Habbo',
-             owner=user,
-             min_players=6,
-             max_players=6,
-             creation_date=datetime.datetime.today(),
-             state=2)
-
-        # Three players in LOL alives
-        game1 = Game[1]
-
-        Board(game=game1,
-              fenix_promulgation=0,
-              death_eater_promulgation=0,
-              election_counter=0)
-
-        Player(turn=1,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game1.id)
-
-        Player(turn=2,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game1.id)
-
-        Player(turn=3,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game1.id)
-
-        # Five players in WOW, two of them dead
-        game2 = Game[2]
-
-        Board(game=game2,
-              fenix_promulgation=0,
-              death_eater_promulgation=0,
-              election_counter=0)
-
-        Player(turn=1,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game2.id)
-
-        Player(turn=2,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game2.id)
-
-        Player(turn=3,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game2.id)
-
-        Player(turn=4,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game2.id)
-
-        Player(turn=5,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game2.id)
-
-        # Ten players in Among Us, three of them dead
-        game3 = Game[3]
-
-        Board(game=game3,
-              fenix_promulgation=0,
-              death_eater_promulgation=0,
-              election_counter=0)
-
-        Player(turn=1,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=2,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=3,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=4,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=5,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=6,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=7,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=8,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=9,
-               user=user,
-               rol='Fenix',
-               loyalty='Fenix',
-               is_alive=True,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
-        Player(turn=10,
-               user=user,
-               rol='Mortifago',
-               loyalty='Mortifago',
-               is_alive=False,
-               chat_enabled=True,
-               is_investigated=False,
-               game_in=game3.id)
-
     request.addfinalizer(clean_db)
 
-# -TEST-CLEARS-DATABASE-AFTER-FINISHING------------------------------------------
+# -TEAR-DOWN--------------------------------------------------------------------
 
 
 def clean_db():
     db.drop_all_tables(with_all_data=True)
     db.create_tables()
 
-# -FUNCTIONS-TO-USE-IN-TESTS-----------------------------------------------------
+
+total_players = 0
+games = 0
+
+
+@db_session()
+def game_factory(players_cuantity: int, turns_cuantity: int,
+                 game_state: int = 1, dead_player: bool = False, dead_cuantity: int = 0):
+    global total_players
+    global games
+
+    users = []
+    # Create users
+    for user in range(players_cuantity):
+        user = User(email='usuario{}@gmail.br'.format(total_players),
+                    username='User_{}'.format(total_players),
+                    password="fachero".encode(),
+                    icon="".encode(),
+                    creation_date=datetime.datetime.today(),
+                    last_access_date=datetime.datetime.today(),
+                    is_validated=True,
+                    refresh_token="HolaKappa",
+                    refresh_token_expires=datetime.datetime.today())
+        users.append(user)
+        total_players += 1
+
+    owner = User['usuario{}@gmail.br'.format(total_players - players_cuantity)]
+
+    # Create game and Board
+    game = Game(name='test_game_{}'.format(games),
+                owner=owner,
+                min_players=5,
+                max_players=10,
+                creation_date=datetime.datetime.today(),
+                state=game_state)
+    games += 1
+
+    Board(game=game,
+          fenix_promulgation=0,
+          death_eater_promulgation=0,
+          election_counter=0)
+    commit()
+
+    game_id = game.id
+
+    players = []
+    turn = 1
+    # Join players in game
+    for user in users:
+        player = Player(turn=turn,
+                        user=user,
+                        rol='Fenix',
+                        loyalty='Fenix',
+                        is_alive=True,
+                        chat_enabled=True,
+                        is_investigated=False,
+                        game_in=game)
+        players.append(player)
+        turn += 1
+
+    # Kill first 'dead_cuantity' players
+    if dead_player:
+        player_index = 0
+        for _ in range(dead_cuantity):
+            player = players[player_index]
+            player.is_alive = False
+            player_index += 1
+    commit()
+
+    for _ in range(turns_cuantity):
+        response = client.put('game/{}/select_MM'.format(game_id))
+
+    return [game_id, players[0].id]
 
 
 def start_new_turn(game_id):
     return client.put('game/{}/select_MM'.format(game_id))
 
 
-def start_several_turns(game_id, turns):
-    for _ in range(turns):
-        client.put('game/{}/select_MM'.format(game_id))
+def get_3_cards(game_id):
+    return client.put('/game/{}/get_cards'.format(game_id))
+
+
+def check_game_state(game_id):
+    return client.get('game/{}/check_game'.format(game_id))
 
 
 def player_vote(game_id, player_id, vote):
@@ -288,15 +126,7 @@ def minister_promulgate(game_id, minister_id, card_type):
     }
     )
 
-
-def check_game_state(game_id):
-    return client.get('game/{}/check_game'.format(game_id))
-
-
-def get_3_cards(game_id):
-    return client.put('/game/{}/get_cards'.format(game_id))
-
-# TESTS--------------------------------------------------------------------------
+# -TESTS------------------------------------------------------------------------
 
 
 '''
@@ -305,7 +135,8 @@ Test correct response when trying to take action in a game that hasn't started
 
 
 def test_action_in_uninitialized_game():
-    response = start_new_turn(game_id=4)
+    game_data = game_factory(5, 1, 0)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Game hasn't started"}
@@ -317,7 +148,8 @@ Test correct response when trying to take action in a finished game
 
 
 def test_action_in_finished_game():
-    response = start_new_turn(game_id=5)
+    game_data = game_factory(5, 1, 2)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Game finished"}
@@ -341,10 +173,11 @@ Test correct response when asked for next minister candidate
 
 
 def test_candidate_minister():
-    response = start_new_turn(game_id=1)
+    game_data = game_factory(5, 0)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": 1}
+    assert response.json() == {"candidate_minister_id": game_data[1]}
 
 
 '''
@@ -353,12 +186,12 @@ Test correct turn assignment in minister candidate position
 
 
 def test_ciclic_candidate_minister():
-    start_several_turns(game_id=1, turns=2)
+    game_data = game_factory(5, 3)
 
-    response = start_new_turn(game_id=1)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": 1}
+    assert response.json() == {"candidate_minister_id": game_data[1] + 3}
 
 
 '''
@@ -367,10 +200,11 @@ Test a dead player can't be selected as minister candidate
 
 
 def test_candidate_minister_when_dead():
-    response = start_new_turn(game_id=2)
+    game_data = game_factory(5, 0, 1, True, 1)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": 5}
+    assert response.json() == {"candidate_minister_id": game_data[1] + 1}
 
 
 '''
@@ -379,12 +213,11 @@ Test correct turn assignment in minister candidate when dead players are present
 
 
 def test_ciclic_candidate_minister_when_dead():
-    start_several_turns(game_id=2, turns=2)
-
-    response = start_new_turn(game_id=2)
+    game_data = game_factory(5, 12, 1, True, 2)
+    response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": 5}
+    assert response.json() == {"candidate_minister_id": game_data[1] + 2}
 
 
 '''
@@ -394,9 +227,12 @@ Test correct cards obtained from database
 
 @db_session()
 def test_get_cards():
-    response = get_3_cards(game_id=1)
+    game_data = game_factory(7, 12)
+    response = get_3_cards(game_id=game_data[0])
 
-    cards = select(c for c in Card if c.game.id == 1).order_by(Card.order)[:]
+    cards = select(
+        c for c in Card if c.game.id == game_data[0]).order_by(
+        Card.order)[:]
     cards_type = [cards[0].type, cards[1].type, cards[2].type]
 
     assert response.status_code == 200
@@ -410,19 +246,10 @@ Test take cards twice in the same turn
 
 @db_session()
 def test_get_cards_twice_in_same_turn():
-    start_new_turn(game_id=1)
+    game_data = game_factory(5, 6)
+    get_3_cards(game_id=game_data[0])
 
-    response = get_3_cards(game_id=1)
-    cards = select(
-        c for c in Card if c.game.id == 1 and c.order > 3).order_by(
-        Card.order)[
-            :3]
-    cards_type = [cards[0].type, cards[1].type, cards[2].type]
-
-    assert response.status_code == 200
-    assert response.json() == {"cards": cards_type}
-
-    response = get_3_cards(game_id=1)
+    response = get_3_cards(game_id=game_data[0])
 
     assert response.status_code == 409
     assert response.json() == {
@@ -435,7 +262,8 @@ Test get cards when a turn hasn't even started in a game
 
 
 def test_get_cards_with_no_turn():
-    response = get_3_cards(game_id=3)
+    game_data = game_factory(7, 0)
+    response = get_3_cards(game_id=game_data[0])
 
     assert response.status_code == 409
     assert response.json() == {"detail": "No turn started yet"}
@@ -447,9 +275,11 @@ Test correct response when a player vote
 
 
 def test_one_vote_count():
-    start_new_turn(game_id=1)
-
-    response = player_vote(game_id=1, player_id=1, vote=True)
+    game_data = game_factory(7, 1)
+    response = player_vote(
+        game_id=game_data[0],
+        player_id=game_data[1],
+        vote=True)
 
     assert response.status_code == 200
     assert response.json() == {"votes": 1}
@@ -461,27 +291,31 @@ Test correct response when several player vote
 
 
 def test_several_vote_count():
-    start_new_turn(game_id=2)
+    game_data = game_factory(5, 1)
+    response = None
 
-    ids = [5, 6]
-    votes = [True, False]
-
-    for i in range(2):
-        player_vote(game_id=2, player_id=ids[i], vote=votes[i])
-
-    response = player_vote(game_id=2, player_id=7, vote=True)
+    votes = [True, False, True, True, False]
+    for i in range(5):
+        response = player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
 
     assert response.status_code == 200
-    assert response.json() == {"votes": 3}
+    assert response.json() == {"votes": 5}
 
 
 '''
-Test a player cant vote when the game just started and no turn is given yet
+Test a player cant vote when the game has no turn started
 '''
 
 
 def test_vote_with_no_turn_in_game():
-    response = player_vote(game_id=3, player_id=7, vote=True)
+    game_data = game_factory(5, 0)
+    response = player_vote(
+        game_id=game_data[0],
+        player_id=game_data[1],
+        vote=True)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "No turn started yet"}
@@ -492,8 +326,12 @@ Test a player can't vote in a game it is not in
 '''
 
 
-def test_player_vote_in_invalid_game():
-    response = player_vote(game_id=2, player_id=20, vote=True)
+def test_player_vote_in_game_its_not_in():
+    game_data = game_factory(7, 5)
+    response = player_vote(
+        game_id=game_data[0],
+        player_id=game_data[1] + 40,
+        vote=True)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Player is not in this game"}
@@ -505,7 +343,8 @@ Assert all players voted before giving the final result
 
 
 def test_get_result_when_votes_missing():
-    response = client.put("game/1/result")
+    game_data = game_factory(5, 1)
+    response = client.put('game/{}/result'.format(game_data[0]))
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Vote's missing"}
@@ -518,7 +357,8 @@ no turn started and therefore a vote session
 
 
 def test_get_result_when_no_turn():
-    response = client.put("game/3/result")
+    game_data = game_factory(10, 0)
+    response = client.put('game/{}/result'.format(game_data[0]))
 
     assert response.status_code == 409
     assert response.json() == {"detail": "No turn started yet"}
@@ -530,13 +370,25 @@ Test correct result when all players voted
 
 
 def test_get_result():
-    player_vote(game_id=1, player_id=2, vote=True)
-    player_vote(game_id=1, player_id=3, vote=False)
+    game_data = game_factory(7, 1)
 
-    response = client.put("game/1/result")
+    votes = [True, True, False, True, True, False, False]
+    voted_lumos = [
+        game_data[1],
+        game_data[1] + 1,
+        game_data[1] + 3,
+        game_data[1] + 4]
+
+    for i in range(7):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    response = client.put('game/{}/result'.format(game_data[0]))
 
     assert response.status_code == 200
-    assert response.json() == {"result": True, "voted_lumos": [1, 2]}
+    assert response.json() == {"result": True, "voted_lumos": voted_lumos}
 
 
 '''
@@ -546,7 +398,11 @@ no turn started and therefore no legislative session
 
 
 def test_promulgate_with_no_turn():
-    response = minister_promulgate(game_id=3, minister_id=10, card_type=0)
+    game_data = game_factory(7, 0)
+    response = minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=0)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "No turn started yet"}
@@ -558,9 +414,12 @@ Test candidate promulgate fenix and get right board status
 
 
 def test_promulgate_fenix():
-    start_new_turn(game_id=2)
+    game_data = game_factory(7, 1)
 
-    response = minister_promulgate(game_id=2, minister_id=7, card_type=0)
+    response = minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=0)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -574,9 +433,12 @@ Test candidate promulgate death eater and get right board status
 
 
 def test_promulgate_death_eater():
-    start_new_turn(game_id=1)
+    game_data = game_factory(7, 1)
 
-    response = minister_promulgate(game_id=1, minister_id=1, card_type=1)
+    response = minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -590,11 +452,17 @@ Test a minister can't promulgate twice in the same turn
 
 
 def test_promulgate_twice():
-    start_new_turn(game_id=2)
+    game_data = game_factory(7, 1)
 
-    minister_promulgate(game_id=2, minister_id=5, card_type=1)
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
 
-    response = minister_promulgate(game_id=2, minister_id=6, card_type=0)
+    response = minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=0)
 
     assert response.status_code == 409
     assert response.json() == {
@@ -607,9 +475,12 @@ Test a player that is not the current minister can not promulgate
 
 
 def test_promulgate_regular_player():
-    start_new_turn(game_id=2)
+    game_data = game_factory(10, 3)
 
-    response = minister_promulgate(game_id=2, minister_id=5, card_type=1)
+    response = minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[0],
+        card_type=1)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Player is not minister"}
@@ -620,11 +491,12 @@ Test correct response when getting the initial game state without turn started
 '''
 
 
-def test_game_ckeck_with_no_turn():
-    response = check_game_state(game_id=3)
+def test_game_check_with_no_turn():
+    game_data = game_factory(10, 0)
+    response = check_game_state(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"game id": 3,
+    assert response.json() == {"game id": game_data[0],
                                "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
@@ -638,17 +510,17 @@ Test correct game status response
 
 
 def test_initial_game_check():
-    start_new_turn(game_id=3)
+    game_data = game_factory(8, 1)
 
-    response = check_game_state(game_id=3)
+    response = check_game_state(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"game id": 3,
+    assert response.json() == {"game id": game_data[0],
                                "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
-                               "current minister id": 10,
-                               "current director id": 10}
+                               "current minister id": game_data[1],
+                               "current director id": game_data[1]}
 
 
 '''
@@ -657,24 +529,24 @@ Test correct game status when fenix should win with 5 promulgations
 
 
 def test_game_check_fenix_five_promulgations():
+    game_data = game_factory(8, 0, 1, True, 3)
 
-    minister_ids = [11, 13, 15, 16, 17]
     for i in range(5):
-        start_new_turn(game_id=3)
-        minister_promulgate(
-            game_id=3,
-            minister_id=minister_ids[i],
+        start_new_turn(game_id=game_data[0])
+        response = minister_promulgate(
+            game_id=game_data[0],
+            minister_id=game_data[1] + i + 3,
             card_type=0)
 
-    response = check_game_state(game_id=3)
+    response = check_game_state(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"game id": 3,
+    assert response.json() == {"game id": game_data[0],
                                "finished": True,
                                "fenix promulgations": 5,
                                "death eater promulgations": 0,
-                               "current minister id": 17,
-                               "current director id": 17}
+                               "current minister id": game_data[1] + 7,
+                               "current director id": game_data[1] + 7}
 
 
 '''
@@ -683,31 +555,21 @@ Test correct game status when death eaters should win with 6 promulgations
 
 
 def test_game_check_six_death_eater_promulgations():
+    game_data = game_factory(10, 0, 1, True, 2)
 
-    response = check_game_state(game_id=1)
-
-    assert response.status_code == 200
-    assert response.json() == {"game id": 1,
-                               "finished": False,
-                               "fenix promulgations": 0,
-                               "death eater promulgations": 1,
-                               "current minister id": 1,
-                               "current director id": 1}
-
-    minister_ids = [2, 3, 1, 2, 3]
-    for i in range(5):
-        start_new_turn(game_id=1)
+    for i in range(6):
+        start_new_turn(game_id=game_data[0])
         minister_promulgate(
-            game_id=1,
-            minister_id=minister_ids[i],
+            game_id=game_data[0],
+            minister_id=game_data[1] + i + 2,
             card_type=1)
 
-    response = check_game_state(game_id=1)
+    response = check_game_state(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"game id": 1,
+    assert response.json() == {"game id": game_data[0],
                                "finished": True,
                                "fenix promulgations": 0,
                                "death eater promulgations": 6,
-                               "current minister id": 3,
-                               "current director id": 3}
+                               "current minister id": game_data[1] + 7,
+                               "current director id": game_data[1] + 7}
