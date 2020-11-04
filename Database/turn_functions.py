@@ -41,6 +41,13 @@ def is_current_minister(game_id: int, player_id: int):
     return True if turn.current_minister.id == player_id else False
 
 
+@db_session()
+def already_selected_director_candidate(game_id):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    return True if turn.candidate_minister.id != turn.candidate_director.id else False
+
+
 '''
 Assert if there was already a promulgation in the current turn
 '''
@@ -192,6 +199,58 @@ def select_MM_candidate(game_id: int):
     return next_candidate_minister.id
 
 
+@db_session()
+def director_available_candidates(game_id):
+    current_turn_number = get_current_turn_number_in_game(game_id)
+    current_turn = get_turn_in_game(game_id, current_turn_number)
+
+    regular_alive_players = Player.select(lambda p: p.is_alive and p.game_in.id==game_id and p.id != current_turn.candidate_minister.id)[:]
+
+    previous_accepted_formula = Vote.select(lambda v: v.result and v.turn.turn_number < current_turn_number).order_by(desc(Vote.turn)).first()
+
+    player_ids = []
+
+    # No accepted formula yet, all alive players can be director candidate
+    if previous_accepted_formula is None:
+        for player in regular_alive_players:
+            player_ids.append(player.id)
+
+        return player_ids
+
+    previous_accepted_formula_turn = previous_accepted_formula.turn
+
+    if alive_players_count == 5:
+
+        for player in regular_alive_players:
+            if player.id != previous_accepted_formula_turn.candidate_director.id:
+                player_ids.append(player.id)
+
+        # Add previus selected MM
+        player_ids.append(previous_accepted_formula_turn.candidate_minister.id)
+
+        return player_ids
+
+    for player in regular_alive_players:
+        if player.id != previous_accepted_formula_turn.candidate_minister.id and player.id != previous_accepted_formula_turn.candidate_director.id:
+            player_ids.append(player.id)
+
+    return player_ids
+
+
+@db_session()
+def select_DD_candidate(game_id, player_id):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    director_candidate_player = get_player_by_id(player_id)
+
+    turn.candidate_director = director_candidate_player
+
+    return [turn.candidate_minister.id, director_candidate_player.id]
+
+
+
+
 '''
 Assert if a player already voted
 '''
@@ -281,6 +340,8 @@ def get_result(game_id: int):
     result = False
     if len(vote.player_vote) - lumos < lumos:
         result = True
+        turn.current_minister = turn.candidate_minister
+        turn.current_director = turn.candidate_director
 
     vote.result = result
     return [result, player_ids]

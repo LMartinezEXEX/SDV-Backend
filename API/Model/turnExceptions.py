@@ -54,3 +54,8 @@ player_isnt_minister_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Player is not minister"
 )
+
+director_candidate_already_set_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Already set director candidate in current turn"
+)

@@ -314,3 +314,23 @@ async def promulgate_card(id: int, promulgate: PlayerPromulgate):
          )
 async def get_game_status(id: int):
     return game_status(id)
+
+
+# Get available director candidates id's
+
+@app.get("/game/{id}/director_candidates",
+         status_code=status.HTTP_200_OK,
+         tags=["Available director candidates id's"]
+         )
+async def get_director_candidates(id: int):
+    return check_and_get_director_candidates(id)
+
+
+# Set director candidate in current turn
+
+@app.put("/game/{id}/select_director_candidate",
+         status_code=status.HTTP_200_OK,
+         tags=["Set director candidate"]
+         )
+async def set_director_candidate(id: int, formula: TurnFormula):
+    return check_and_set_director_candidate(id, formula.minister_id, formula.director_id)
