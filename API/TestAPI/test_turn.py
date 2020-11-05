@@ -573,3 +573,361 @@ def test_game_check_six_death_eater_promulgations():
                                "death eater promulgations": 6,
                                "current minister id": game_data[1] + 7,
                                "current director id": game_data[1] + 7}
+
+
+'''
+Test endpoint returns all ids (except candidate for minister) when asking
+for director candidate ids, because theres no restriction with preivous
+selected formula
+'''
+
+
+def test_get_director_candidate_ids_with_no_restriction():
+    game_data = game_factory(10, 1)
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    candidates = []
+
+    for i in range(9):
+        candidates.append(game_data[1] + 1 + i)
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Assert correst response when trying ro get director candidates with
+no turn, (i.e. candidate minister) yet.
+'''
+
+
+def test_get_director_candidate_ids_with_no_turn():
+    game_data = game_factory(10, 0)
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
+Test correct response when there's a restriction because of a previous
+accepted formula in the game
+'''
+
+
+def test_get_director_candidates_ids_with_minister_restriction():
+    game_data = game_factory(7, 2)
+
+    votes = [True, True, False, True, True, False, False]
+    for i in range(7):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+3
+    start_new_turn(game_data[0])
+
+    candidates = [game_data[1]]
+    for i in range(4):
+        candidates.append(game_data[1] + 3 + i)
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Assert correct response, we know the valid director candidate ids; it should be
+retrived by the endpoint in the real game
+'''
+
+
+def test_set_director_candidate():
+    game_data = game_factory(10, 1)
+
+    response = client.put(
+        '/game/{}/select_director_candidate'.format(
+            game_data[0]),
+        json={
+            "minister_id": game_data[1],
+            "director_id": game_data[1] + 7})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "candidate minister id": game_data[1],
+        "candidate director id": game_data[1] + 7}
+
+
+'''
+Assert that is not possible set director with no turn started
+'''
+
+
+def test_set_director_with_no_turn():
+    game_data = game_factory(10, 0)
+
+    response = client.put(
+        '/game/{}/select_director_candidate'.format(
+            game_data[0]),
+        json={
+            "minister_id": game_data[1],
+            "director_id": game_data[1] + 7})
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
+Test correct response when the player who sets the director candidate isn't
+the current minister in the current turn
+'''
+
+
+def test_set_director_with_incorret_minister_id():
+    game_data = game_factory(10, 1)
+
+    response = client.put(
+        '/game/{}/select_director_candidate'.format(
+            game_data[0]),
+        json={
+            "minister_id": game_data[1] + 20,
+            "director_id": game_data[1] + 7})
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not minister"}
+
+
+'''
+Assert correct response when trying to set twice director candidate, regardless
+of the id
+'''
+
+
+def test_set_director_twice():
+    game_data = game_factory(10, 3)
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 2, "director_id": game_data[1] + 7})
+
+    response = client.put(
+        '/game/{}/select_director_candidate'.format(
+            game_data[0]),
+        json={
+            "minister_id": game_data[1] + 2,
+            "director_id": game_data[1] + 10})
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Already set director candidate in current turn"}
+
+
+'''
+This test simulates a legislative session (without cards work), to assert
+the correct director candidates in different turns
+'''
+
+
+def test_get_director_candidate_after_multiple_selected_director():
+    game_data = game_factory(7, 3)
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 2, "director_id": game_data[1]})
+
+    # Vote the formula
+    votes = [True, True, False, True, True, False, False]
+    for i in range(7):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+3
+    start_new_turn(game_data[0])
+
+    candidates = [
+        game_data[1] + 1,
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 3, "director_id": game_data[1] + 1})
+
+    # Vote the formula
+    votes = [True, True, False, True, True, False, False]
+    for i in range(7):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+4
+    start_new_turn(game_data[0])
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 2,
+        game_data[1] + 5,
+        game_data[1] + 6]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 4, "director_id": game_data[1] + 6})
+
+    # Vote the formula
+    votes = [True, True, False, True, False, False, False]
+    for i in range(7):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+4
+    start_new_turn(game_data[0])
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 2,
+        game_data[1] + 4,
+        game_data[1] + 6]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+This test simulates a legislative session (without cards work) with five
+alive player to test this elegibility condition in the game
+'''
+
+
+def test_get_director_candidate_ids_with_five_player_restriction():
+    game_data = game_factory(5, 1)
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1], "director_id": game_data[1] + 3})
+
+    # Vote the formula
+    votes = [True, True, False, True, True]
+    for i in range(5):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+1
+    start_new_turn(game_data[0])
+
+    candidates = [game_data[1], game_data[1] + 2, game_data[1] + 4]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 1, "director_id": game_data[1] + 2})
+
+    # Vote the formula
+    votes = [True, True, False, False, False]
+    for i in range(5):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    response = client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+2
+    start_new_turn(game_data[0])
+
+    candidates = [game_data[1], game_data[1] + 1, game_data[1] + 4]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 2, "director_id": game_data[1]})
+
+    # Vote the formula
+    votes = [True, True, False, False, False]
+    for i in range(5):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=votes[i])
+
+    response = client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+3
+    start_new_turn(game_data[0])
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 1,
+        game_data[1] + 2,
+        game_data[1] + 4]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Test director candidates elegibility with 5 alive player between 7 players
+'''
+
+
+def test_get_director_candidate_ids_with_five_player_dead_players():
+    game_data = game_factory(7, 1, 1, True, 2)
+
+    client.put('/game/{}/select_director_candidate'.format(game_data[0]), json={
+               "minister_id": game_data[1] + 2, "director_id": game_data[1] + 4})
+
+    # Vote the formula
+    votes = [True, True, False, True, True]
+    for i in range(5):
+        player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + 2 + i,
+            vote=votes[i])
+
+    client.put('game/{}/result'.format(game_data[0]))
+
+    # Now minister id is game_data[1]+4
+    start_new_turn(game_data[0])
+
+    candidates = [game_data[1] + 2, game_data[1] + 5, game_data[1] + 6]
+
+    response = client.get('/game/{}/director_candidates'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}

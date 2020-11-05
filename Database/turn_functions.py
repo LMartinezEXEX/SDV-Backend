@@ -208,7 +208,7 @@ def director_available_candidates(game_id):
         lambda p: p.is_alive and p.game_in.id == game_id and p.id != current_turn.candidate_minister.id)[:]
 
     previous_accepted_formula = Vote.select(
-        lambda v: v.result and v.turn.turn_number < current_turn_number).order_by(
+        lambda v: v.result and v.turn.turn_number < current_turn_number and v.turn.game.id == game_id).order_by(
         desc(
             Vote.turn)).first()
 
@@ -223,14 +223,10 @@ def director_available_candidates(game_id):
 
     previous_accepted_formula_turn = previous_accepted_formula.turn
 
-    if alive_players_count == 5:
-
+    if alive_players_count(game_id) == 5:
         for player in regular_alive_players:
             if player.id != previous_accepted_formula_turn.candidate_director.id:
                 player_ids.append(player.id)
-
-        # Add previus selected MM
-        player_ids.append(previous_accepted_formula_turn.candidate_minister.id)
 
         return player_ids
 
@@ -331,7 +327,7 @@ def get_result(game_id: int):
                     turn_number and v.turn.game.id == game_id)
 
     lumos = Player_vote.select(
-        lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
+        lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos).count()
     lumos_votes = select(
         pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
 
