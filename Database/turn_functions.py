@@ -1,6 +1,6 @@
 from pony.orm import *
 from Database.database import *
-from Database.game_functions import get_player_by_id
+from Database.game_functions import get_player_by_id, get_player_set, get_game_by_id, set_game_init, assign_roles
 import random
 
 
@@ -124,6 +124,7 @@ Generate a new turn with its Vote instance
 @db_session()
 def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Player, candidate_director: Player,
                   current_minister: Player, current_director: Player, last_minister: Player = None, last_director: Player = None):
+                              
     turn = Turn(game=game_instance,
                 turn_number=turn_number,
                 current_minister=current_minister,
@@ -134,7 +135,7 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_director=candidate_director,
                 taken_cards=False,
                 promulgated=False)
-
+   
     Vote(result=False,
          turn=turn)
 
@@ -371,3 +372,30 @@ def check_status(game_id: int):
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id]
+
+
+
+# -------------------------------------------------------
+
+@db_session()
+def create_first_turn(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    players_set = get_player_set(game_id=game_id)
+    next_minister = get_next_candidate(players_set)
+    generate_turn(
+        game_instance=game,
+        turn_number=1,
+        candidate_minister=next_minister,
+        candidate_director=next_minister,
+        last_minister=None,
+        last_director=None,
+        current_minister=next_minister,
+        current_director=next_minister)
+    generate_card(3,1,game_id)
+    assign_roles(game_id=game_id)
+    set_game_init(game_id)
+    return next_minister.id
+
+
+
+# -------------------------------------------------------

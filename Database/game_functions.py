@@ -4,6 +4,8 @@ from Database.database import Player, User, Game, Board, db
 from pydantic import EmailStr
 from fastapi import HTTPException, status
 from API.Model.gameExceptions import *
+from numpy import random
+from Database.roles_constants import *
 
 
 @db_session
@@ -32,6 +34,11 @@ def get_game_state(game_id):
     return state
 
 
+@db_session()
+def set_game_init(game_id: int):
+    Game[game_id].state = 1
+
+
 @db_session
 def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
     user_joining = get_user_by_email(email=user_email)
@@ -42,10 +49,10 @@ def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
     return 0
 
 
-'''
-Assert if a player is in the game
-'''
-
+@db_session
+def get_player_set(game_id: int):
+    game = get_game_by_id(game_id= game_id)
+    return game.players
 
 @db_session()
 def is_player_in_game_by_id(game_id: int, player_id: int):
@@ -77,13 +84,7 @@ def save_new_game(owner: EmailStr, name: str,
 
 @db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
-    if is_player_in_game_by_email(user, game_id):
-        raise player_already_in_game_exception
     game = get_game_by_id(game_id=game_id)
-    if game.players.count() == game.max_players:
-        raise max_players_reach_exception
-    if game.state == 1 or game.state == 2:
-        raise game_has_finished_exception
     creator = get_user_by_email(email=user)
     new_player = Player(
         user=creator,
@@ -100,12 +101,72 @@ def put_new_player_in_game(user: EmailStr, game_id: int):
 
 
 @db_session
+def check_create_conditions(user_email: EmailStr, name: str,
+                            min_players: int, max_players: int):
+    user = get_user_by_email(user_email)
+    if not user:
+        raise user_not_found_exception
+    if min_players < 5:
+        raise less_than_five_players_exception
+    if max_players < min_players:
+        raise incoherent_amount_of_players_exception
+    if max_players > 10:
+        raise more_than_ten_players_exception
+
+
+@db_session 
+def check_join_conditions(game_id: int, user_email: EmailStr):
+    game = get_game_by_id(game_id=game_id)
+    if not game:
+        raise game_not_found_exception
+    user = get_user_by_email(email=user_email)
+    if not user:
+        raise user_not_found_exception
+    if is_player_in_game_by_email(user_email, game_id):
+        raise player_already_in_game_exception
+    if game.players.count() == game.max_players:
+        raise max_players_reach_exception
+    if game.state == 1:
+        raise game_has_started_exception
+    if game.state == 2:
+        raise game_has_finished_exception
+
+
+@db_session
 def check_init_conditions(game_id: int, player_id: int):
     game = get_game_by_id(game_id=game_id)
-    player_owner = get_player_by_id(player_id=player_id)
-    if game.owner == player_owner.user:
-        if game.min_players <= game.players.count():
-            return 1
-        else:
-            return 0
-    raise not_the_owner_exception
+    if not game:
+        raise game_not_found_exception
+    player = get_player_by_id(player_id=player_id)
+    if not player:
+        raise player_not_found_exception
+    if player not in game.players:
+        raise player_not_in_game_exception
+    if game.state == 1:
+        raise game_has_started_exception
+    if game.state == 2:
+        raise game_has_finished_exception
+    if game.owner != player.user:
+        raise not_the_owner_exception
+    if game.min_players > game.players.count():
+        raise min_player_not_reach_exception
+
+
+
+
+
+@db_session
+def assign_roles(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    amount_players = game.players.count()
+    roles = select_roles_for_game(players=amount_players)
+    mixed_roles = random.choice(roles, amount_players, replace=False)
+    index = 0
+    for player in game.players:
+        player.rol = mixed_roles[index]
+        player.loyalty = get_loyalty(rol=mixed_roles[index])
+        index = index+1
+    
+
+
+

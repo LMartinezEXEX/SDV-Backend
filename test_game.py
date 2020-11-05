@@ -257,6 +257,7 @@ def test_init_game():
           'game/init/{}?player_id=1'.format(game_id))
      
      assert response.status_code == 200
+     assert response.json() == {"Minister_Id": 1}
 
 
 
