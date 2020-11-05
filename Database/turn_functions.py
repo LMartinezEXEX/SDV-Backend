@@ -41,6 +41,11 @@ def is_current_minister(game_id: int, player_id: int):
     return True if turn.current_minister.id == player_id else False
 
 
+'''
+Assert if the director candidate was already selected in the current turn
+'''
+
+
 @db_session()
 def already_selected_director_candidate(game_id):
     turn_number = get_current_turn_number_in_game(game_id)
@@ -80,6 +85,20 @@ Get some turn instance in the game depending the number
 def get_turn_in_game(game_id: int, turn_number: int):
     return Turn.get(lambda t: t.game.id ==
                     game_id and t.turn_number == turn_number)
+
+
+'''
+Create a list of player ids based on the input 'players' array of Player
+'''
+
+
+def create_players_id_list(players):
+    player_ids = []
+
+    for player in players:
+        player_ids.append(player.id)
+
+    return player_ids
 
 
 '''
@@ -129,8 +148,9 @@ Generate a new turn with its Vote instance
 
 
 @db_session()
-def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Player, candidate_director: Player,
-                  current_minister: Player, current_director: Player, last_minister: Player = None, last_director: Player = None):
+def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Player,
+                  candidate_director: Player, current_minister: Player, current_director: Player,
+                  last_minister: Player = None, last_director: Player = None):
     turn = Turn(game=game_instance,
                 turn_number=turn_number,
                 current_minister=current_minister,
@@ -199,6 +219,38 @@ def select_MM_candidate(game_id: int):
     return next_candidate_minister.id
 
 
+'''
+Create a list of suitable player ids for director candidate
+'''
+
+
+@db_session()
+def create_director_candidates_list(game_id, players, previous_formula_vote):
+    if previous_formula_vote is None:
+        return create_players_id_list(players)
+
+    alive_players_counter = alive_players_count(game_id)
+    previous_accepted_formula_turn = previous_formula_vote.turn
+
+    previous_director_id = previous_accepted_formula_turn.candidate_director.id
+    previous_minister_id = previous_accepted_formula_turn.candidate_minister.id
+
+    player_ids = []
+    for player in players:
+        if alive_players_counter == 5 and player.id != previous_director_id:
+            player_ids.append(player.id)
+
+        elif player.id != previous_minister_id and player.id != previous_director_id:
+            player_ids.append(player.id)
+
+    return player_ids
+
+
+'''
+Get a list of player ids suitable for director candidate
+'''
+
+
 @db_session()
 def director_available_candidates(game_id):
     current_turn_number = get_current_turn_number_in_game(game_id)
@@ -212,29 +264,14 @@ def director_available_candidates(game_id):
         desc(
             Vote.turn)).first()
 
-    player_ids = []
+    return create_director_candidates_list(
+        game_id, regular_alive_players, previous_accepted_formula)
 
-    # No accepted formula yet, all alive players can be director candidate
-    if previous_accepted_formula is None:
-        for player in regular_alive_players:
-            player_ids.append(player.id)
 
-        return player_ids
-
-    previous_accepted_formula_turn = previous_accepted_formula.turn
-
-    if alive_players_count(game_id) == 5:
-        for player in regular_alive_players:
-            if player.id != previous_accepted_formula_turn.candidate_director.id:
-                player_ids.append(player.id)
-
-        return player_ids
-
-    for player in regular_alive_players:
-        if player.id != previous_accepted_formula_turn.candidate_minister.id and player.id != previous_accepted_formula_turn.candidate_director.id:
-            player_ids.append(player.id)
-
-    return player_ids
+'''
+Set a player as director candidate in current turn.
+This function doesn't make checks, it should've been made privously
+'''
 
 
 @db_session()
