@@ -76,6 +76,33 @@ def get_turn_in_game(game_id: int, turn_number: int):
 
 
 '''
+Get all players id in the game
+'''
+
+
+@db_session()
+def get_all_players_id(game_id: int):
+    game = Game[game_id]
+    players = game.players.order_by(Player.id)
+
+    return create_players_id_list(players)
+
+
+'''
+Create a list of player ids based on the input 'players' array of Player
+'''
+
+
+def create_players_id_list(players):
+    player_ids = []
+
+    for player in players:
+        player_ids.append(player.id)
+
+    return player_ids
+
+
+'''
 Generate 'quantity' new cards for a game
 '''
 

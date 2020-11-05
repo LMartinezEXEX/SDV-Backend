@@ -336,6 +336,17 @@ def test_action_in_unexisting_game():
 
 
 '''
+Test correct player ids when getting them from the endpoint
+'''
+def test_get_player_ids():
+    response = client.get("/game/3/players")
+
+    real_ids = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    assert response.status_code == 200
+    assert response.json() == {"Player ids": real_ids}
+
+
+'''
 Test correct response when asked for next minister candidate
 '''
 
