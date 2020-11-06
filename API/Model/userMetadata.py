@@ -2,6 +2,10 @@
 
 user_metadata = [
     {
+        "name": "Profile",
+        "description": "Return user profile data",
+    },
+    {
         "name": "User icon",
         "description": "Return user icon",
     },
@@ -12,10 +16,6 @@ user_metadata = [
     {
         "name": "Login",
         "description": "Login endpoint: returns token and session data for requests.",
-    },
-    {
-        "name": "Profile",
-        "description": "Return user profile data",
     },
     {
         "name": "Update username",

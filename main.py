@@ -100,7 +100,7 @@ async def user_login(email: EmailStr = Form(...), password: str = Form(...)):
 @app.get(
     USER_PROFILE_URL,
     status_code=status.HTTP_200_OK,
-    tags=["User public data"]
+    tags=["Profile"]
 )
 async def get_user_public_profile(email: EmailStr):
     try:
