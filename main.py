@@ -11,16 +11,14 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.security import OAuth2PasswordRequestForm
-from API.Model.authData import TOKEN_SEP
-from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PUBLIC_PROFILE_URL,\
-    USER_PRIVATE_PROFILE_URL, USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
+from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PROFILE_URL,\
+     USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
 
 # User Model
-from API.Model.userModel import UserRegisterIn, UserProfileExtended,\
+from API.Model.userModel import UserRegisterIn, UserProfile,\
     UserUpdateUsername, UserUpdatePassword, UserUpdateIcon,\
     get_user_profile_by_email, get_user_icon_by_email, register,\
-    authenticate, deauthenticate, get_this_user,\
-    change_username, change_password, change_icon
+    authenticate, get_this_user, change_username, change_password, change_icon
 
 from API.Model.userExceptions import not_found_exception, credentials_exception,\
     profile_exception, register_exception, update_exception, update_icon_exception
@@ -100,7 +98,7 @@ async def user_login(email: EmailStr = Form(...), password: str = Form(...)):
 
 
 @app.get(
-    USER_PUBLIC_PROFILE_URL,
+    USER_PROFILE_URL,
     status_code=status.HTTP_200_OK,
     tags=["User public data"]
 )
@@ -123,42 +121,6 @@ async def get_user_icon(email: EmailStr):
         raise not_found_exception
 
 
-@app.get(
-    USER_PRIVATE_PROFILE_URL,
-    status_code=status.HTTP_200_OK,
-    tags=["Private profile"]
-)
-async def profile(Authorization: str = Header(...), response: Response = Depends(get_this_user)):
-    return response
-
-
-@app.post(
-    USER_LOGOUT_URL,
-    status_code=status.HTTP_200_OK,
-    tags=["Logout"]
-)
-async def user_logout(Authorization: str = Header(...), response: Response = Depends(get_this_user)):
-    user = UserProfileExtended(**json.loads(response.body.decode()))
-    authorization_splitted = Authorization.split(TOKEN_SEP)
-    if len(authorization_splitted) != 2:
-        raise not_authenticated_exception
-    refresh = authorization_splitted[1].strip()
-    refresh_splitted = refresh.split(" ")
-    if len(refresh_splitted) != 2:
-        raise not_authenticated_exception
-    refresh_token = refresh_splitted[1]
-    await deauthenticate(user.email, refresh_token)
-    response = Response(
-        content=json.dumps({
-            "email": user.email,
-            "result": "success"
-        }).encode(),
-        status_code=status.HTTP_200_OK,
-        headers={ "Authorization": ""}
-    )
-    return response
-
-
 @app.put(
     USER_UPDATE_USERNAME_URL,
     status_code=status.HTTP_200_OK,
@@ -166,15 +128,12 @@ async def user_logout(Authorization: str = Header(...), response: Response = Dep
 )
 async def user_update_username(
         update_data: UserUpdateUsername,
-        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
-    user = UserProfileExtended(**json.loads(response.body.decode()))
+        Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and (await change_username(update_data)):
-        response.body = json.dumps({
+        return {
             "email": update_data.email,
             "result": "success"
-        }).encode()
-        response.headers["content-length"] = str(len(response.body))
-        return response
+        }
     else:
         raise update_exception
 
@@ -186,15 +145,12 @@ async def user_update_username(
 )
 async def user_update_password(
         update_data: UserUpdatePassword,
-        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
-    user = UserProfileExtended(**json.loads(response.body.decode()))
+        Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
     if update_data.email == user.email and (await change_password(update_data)):
-        response.body = json.dumps({
+        return {
             "email": user.email,
             "result": "success"
-        }).encode()
-        response.headers["content-length"] = str(len(response.body))
-        return response
+        }
     else:
         raise update_exception
 
@@ -206,8 +162,7 @@ async def user_update_password(
 )
 async def user_update_icon(
         email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
-        Authorization: str = Header(...), response: Response = Depends(get_this_user)):
-    user = UserProfileExtended(**json.loads(response.body.decode()))
+        Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
     update_data = UserUpdateIcon(email=email, password=password)
 
     if new_icon.content_type not in [
@@ -221,12 +176,10 @@ async def user_update_icon(
         raise update_icon_exception
 
     if update_data.email == user.email and (await change_icon(update_data, raw_icon)):
-        response.body = json.dumps({
+        return {
             "email": user.email,
             "result": "success"
-        }).encode()
-        response.headers["content-length"] = str(len(response.body))
-        return response
+        }
     else:
         raise credentials_exception
 
