@@ -19,9 +19,7 @@ def register_user(new_user):
         icon     = new_user.icon,
         creation_date    = new_user.creation_date,
         last_access_date = new_user.last_access_date,
-        is_validated     = new_user.is_validated,
-        refresh_token    = new_user.refresh_token,
-        refresh_token_expires = new_user.refresh_token_expires,
+        is_validated     = new_user.is_validated
     )
 
 @orm.db_session
@@ -33,18 +31,9 @@ def auth_user_password(email: EmailStr, password: str):
         return False
 
 @orm.db_session
-def activate_user(email: EmailStr, refresh_token_value: str, refresh_token_expires: datetime, last_access_date: Optional[datetime] = None):
+def last_access(email: EmailStr, last_acces_date: datetime):
     user = User.get(email = email)
-    if not (last_access_date is None):
-        user.last_access_date = last_access_date
-    user.refresh_token = refresh_token_value
-    user.refresh_token_expires = refresh_token_expires
-
-@orm.db_session
-def deactivate_user(email: EmailStr):
-    user = User.get(email = email)
-    user.refresh_token = "empty"
-    user.refresh_token_expires = datetime(year = 1970, month = 1, day = 1, hour = 0, minute = 0, second = 0, microsecond = 0)
+    user.last_access_date = last_acces_date
 
 @orm.db_session
 def change_username(update_data):
