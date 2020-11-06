@@ -2,10 +2,6 @@
 
 user_metadata = [
     {
-        "name": "User public data",
-        "description": "Return user public data",
-    },
-    {
         "name": "User icon",
         "description": "Return user icon",
     },
@@ -18,11 +14,7 @@ user_metadata = [
         "description": "Login endpoint: returns token and session data for requests.",
     },
     {
-        "name": "Logout",
-        "description": "Logout endpoint: revoke tokens and end session.",
-    },
-    {
-        "name": "Private profile",
+        "name": "Profile",
         "description": "Return user profile data",
     },
     {
