@@ -154,7 +154,7 @@ async def user_logout(Authorization: str = Header(...), response: Response = Dep
             "result": "success"
         }).encode(),
         status_code=status.HTTP_200_OK,
-        headers={ "Authorization": ""}
+        headers={"Authorization": ""}
     )
     return response
 
@@ -314,3 +314,12 @@ async def promulgate_card(id: int, promulgate: PlayerPromulgate):
          )
 async def get_game_status(id: int):
     return game_status(id)
+
+
+# Get available spell in current turn
+@app.get("/game/{id}/spell",
+         status_code=status.HTTP_200_OK,
+         tags=["Available Spell"]
+         )
+async def get_available_spell(id: int):
+    return check_and_get_available_spell(id)

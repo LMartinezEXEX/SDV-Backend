@@ -133,7 +133,8 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_minister=candidate_minister,
                 candidate_director=candidate_director,
                 taken_cards=False,
-                promulgated=False)
+                promulgated=False,
+                spell_available=False)
 
     Vote(result=False,
          turn=turn)
@@ -371,3 +372,74 @@ def check_status(game_id: int):
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id]
+
+# -SPELLS-----------------------------------------------------------------------
+
+
+@db_session()
+def get_current_turn_in_game(game_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+
+    return get_turn_in_game(game_id, turn_number)
+
+
+def available_spell_in_board_1(player_cuantity: int, promulgations: int):
+    if promulgations == 3:
+        spell = "Guessing"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+def available_spell_in_board_2(player_cuantity: int, promulgations: int):
+    if promulgations == 2:
+        spell = "Crucio"
+    elif promulgations == 3:
+        spell = "Imperius"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+def available_spell_in_board_3(player_cuantity: int, promulgations: int):
+    if promulgations == 1 or promulgations == 2:
+        spell = "Crucio"
+    elif promulgations == 3:
+        spell = "Imperius"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+@db_session()
+def available_spell(game_id: int):
+    current_turn = get_current_turn_in_game(game_id)
+    death_eater_promulgation = Board[game_id].death_eater_promulgation
+    player_cuantity = Game[game_id].players.count()
+
+    spell = ""
+    if player_cuantity == 5 or player_cuantity == 6:
+        spell = available_spell_in_board_1(
+            player_cuantity, death_eater_promulgation)
+
+    elif player_cuantity == 7 or player_cuantity == 8:
+        spell = available_spell_in_board_2(
+            player_cuantity, death_eater_promulgation)
+
+    elif player_cuantity == 9 or player_cuantity == 10:
+        spell = available_spell_in_board_3(
+            player_cuantity, death_eater_promulgation)
+
+    if spell != "":
+        current_turn.spell_available = True
+
+    return spell

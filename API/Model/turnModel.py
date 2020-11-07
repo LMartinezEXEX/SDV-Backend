@@ -132,3 +132,15 @@ def game_status(game_id: int):
             "death eater promulgations": status[2],
             "current minister id": status[3],
             "current director id": status[4]}
+
+
+def check_and_get_available_spell(game_id: int):
+    check_game_state(game_id)
+
+    if db_turn.get_current_turn_number_in_game(game_id) == 0:
+        spell = ""
+
+    else:
+        spell = db_turn.available_spell(game_id)
+
+    return {"Spell": spell}

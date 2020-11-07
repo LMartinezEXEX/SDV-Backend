@@ -52,6 +52,34 @@ def init_data(request):
              creation_date=datetime.datetime.today(),
              state=1)
 
+        Game(name='Pokemon',
+             owner=user,
+             min_players=7,
+             max_players=8,
+             creation_date=datetime.datetime.today(),
+             state=1)
+
+        Game(name='Kirby',
+             owner=user,
+             min_players=5,
+             max_players=6,
+             creation_date=datetime.datetime.today(),
+             state=1)
+
+        Game(name='Sonic',
+             owner=user,
+             min_players=9,
+             max_players=10,
+             creation_date=datetime.datetime.today(),
+             state=1)
+
+        Game(name='Mario Bros',
+             owner=user,
+             min_players=9,
+             max_players=10,
+             creation_date=datetime.datetime.today(),
+             state=1)
+
         Game(name='Forest',
              owner=user,
              min_players=4,
@@ -252,6 +280,237 @@ def init_data(request):
                is_investigated=False,
                game_in=game3.id)
 
+        game4 = Game[4]
+        Board(game=game4,
+              fenix_promulgation=0,
+              death_eater_promulgation=1,
+              election_counter=0)
+
+        Player(turn=1,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=2,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=3,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=4,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=5,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=6,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        Player(turn=7,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game4.id)
+
+        game5 = Game[5]
+        Board(game=game5,
+              fenix_promulgation=0,
+              death_eater_promulgation=2,
+              election_counter=0)
+
+        Player(turn=1,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game5.id)
+
+        Player(turn=2,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game5.id)
+
+        Player(turn=3,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game5.id)
+
+        Player(turn=4,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game5.id)
+
+        Player(turn=5,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game5.id)
+
+        game6 = Game[6]
+        Board(game=game6,
+              fenix_promulgation=0,
+              death_eater_promulgation=0,
+              election_counter=0)
+
+        Player(turn=1,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=2,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=3,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=4,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=5,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=6,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=7,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=8,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=9,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        Player(turn=10,
+               user=user,
+               rol='Mortifago',
+               loyalty='Mortifago',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game6.id)
+
+        game7 = Game[7]
+        Board(game=game7,
+              fenix_promulgation=0,
+              death_eater_promulgation=2,
+              election_counter=0)
+
+        Player(turn=1,
+               user=user,
+               rol='Fenix',
+               loyalty='Fenix',
+               is_alive=True,
+               chat_enabled=True,
+               is_investigated=False,
+               game_in=game7.id)
+
     request.addfinalizer(clean_db)
 
 # -TEST-CLEARS-DATABASE-AFTER-FINISHING------------------------------------------
@@ -289,6 +548,13 @@ def minister_promulgate(game_id, minister_id, card_type):
     )
 
 
+def get_spells_in_new_turn(game_id, minister_id, card_type):
+    start_new_turn(game_id)
+    minister_promulgate(game_id, minister_id, card_type)
+
+    return client.get('/game/{}/spell'.format(game_id))
+
+
 def check_game_state(game_id):
     return client.get('game/{}/check_game'.format(game_id))
 
@@ -305,7 +571,7 @@ Test correct response when trying to take action in a game that hasn't started
 
 
 def test_action_in_uninitialized_game():
-    response = start_new_turn(game_id=4)
+    response = start_new_turn(game_id=8)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Game hasn't started"}
@@ -317,7 +583,7 @@ Test correct response when trying to take action in a finished game
 
 
 def test_action_in_finished_game():
-    response = start_new_turn(game_id=5)
+    response = start_new_turn(game_id=9)
 
     assert response.status_code == 409
     assert response.json() == {"detail": "Game finished"}
@@ -711,3 +977,108 @@ def test_game_check_six_death_eater_promulgations():
                                "death eater promulgations": 6,
                                "current minister id": 3,
                                "current director id": 3}
+
+
+'''
+Test correct response with no available spells in a game with no turn
+'''
+
+
+def test_available_spell_with_no_turn():
+    response = client.get("/game/4/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+
+def test_available_spells_board_with_invalid_players_count():
+    response = get_spells_in_new_turn(game_id=7, minister_id=41, card_type=1)
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+
+'''
+Test correct spells in board with 5 to 6 players
+'''
+
+
+def test_available_spells_board_1():
+    start_new_turn(game_id=5)
+
+    response = client.get("/game/5/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+    minister_promulgate(game_id=5, minister_id=26, card_type=1)
+
+    response = client.get("/game/5/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Guessing"}
+
+    for i in range(2):
+        response = get_spells_in_new_turn(
+            game_id=5, minister_id=27 + i, card_type=1)
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": "Avada Kedavra"}
+
+
+'''
+Test correct spells in board with 7 to 8 players
+'''
+
+
+def test_available_spells_board_2():
+    start_new_turn(game_id=4)
+
+    response = client.get("/game/4/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+    minister_promulgate(game_id=4, minister_id=19, card_type=1)
+
+    response = client.get("/game/4/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Crucio"}
+
+    spells = ["Imperius", "Avada Kedavra", "Avada Kedavra"]
+    for i in range(3):
+        response = get_spells_in_new_turn(
+            game_id=4, minister_id=20 + i, card_type=1)
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": spells[i]}
+
+
+'''
+Test correct spells in board with 9 to 10 players
+'''
+
+
+def test_available_spells_board_3():
+    start_new_turn(game_id=6)
+
+    response = client.get("/game/6/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+    minister_promulgate(game_id=6, minister_id=31, card_type=1)
+
+    response = client.get("/game/6/spell")
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Crucio"}
+
+    spells = ["Crucio", "Imperius", "Avada Kedavra", "Avada Kedavra"]
+    for i in range(4):
+        response = get_spells_in_new_turn(
+            game_id=6, minister_id=32 + i, card_type=1)
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": spells[i]}

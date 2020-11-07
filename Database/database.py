@@ -67,6 +67,7 @@ class Turn(db.Entity):
     vote = Optional('Vote')
     taken_cards = Required(bool)
     promulgated = Required(bool)
+    spell_available = Required(bool)
     PrimaryKey(game, turn_number)
 
 
