@@ -23,9 +23,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         user = User["lautaro@gmail.br"]
 
