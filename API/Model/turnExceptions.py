@@ -54,3 +54,18 @@ player_isnt_minister_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Player is not minister"
 )
+
+didnt_promulgate_in_turn_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Must promulgate in current turn before execute a spell"
+)
+
+no_spell_available_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="The requirements to cast the spell are not met"
+)
+
+player_already_investigated_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Player has been already investigated"
+)

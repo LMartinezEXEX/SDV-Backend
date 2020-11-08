@@ -319,7 +319,19 @@ async def get_game_status(id: int):
 # Get available spell in current turn
 @app.get("/game/{id}/spell",
          status_code=status.HTTP_200_OK,
-         tags=["Available Spell"]
+         tags=["Available spell"]
          )
 async def get_available_spell(id: int):
     return check_and_get_available_spell(id)
+
+
+# Execute a spell
+@app.put("/game/{id}/execute_spell",
+         status_code=status.HTTP_200_OK,
+         tags=["Execute spell"]
+         )
+async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
+    if spell == Spell.GUESSING:
+        return check_and_execute_guessing(id, spell_data.minister_id)
+    elif spell == Spell.CRUCIO:
+        return check_and_execute_crucio(id, spell_data.minister_id, spell_data.player_id)

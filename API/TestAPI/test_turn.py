@@ -100,7 +100,8 @@ def init_data(request):
         Board(game=game1,
               fenix_promulgation=0,
               death_eater_promulgation=0,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -135,7 +136,8 @@ def init_data(request):
         Board(game=game2,
               fenix_promulgation=0,
               death_eater_promulgation=0,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -188,7 +190,8 @@ def init_data(request):
         Board(game=game3,
               fenix_promulgation=0,
               death_eater_promulgation=0,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -284,7 +287,8 @@ def init_data(request):
         Board(game=game4,
               fenix_promulgation=0,
               death_eater_promulgation=1,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -353,7 +357,8 @@ def init_data(request):
         Board(game=game5,
               fenix_promulgation=0,
               death_eater_promulgation=2,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -404,7 +409,8 @@ def init_data(request):
         Board(game=game6,
               fenix_promulgation=0,
               death_eater_promulgation=0,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,
@@ -500,7 +506,8 @@ def init_data(request):
         Board(game=game7,
               fenix_promulgation=0,
               death_eater_promulgation=2,
-              election_counter=0)
+              election_counter=0,
+              spell_available=False)
 
         Player(turn=1,
                user=user,

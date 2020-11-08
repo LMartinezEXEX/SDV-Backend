@@ -1,3 +1,4 @@
+from enum import Enum
 import Database.turn_functions as db_turn
 from Database.game_functions import get_game_state, is_player_in_game_by_id
 from pydantic import BaseModel, StrictInt
@@ -12,6 +13,16 @@ class PlayerVote(BaseModel):
 class PlayerPromulgate(BaseModel):
     candidate_id: int
     to_promulgate: StrictInt
+
+
+class Spell(str, Enum):
+    GUESSING = "Guessing"
+    CRUCIO = "Crucio"
+
+
+class SpellData(BaseModel):
+    minister_id: int
+    player_id: int
 
 
 def check_game_state(game_id: int):
@@ -137,10 +148,42 @@ def game_status(game_id: int):
 def check_and_get_available_spell(game_id: int):
     check_game_state(game_id)
 
-    if db_turn.get_current_turn_number_in_game(game_id) == 0:
+    if db_turn.get_current_turn_number_in_game(game_id) == 0 or (
+            not db_turn.is_board_available_spell(game_id)):
         spell = ""
 
     else:
-        spell = db_turn.available_spell(game_id)
+        spell = db_turn.available_spell_in_game_conditions(game_id)
 
     return {"Spell": spell}
+
+
+def check_spell_base_conditions(game_id: int, minister_id: int):
+    check_game_with_at_least_one_turn(game_id)
+
+    if not db_turn.already_promulgate_in_current_turn(game_id):
+        raise didnt_promulgate_in_turn_exception
+
+    if not db_turn.is_current_minister(game_id, minister_id):
+        raise player_isnt_minister_exception
+
+    if not db_turn.is_board_available_spell(game_id):
+        raise no_spell_available_exception
+
+
+def check_and_execute_guessing(game_id: int, minister_id: int):
+    check_spell_base_conditions(game_id, minister_id)
+
+    return {"cards": db_turn.execute_guessing(game_id)}
+
+
+def check_and_execute_crucio(game_id: int, minister_id: int, player_id: int):
+    check_spell_base_conditions(game_id, minister_id)
+
+    if not is_player_in_game_by_id(game_id, player_id):
+        raise invalid_player_in_game_exception
+
+    if db_turn.is_player_investigated(player_id):
+        raise player_already_investigated_exception
+
+    return {"Fenix loyalty": db_turn.execute_crucio(game_id, player_id)}

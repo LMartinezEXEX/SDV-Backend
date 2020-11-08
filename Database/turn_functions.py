@@ -75,6 +75,17 @@ def get_turn_in_game(game_id: int, turn_number: int):
                     game_id and t.turn_number == turn_number)
 
 
+@db_session()
+def is_player_investigated(player_id: int):
+    player = get_player_by_id(player_id)
+    return player.is_investigated
+
+
+@db_session()
+def is_board_available_spell(game_id):
+    return Board[game_id].spell_available
+
+
 '''
 Generate 'quantity' new cards for a game
 '''
@@ -133,8 +144,7 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_minister=candidate_minister,
                 candidate_director=candidate_director,
                 taken_cards=False,
-                promulgated=False,
-                spell_available=False)
+                promulgated=False)
 
     Vote(result=False,
          turn=turn)
@@ -341,6 +351,7 @@ def promulgate(game_id: int, card_type: int):
 
     if card_type:
         board.death_eater_promulgation += 1
+        check_available_spell(game_id)
     else:
         board.fenix_promulgation += 1
 
@@ -374,6 +385,24 @@ def check_status(game_id: int):
             turn.current_minister.id, turn.current_director.id]
 
 # -SPELLS-----------------------------------------------------------------------
+
+
+@db_session()
+def check_available_spell(game_id: int):
+    board = Board[game_id]
+    death_eater_promulgation = board.death_eater_promulgation
+    player_cuantity = Game[game_id].players.count()
+
+    print(death_eater_promulgation)
+    if (player_cuantity == 5 or player_cuantity ==
+            6) and death_eater_promulgation >= 3:
+        board.spell_available = True
+
+    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2:
+        board.spell_available = True
+
+    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
+        board.spell_available = True
 
 
 @db_session()
@@ -421,7 +450,8 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
 
 
 @db_session()
-def available_spell(game_id: int):
+def available_spell_in_game_conditions(game_id: int):
+    board = Board[game_id]
     current_turn = get_current_turn_in_game(game_id)
     death_eater_promulgation = Board[game_id].death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
@@ -439,7 +469,32 @@ def available_spell(game_id: int):
         spell = available_spell_in_board_3(
             player_cuantity, death_eater_promulgation)
 
-    if spell != "":
-        current_turn.spell_available = True
-
     return spell
+
+
+@db_session()
+def execute_guessing(game_id):
+    game = Game[game_id]
+    board = Board[game_id]
+    game_deck_cuantity = len(game.card)
+    cards = Card.select(
+        lambda c: c.game.id == game_id and c.order > (
+            game_deck_cuantity -
+            3)).order_by(
+        Card.order)[
+                :3]
+
+    board.spell_available = False
+
+    return [cards[0].type, cards[1].type, cards[2].type]
+
+
+@db_session()
+def execute_crucio(game_id, player_id):
+    board = Board[game_id]
+    player = get_player_by_id(player_id)
+
+    player.is_investigated = True
+    board.spell_available = False
+
+    return player.loyalty
