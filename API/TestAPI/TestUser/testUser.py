@@ -85,27 +85,6 @@ def test_login_users(users):
             print(f'Login: {key} -> {USERS_AUTH_DICT[key][1]}')
 
 """
-Endpoint test: "/user/profile/"
-
-Descripción:
-Un usuario puede revisar su perfil exitosamente.
-
-Escenario exitoso: 200 Ok
-Error: 400 Bad Request, 401 Unauthorized, 403 Forbidden
-
-"""
-def test_profile_users(users):
-    for user in users:
-        authorization = USERS_AUTH_DICT[user["email"]][1]
-
-        response = client.get(
-            "/user/profile/",
-            headers = { "accept": "application/json", "Authorization": authorization }
-        )
-
-        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
-
-"""
 Endpoint test: "/user/update/username/"
 
 Descripción:
@@ -179,24 +158,3 @@ def test_update_icons(users):
         file_to_upload.close()
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "email": user["email"], "result": "success" }
-
-"""
-Endpoint test: "/user/logout/"
-
-Descripción:
-Un usuario puede desloguearse exitosamente.
-
-Escenario exitoso: 200 Ok
-Error: 400 Bad Request, 401 Unauthorized, 403 Forbidden
-
-"""
-def test_logout_users(users):
-    for user in users:
-        authorization = USERS_AUTH_DICT[user["email"]][1]
-
-        response = client.post(
-            "/user/logout/",
-            headers = { "accept": "application/json", "Authorization": authorization }
-        )
-
-        assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'

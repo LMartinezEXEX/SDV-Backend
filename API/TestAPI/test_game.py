@@ -22,9 +22,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         User(email="aguschapuis@gmail.com",
              username="agus",
@@ -32,9 +30,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         User(email="lautimartinez@gmail.com",
              username="lauti",
@@ -42,9 +38,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         User(email="danireynuaba@gmail.com",
              username="dani",
@@ -52,9 +46,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         User(email="sofigalfre@gmail.com",
              username="sofi",
@@ -62,9 +54,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
         User(email="franjoray@gmail.com",
              username="fran",
@@ -72,9 +62,7 @@ def init_data(request):
              icon="".encode(),
              creation_date=datetime.datetime.today(),
              last_access_date=datetime.datetime.today(),
-             is_validated=True,
-             refresh_token="HolaKappa",
-             refresh_token_expires=datetime.datetime.today())
+             is_validated=True)
 
 
 # Test Functions

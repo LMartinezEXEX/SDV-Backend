@@ -11,10 +11,9 @@ from jose import JWTError, ExpiredSignatureError, jwt
 
 # Exceptions
 from API.Model.userExceptions import credentials_exception, not_authenticated_exception, \
-    unauthorized_exception, profile_exception, not_found_exception
+    unauthorized_exception, not_found_exception
 # Data for user management
-from API.Model.authData import SECRET_KEY, ALGORITHM, TOKEN_SEP, \
-    ACCESS_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_EXPIRES_MINUTES, REFRESH_TOKEN_LENGTH
+from API.Model.authData import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRES_MINUTES
 from USER_URLS import USER_LOGIN_URL
 # Security scheme
 from API.Model.securityScheme import OAuth2PasswordBearerWithCookie
@@ -37,8 +36,6 @@ class User(BaseModel):
     creation_date: datetime
     last_access_date: datetime
     is_validated: bool
-    refresh_token: str
-    refresh_token_expires: datetime
 
     @validator("email")
     def email_size(cls, val):
@@ -58,12 +55,8 @@ class UserRegisterIn(BaseModel):
 class UserProfile(BaseModel):
     email: EmailStr
     username: str
+    last_access_date: datetime
     is_validated: bool
-
-
-class UserProfileExtended(UserProfile):
-    refresh_token: str
-    refresh_token_expires: datetime
 
 
 class UserUpdateUsername(BaseModel):
@@ -88,6 +81,7 @@ async def get_user_profile_by_email(email: EmailStr):
     return UserProfile(
         email=user.email,
         username=user.username,
+        last_access_date=user.last_access_date,
         is_validated=user.is_validated
     )
 
@@ -106,94 +100,40 @@ async def register(new_user: UserRegisterIn):
             icon="".encode(),
             creation_date=datetime.utcnow(),
             last_access_date=datetime.utcnow(),
-            is_validated=False,
-            refresh_token="empty",
-            refresh_token_expires=datetime(
-                year=1970,
-                month=1,
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0)
+            is_validated=False
         )
     )
 
 
-async def get_user_auth(email: EmailStr):
-    user = Database.user_functions.get_user_by_email(email)
-    if user:
-        return UserProfileExtended(
-            email=user.email,
-            username=user.username,
-            is_validated=user.is_validated,
-            refresh_token=user.refresh_token,
-            refresh_token_expires=user.refresh_token_expires
-        )
-    else:
-        raise not_found_exception
-
-
 async def is_valid_user(email: EmailStr):
-    user = await get_user_auth(email)
+    user = await get_user_profile_by_email(email)
     return user.is_validated
-
-
-async def is_active_user(email: EmailStr):
-    user = await get_user_auth(email)
-    return user.refresh_token != "empty" and user.refresh_token_expires > datetime.utcnow()
 
 
 async def authenticate(email: EmailStr, password: str):
     if Database.user_functions.auth_user_password(email, password):
-        user = await get_user_auth(email)
-        # Consider both cases:
-        # 1) User is not logged in
-        # 2) Browser deleted expired cookies but application doesn't even know about it,
-        #    then check out if we have a possible expired session
-        if user.refresh_token == "empty" or (
-                user.refresh_token != "empty" and user.refresh_token_expires < datetime.utcnow()):
-            access_token = await new_access_token(
-                data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
-            )
-            access_token_json = jsonable_encoder(access_token)
+        user = await get_user_profile_by_email(email)
+        access_token = await new_access_token(
+            data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
+        )
+        access_token_json = jsonable_encoder(access_token)
 
-            refresh_token_value = token_hex(REFRESH_TOKEN_LENGTH)
+        last_access_date = datetime.utcnow()
 
-            last_access_date = datetime.utcnow()
+        Database.user_functions.last_access(
+            user.email,
+            last_access_date)
 
-            refresh_token_expires = last_access_date + \
-                timedelta(minutes=REFRESH_TOKEN_EXPIRES_MINUTES)
-
-            Database.user_functions.activate_user(
-                user.email,
-                refresh_token_value,
-                refresh_token_expires,
-                last_access_date)
-
-            response = Response(
-                status_code=status.HTTP_200_OK,
-                headers={
-                    "WWW-Authenticate": "Bearer",
-                    "Authorization": f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}" 
-                }
-            )
-
-            return response
-        else:
-            raise credentials_exception
+        response = Response(
+            status_code=status.HTTP_200_OK,
+            headers={
+                "WWW-Authenticate": "Bearer",
+                "Authorization": f"Bearer {access_token_json}" 
+            }
+        )
+        return response
     else:
-        raise unauthorized_exception
-
-
-async def deauthenticate(email: EmailStr, refresh_token: str):
-    user = await get_user_auth(email)
-    # Logout user by request if refresh token is the same, and refresh token
-    # expires in the future
-    if user.refresh_token != "empty" and user.refresh_token == refresh_token and user.refresh_token_expires > datetime.utcnow():
-        Database.user_functions.deactivate_user(email)
-    else:
-        raise not_authenticated_exception
+        raise credentials_exception
 
 
 async def new_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -206,18 +146,10 @@ async def new_access_token(data: dict, expires_delta: Optional[timedelta] = None
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-""" This function acts as a proxy, prepares request to be given to continue user
-    session or shuts it down. Caller must decide if it discards the response or 
-    if it should be modified
-"""
-
 async def get_this_user(
     request: Request,
     Authorization: str = Header(...),
-    tokens: Tuple[str, str] = Depends(oauth2_scheme)):
-
-    access_token = tokens[0]
-    refresh_token = tokens[1]
+    access_token = Depends(oauth2_scheme)):
     try:
         # This is the case of user being logged and checks are fine,ie no
         # exceptions
@@ -226,64 +158,11 @@ async def get_this_user(
 
         if token_email is None:
             raise credentials_exception
-        user = await get_user_auth(token_email)
-        if user is None:
-            raise credentials_exception
-        if user.refresh_token == "empty" or user.refresh_token != refresh_token:
-            raise profile_exception
-        response = Response(
-            content=json.dumps(user.__dict__, default=str).encode(),
-            status_code=status.HTTP_200_OK,
-            headers={ "WWW-Authenticate": "Bearer", "Authorization": Authorization }
-        )
-        return response
-    except ExpiredSignatureError:
-        # This is the case where signature expired
-        # Signature expired, but we need to know if refresh expired too
-        payload = jwt.decode(
-            access_token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
-            options={
-                "verify_exp": False})
-        token_email = payload.get("sub")
-
-        if token_email is None:
-            raise credentials_exception
-        user = await get_user_auth(token_email)
+        user = await get_user_profile_by_email(token_email)
         if user is None:
             raise credentials_exception
 
-        if user.refresh_token != "empty" and user.refresh_token == refresh_token and user.refresh_token_expires > datetime.utcnow():
-            # Refresh token corresponds to user and
-            # Bearer token expired but Refresh token didn't, so issue new
-            # tokens
-            access_token = await new_access_token(
-                data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
-            )
-            access_token_json = jsonable_encoder(access_token)
-
-            refresh_token_value = token_hex(REFRESH_TOKEN_LENGTH)
-
-            refresh_token_expires = datetime.utcnow(
-            ) + timedelta(minutes=REFRESH_TOKEN_EXPIRES_MINUTES)
-
-            Database.user_functions.activate_user(
-                user.email, refresh_token_value, refresh_token_expires)
-
-            user = await get_user_auth(user.email)
-            response = Response(
-                content=json.dumps(user.__dict__, default=str).encode,
-                status_code=status.HTTP_200_OK,
-                headers={ "WWW-Authenticate": "Bearer", "Authorization": f"Bearer {access_token_json} {TOKEN_SEP} Refresh {refresh_token_value}" }
-            )
-            return response
-        else:
-            # Refresh token is not tracked, then token is being replayed somehow
-            # Or Refresh token is not equal to the stored one
-            # Or Refresh token expired
-            Database.user_functions.deactivate_user(user.email)
-            raise profile_exception
+        return user
     except JWTError:
         # Any other exception
         raise credentials_exception
