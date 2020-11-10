@@ -183,6 +183,29 @@ async def user_update_icon(
     else:
         raise credentials_exception
 
+# ----------------------
+# New Endpoints tomi
+
+#List games
+
+@app.get("/game/list_games",
+         status_code=status.HTTP_200_OK,
+         tags=["List Games"])
+async def list_games():
+    return list_available_games()
+
+
+# For polling: Has the game started?
+
+@app.get("/game/initialized/{id}",
+         status_code=status.HTTP_200_OK,
+         tags=["Has the Game started"])
+async def has_the_game_started(id: int, player_id: int):
+    return check_if_game_started(game_id=id, player_id=player_id)
+
+#-------------------------
+
+# Create Game
 
 @app.post("/game/create/",
           status_code=status.HTTP_201_CREATED,
@@ -191,7 +214,6 @@ async def create_game(params: GameParams):
     return create_new_game(game_params=params)
 
 # Join Game
-
 
 @app.put("/game/join/{id}",
          status_code=status.HTTP_200_OK,

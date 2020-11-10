@@ -93,6 +93,7 @@ class Board(db.Entity):
     fenix_promulgation = Required(int)
     death_eater_promulgation = Required(int)
     election_counter = Required(int)
+    spell_available = Required(bool)
 
 #
 

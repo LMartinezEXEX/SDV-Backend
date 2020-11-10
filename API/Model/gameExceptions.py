@@ -17,6 +17,11 @@ player_not_found_exception = HTTPException(
     detail="Player not found"
 )
 
+player_not_in_game_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="The player is not in the game"
+)
+
 player_already_in_game_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="The user is already in game"
@@ -60,4 +65,14 @@ game_has_finished_exception = HTTPException(
 incoherent_amount_of_players_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="The minimum of players is higher than the maximum"
+)
+
+inconsistent_amount_of_players_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="The amount of players is inconsistent to assign roles"
+)
+
+not_games_available_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="There are no games available"
 )
