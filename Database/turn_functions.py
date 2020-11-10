@@ -283,7 +283,7 @@ def get_result(game_id: int):
     lumos = Player_vote.select(
         lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos).count()
     lumos_votes = select(
-        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.is_lumos)[:]
+        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
 
     player_ids = []
     for _vote_ in lumos_votes:
@@ -393,7 +393,6 @@ def check_available_spell(game_id: int):
     death_eater_promulgation = board.death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
 
-    print(death_eater_promulgation)
     if (player_cuantity == 5 or player_cuantity ==
             6) and death_eater_promulgation >= 3:
         board.spell_available = True
@@ -497,4 +496,4 @@ def execute_crucio(game_id, player_id):
     player.is_investigated = True
     board.spell_available = False
 
-    return player.loyalty
+    return True if player.loyalty == "Fenix" else False

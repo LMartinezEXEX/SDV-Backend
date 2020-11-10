@@ -69,3 +69,8 @@ player_already_investigated_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Player has been already investigated"
 )
+
+spell_not_used_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="A spell is available and need to be used before start of next turn"
+)

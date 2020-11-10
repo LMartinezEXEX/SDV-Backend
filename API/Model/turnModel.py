@@ -54,6 +54,10 @@ def check_game_with_at_least_one_turn(game_id: int):
 
 def get_next_MM(game_id: int):
     check_game_state(game_id)
+
+    if db_turn.is_board_available_spell(game_id):
+        raise spell_not_used_exception
+
     return {
         "candidate_minister_id": db_turn.select_MM_candidate(game_id)}
 
@@ -182,6 +186,9 @@ def check_and_execute_crucio(game_id: int, minister_id: int, player_id: int):
 
     if not is_player_in_game_by_id(game_id, player_id):
         raise invalid_player_in_game_exception
+
+    if not db_turn.is_alive(game_id, player_id):
+        raise player_is_dead_exception
 
     if db_turn.is_player_investigated(player_id):
         raise player_already_investigated_exception
