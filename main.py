@@ -230,6 +230,38 @@ async def user_update_icon(
     else:
         raise credentials_exception
 
+# ----------------------
+# New Endpoints tomi
+
+#List games
+
+@app.get("/game/list_games",
+         status_code=status.HTTP_200_OK,
+         tags=["List Games"])
+async def list_games():
+    return list_available_games()
+
+
+# Discard card
+
+@app.put("/turn/discard",
+         status_code=status.HTTP_200_OK,
+         tags=["Discard card"])
+async def discard(game_id: int, to_discard: int):
+    return discard_selected_card(game_id=game_id, data=to_discard)
+
+# Get the remaining two cards for the Director to promulgate
+
+@app.get("/turn/director_cards",
+         status_code=status.HTTP_200_OK,
+         tags=["Not discarded cards"])
+async def get_director_cards_to_discard(game_id: int):
+    return get_cards_for_director(game_id=game_id)
+
+
+# -------------------------
+
+# Create Game
 
 @app.post("/game/create/",
           status_code=status.HTTP_201_CREATED,

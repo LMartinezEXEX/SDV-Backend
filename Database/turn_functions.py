@@ -90,7 +90,8 @@ def generate_card(quantity: int, order_in_deck: int, game_id: int):
         card_type = random.randint(0, 1)
         Card(order=order_in_deck,
              type=card_type,
-             game=game)
+             game=game,
+             discarded=False)
         order_in_deck += 1
 
 
@@ -397,5 +398,34 @@ def create_first_turn(game_id: int):
     return next_minister.id
 
 
+@db_session()
+def get_not_discarded_cards(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    game_deck_quantity = game.card.count()
+
+    cards = Card.select(
+        lambda c: c.game.id == game_id and c.order > (
+            game_deck_cuantity -
+            3) and c.discarded == False)
+
+    return [cards[0].type, cards[1].type]
+
+
+@db_session()
+async def discard_card(game_id: int, data: int):
+    game = get_game_by_id(game_id=game_id)
+    deck_quantity = game.cards.count()
+    
+    card = Card.select(
+        lambda c: c.game.id == game_id and
+        c.order > (deck_quantity - 3) and
+        c.type == data 
+        )[:1]
+    
+    card.discarded = True
+    return get_not_discarded_cards(game_id=game_id)
+
+
+    
 
 # -------------------------------------------------------

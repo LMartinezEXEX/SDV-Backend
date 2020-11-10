@@ -132,3 +132,26 @@ def game_status(game_id: int):
             "death eater promulgations": status[2],
             "current minister id": status[3],
             "current director id": status[4]}
+
+
+
+#--------------------------------
+
+#Funciones Tomi
+
+
+class DiscardData(BaseModel):
+    minister_id: int
+    card_type: int
+
+
+def discard_selected_card(game_id: int, data: int):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    return discard_selected_card(game_id=game_id, data=data)
+
+
+def get_cards_for_director(game_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    return get_not_discarded_cards(game_id=game_id)

@@ -71,3 +71,8 @@ inconsistent_amount_of_players_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="The amount of players is inconsistent to assign roles"
 )
+
+not_games_available_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="There are no games available"
+)

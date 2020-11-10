@@ -261,3 +261,58 @@ def test_init_game():
 
 
 
+def test_list_games():
+     game_params = {"email": 'tomasosiecki@gmail.com', "name": 'MLBB', "min_players": 5, "max_players": 5}
+     response1 = client.post(
+          'game/create/',
+          json = game_params
+     )
+     response2 = client.post(
+          'game/create/',
+          json = game_params
+     )
+     response3 = client.post(
+          'game/create/',
+          json = game_params
+     )
+
+     response = client.get(
+          'game/list_games/'
+     )
+
+     expected_list = [
+                      {
+                       "id": 2,
+                       "name": "MLBB",
+                       "owner": "tomi",
+                       "min_players": 5,
+                       "max_players": 5,
+                       "players": 1
+                     },
+                     {
+                      "id": 3,
+                      "name": "MLBB",
+                      "owner": "tomi",
+                      "min_players": 5,
+                      "max_players": 5,
+                      "players": 1
+                     },
+                     {
+                      "id": 4,
+                      "name": "MLBB",
+                      "owner": "tomi",
+                      "min_players": 5,
+                      "max_players": 5,
+                      "players": 1
+                     }
+                    ]
+     
+
+     assert response1.status_code == 201
+     assert response2.status_code == 201
+     assert response3.status_code == 201
+     assert response.status_code == 200
+     assert response.json() == expected_list
+     
+     
+     

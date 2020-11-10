@@ -23,6 +23,12 @@ def get_player_by_id(player_id: int):
     return Player.get(id=player_id)
 
 
+@db_session
+def players_in_game(game_id: int):
+    game = Game[game_id]
+    return game.players.count()
+
+
 @db_session()
 def get_game_state(game_id):
     try:
@@ -152,9 +158,6 @@ def check_init_conditions(game_id: int, player_id: int):
         raise min_player_not_reach_exception
 
 
-
-
-
 @db_session
 def assign_roles(game_id: int):
     game = get_game_by_id(game_id=game_id)
@@ -168,5 +171,21 @@ def assign_roles(game_id: int):
         index = index+1
     
 
+@db_session()
+def get_game_list():
+    games = Game.select(lambda g: g.state == 0)
+    g_list = []
+    for game in games:
+        g_list.append(
+            {
+             "id": game.id,
+             "name": game.name,
+             "owner": game.owner.username,
+             "min_players": game.min_players,
+             "max_players": game.max_players,
+             "players": game.players.count()
+            }
+        )
+    return g_list
 
 

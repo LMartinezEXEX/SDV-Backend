@@ -87,6 +87,7 @@ class Card(db.Entity):
     order = Required(int, auto=True)
     type = Required(int)
     game = Required('Game')
+    discarded = Required(bool)
     PrimaryKey(order, game)
 
 

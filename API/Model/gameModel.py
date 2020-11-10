@@ -5,7 +5,7 @@ from Database import database
 from Database.game_functions import *
 from API.Model.gameExceptions import *
 from Database.turn_functions import create_first_turn
-
+from typing import List
 
 
 class GameParams(BaseModel):
@@ -17,6 +17,23 @@ class GameParams(BaseModel):
 
 class EmailParameter(BaseModel):
     email: EmailStr
+
+
+class Game_to_List(BaseModel):
+    id: int
+    owner: str
+    name: str
+    min_players: int
+    max_players: int
+    players: int
+
+
+def list_available_games():
+    g_list = get_game_list()
+    if not g_list:
+        raise not_games_available_exception
+    return g_list 
+
 
 
 def create_new_game(game_params: GameParams):
@@ -39,3 +56,6 @@ def init_game_with_ids(game_id: int, player_id: int):
     check_init_conditions(game_id=game_id, player_id=player_id)
     minister_id = create_first_turn(game_id=game_id)
     return {"Minister_Id": minister_id}
+
+
+#def discard_selected_card(game_id)

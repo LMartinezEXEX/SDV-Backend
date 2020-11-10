@@ -36,6 +36,7 @@ def select_roles_for_game(players: int):
     else:
         raise inconsistent_amount_of_players_exception
 
+
 def get_loyalty(rol: str):
     if rol == "Voldemort":
         return "Death Eater"
