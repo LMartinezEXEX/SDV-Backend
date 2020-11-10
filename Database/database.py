@@ -16,8 +16,6 @@ class User(db.Entity):
     creation_date = Required(datetime.datetime)
     last_access_date = Required(datetime.datetime)
     is_validated = Required(bool)
-    refresh_token = Required(str)
-    refresh_token_expires = Required(datetime.datetime)
     owner_of = Set('Game')
     playing_in = Set('Player')
 

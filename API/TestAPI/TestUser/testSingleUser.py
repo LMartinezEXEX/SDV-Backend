@@ -1,5 +1,4 @@
 import pytest
-import random
 from os  import path
 from pathlib import Path
 from http.cookies import SimpleCookie
@@ -12,7 +11,7 @@ from main import app
 
 client = TestClient(app)
 
-single_user = USERS[ random.randrange(len(USERS)) ]
+single_user = USERS[0]
 pytest.USER_AUTH = None
 
 @pytest.mark.parametrize(
@@ -97,29 +96,6 @@ def test_update_icon(email, password, dir_file, file, expected_codes, fail_messa
     file_to_upload.close()
     assert response.status_code in expected_codes, f'Error: {response.content.decode()}\n'
     assert response.json() == compare_message
-
-def test_profile():
-    response = client.get(
-        "/user/profile/",
-        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
-    )
-    assert response.status_code == 200, f'Error: {response.content.decode()}\n'
-
-def test_logout():
-    response = client.post(
-        "/user/logout/",
-        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
-    )
-    assert response.status_code == 200, f'Error: {response.content.decode()}\n'
-    assert response.json() == { "email": single_user["email"], "result": "success" }
-
-def test_profile_after_logout():
-    
-    response = client.get(
-        "/user/profile/",
-        headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
-    )
-    assert response.status_code in [400, 401, 403, 422], f'Error: {response.content.decode()}\n'
 
 """ Running with python3.8 -m pytest -s API/TestAPI/TestUser/<this_file_name>
 """
