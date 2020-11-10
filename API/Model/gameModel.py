@@ -51,13 +51,6 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
     return {"Player_Id": player_id}
 
 
-# def get_init_game_data(game_id: int, player_id: int):
-#     minister_id = create_first_turn(game_id=game_id)
-#     amount_players = players_in_game(game_id=game_id)
-#     rol_and_loyalty = get_player_rol_and_loyalty(player_id=player_id)
-#     return {"Minister_Id": minister_id, "Amount of Players": amount_players,
-#            "Rol": rol_and_loyalty.get("Rol"), "Loyalty": rol_and_loyalty.get("Loyalty")}
-
 def init_game_with_ids(game_id: int, player_id: int):
     check_init_conditions(game_id=game_id, player_id=player_id)
     minister_id = create_first_turn(game_id=game_id)
