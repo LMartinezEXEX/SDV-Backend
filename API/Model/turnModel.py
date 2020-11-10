@@ -14,7 +14,6 @@ class PlayerPromulgate(BaseModel):
     candidate_id: int
     to_promulgate: StrictInt
 
-
 class Spell(str, Enum):
     GUESSING = "Guessing"
     CRUCIO = "Crucio"
@@ -23,6 +22,10 @@ class Spell(str, Enum):
 class SpellData(BaseModel):
     minister_id: int
     player_id: int
+
+class TurnFormula(BaseModel):
+    minister_id: int
+    director_id: int
 
 
 def check_game_state(game_id: int):
@@ -50,6 +53,12 @@ def check_game_with_at_least_one_turn(game_id: int):
 
     if turns == 0:
         raise turn_hasnt_started_exception
+
+
+def check_and_get_player_ids(game_id: int):
+    check_game_state(game_id)
+
+    return {"Player ids": db_turn.get_all_players_id(game_id)}
 
 
 def get_next_MM(game_id: int):
@@ -194,3 +203,24 @@ def check_and_execute_crucio(game_id: int, minister_id: int, player_id: int):
         raise player_already_investigated_exception
 
     return {"Fenix loyalty": db_turn.execute_crucio(game_id, player_id)}
+
+def check_and_get_director_candidates(game_id: int):
+    check_game_with_at_least_one_turn(game_id)
+
+    return {"director candidates": db_turn.director_available_candidates(game_id)}
+
+
+def check_and_set_director_candidate(game_id, minister_id, director_id):
+    check_game_with_at_least_one_turn(game_id)
+
+    # Player is not current minister
+    if not db_turn.is_current_minister(game_id, minister_id):
+        raise player_isnt_minister_exception
+
+    # Alredy selected director candidate
+    if db_turn.already_selected_director_candidate(game_id):
+        raise director_candidate_already_set_exception
+
+    formula = db_turn.select_DD_candidate(game_id, director_id)
+
+    return {"candidate minister id": formula[0], "candidate director id": formula[1]}

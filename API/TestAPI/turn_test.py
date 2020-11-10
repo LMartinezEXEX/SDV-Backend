@@ -1,6 +1,6 @@
 from API.TestAPI.test_functions import *
 
-# -TEST-CLEARS-THE-DATABASE-BEFORE-STARTING--------------------------------------
+# -SET-UP-----------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -10,14 +10,17 @@ def init_data(request):
     request.addfinalizer(clean_db)
 
 
-# -TEST-CLEARS-DATABASE-AFTER-FINISHING------------------------------------------
+# -TEAR-DOWN--------------------------------------------------------------------
+
 
 
 def clean_db():
     db.drop_all_tables(with_all_data=True)
     db.create_tables()
 
+
 # TESTS--------------------------------------------------------------------------
+
 '''
 Test correct response when trying to take action in a game that hasn't started
 '''
@@ -454,6 +457,7 @@ def test_game_check_six_death_eater_promulgations():
             card_type=1)
         execute_spell(game_data[0], "Guessing", game_data[1] + i + 2, 1)
 
+
     response = check_game_state(game_id=game_data[0])
 
     assert response.status_code == 200
@@ -791,3 +795,258 @@ def test_available_spells_board_3():
             "Guessing",
             game_data[1] + 1 + i,
             game_data[1] + i)
+
+'''        
+Test endpoint returns all ids (except candidate for minister) when asking
+for director candidate ids, because theres no restriction with preivous
+selected formula
+'''
+
+
+def test_get_director_candidate_ids_with_no_restriction():
+    game_data = game_factory(10, 1)
+
+    response = get_director_candidates(game_data[0])
+
+    candidates = []
+
+    for i in range(9):
+        candidates.append(game_data[1] + 1 + i)
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Assert correst response when trying ro get director candidates with
+no turn, (i.e. candidate minister) yet.
+'''
+
+
+def test_get_director_candidate_ids_with_no_turn():
+    game_data = game_factory(10, 0)
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
+Test correct response when there's a restriction because of a previous
+accepted formula in the game
+'''
+
+
+def test_get_director_candidates_ids_with_minister_restriction():
+    game_data = game_factory(7, 2)
+
+    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 3,
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Assert correct response, we know the valid director candidate ids; it should be
+retrived by the endpoint in the real game
+'''
+
+
+def test_set_director_candidate():
+    game_data = game_factory(10, 1)
+
+    response = set_director_candidate(
+        game_data[0], game_data[1], game_data[1] + 7)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "candidate minister id": game_data[1],
+        "candidate director id": game_data[1] + 7}
+
+
+'''
+Assert that is not possible set director with no turn started
+'''
+
+
+def test_set_director_with_no_turn():
+    game_data = game_factory(10, 0)
+
+    response = set_director_candidate(
+        game_data[0], game_data[1], game_data[1] + 7)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
+Test correct response when the player who sets the director candidate isn't
+the current minister in the current turn
+'''
+
+
+def test_set_director_with_incorret_minister_id():
+    game_data = game_factory(10, 1)
+
+    response = set_director_candidate(
+        game_data[0], game_data[1] + 20, game_data[1] + 7)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not minister"}
+
+
+'''
+Assert correct response when trying to set twice director candidate, regardless
+of the id
+'''
+
+
+def test_set_director_twice():
+    game_data = game_factory(10, 3)
+
+    set_director_candidate(game_data[0], game_data[1] + 2, game_data[1] + 7)
+
+    response = set_director_candidate(
+        game_data[0], game_data[1] + 2, game_data[1] + 10)
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Already set director candidate in current turn"}
+
+
+'''
+This test simulates a legislative session (without cards work), to assert
+the correct director candidates in different turns
+'''
+
+
+def test_get_director_candidate_after_multiple_selected_director():
+    game_data = game_factory(7, 3)
+
+    set_director_candidate(game_data[0], game_data[1] + 2, game_data[1])
+
+    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
+
+    candidates = [
+        game_data[1] + 1,
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    set_director_candidate(game_data[0], game_data[1] + 3, game_data[1] + 1)
+
+    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 2,
+        game_data[1] + 5,
+        game_data[1] + 6]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    set_director_candidate(game_data[0], game_data[1] + 4, game_data[1] + 6)
+
+    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], False)
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 2,
+        game_data[1] + 4,
+        game_data[1] + 6]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+This test simulates a legislative session (without cards work) with five
+alive player to test this elegibility condition in the game
+'''
+
+
+def test_get_director_candidate_ids_with_five_player_restriction():
+    game_data = game_factory(5, 1)
+
+    set_director_candidate(game_data[0], game_data[1], game_data[1] + 3)
+
+    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], True)
+
+    candidates = [game_data[1],
+                  game_data[1] + 2,
+                  game_data[1] + 4]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    set_director_candidate(game_data[0], game_data[1] + 1, game_data[1] + 2)
+
+    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], False)
+
+    candidates = [game_data[1],
+                  game_data[1] + 1,
+                  game_data[1] + 4]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+    set_director_candidate(game_data[0], game_data[1] + 2, game_data[1])
+
+    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], False)
+
+    candidates = [
+        game_data[1],
+        game_data[1] + 1,
+        game_data[1] + 2,
+        game_data[1] + 4]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}
+
+
+'''
+Test director candidates elegibility with 5 alive player between 7 players
+'''
+
+
+def test_get_director_candidate_ids_with_five_player_dead_players():
+    game_data = game_factory(7, 1, 1, True, 2)
+
+    set_director_candidate(game_data[0], game_data[1] + 2, game_data[1] + 4)
+
+    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], True, 2)
+
+    candidates = [game_data[1] + 2,
+                  game_data[1] + 5,
+                  game_data[1] + 6]
+
+    response = get_director_candidates(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"director candidates": candidates}

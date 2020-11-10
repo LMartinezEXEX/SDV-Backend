@@ -73,4 +73,8 @@ player_already_investigated_exception = HTTPException(
 spell_not_used_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="A spell is available and need to be used before start of next turn"
+
+director_candidate_already_set_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Already set director candidate in current turn"
 )

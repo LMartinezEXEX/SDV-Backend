@@ -30,9 +30,8 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
                     icon="".encode(),
                     creation_date=datetime.datetime.today(),
                     last_access_date=datetime.datetime.today(),
-                    is_validated=True,
-                    refresh_token="HolaKappa",
-                    refresh_token_expires=datetime.datetime.today())
+                    is_validated=True)
+
         users.append(user)
         total_players += 1
 
@@ -60,6 +59,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     turn = 1
     # Join players in game
     for user in users:
+
         is_Fenix = turn % 2 == 0
         player = Player(turn=turn,
                         user=user,
@@ -124,7 +124,6 @@ def execute_spell(game_id: int, spell: str, minister_id: int, player_id: int):
         "player_id": player_id
     }
     )
-
 
 def player_vote(game_id, player_id, vote):
     return client.put('/game/{}/vote'.format(game_id), json={
