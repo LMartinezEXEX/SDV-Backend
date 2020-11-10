@@ -46,6 +46,12 @@ def check_game_with_at_least_one_turn(game_id: int):
         raise turn_hasnt_started_exception
 
 
+def check_and_get_player_ids(game_id: int):
+    check_game_state(game_id)
+
+    return {"Player ids": db_turn.get_all_players_id(game_id)}
+
+
 def get_next_MM(game_id: int):
     check_game_state(game_id)
     return {

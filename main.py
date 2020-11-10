@@ -209,7 +209,17 @@ async def init_game(id: int, player_id: int):
     return init_game_with_ids(game_id=id, player_id=player_id)
 
 
+# Get list of player ids in the game
+@app.get("/game/{id}/players",
+         status_code=status.HTTP_200_OK,
+         tags=["Players id"]
+         )
+async def get_player_ids(id: int):
+    return check_and_get_player_ids(id)
+
 # Get next player id candidate for minister
+
+
 @app.put("/game/{id}/select_MM",
          status_code=status.HTTP_200_OK,
          tags=["Next minister candidate"]
