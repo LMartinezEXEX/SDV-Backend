@@ -120,7 +120,6 @@ async def get_user_icon(email: EmailStr):
     except BaseException:
         raise not_found_exception
 
-
 @app.put(
     USER_UPDATE_USERNAME_URL,
     status_code=status.HTTP_200_OK,
@@ -279,6 +278,26 @@ async def get_game_status(id: int):
     return game_status(id)
 
 
+# Get available spell in current turn
+@app.get("/game/{id}/spell",
+         status_code=status.HTTP_200_OK,
+         tags=["Available spell"]
+         )
+async def get_available_spell(id: int):
+    return check_and_get_available_spell(id)
+
+
+# Execute a spell
+@app.put("/game/{id}/execute_spell",
+         status_code=status.HTTP_200_OK,
+         tags=["Execute spell"]
+         )
+async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
+    if spell == Spell.GUESSING:
+        return check_and_execute_guessing(id, spell_data.minister_id)
+    elif spell == Spell.CRUCIO:
+        return check_and_execute_crucio(id, spell_data.minister_id, spell_data.player_id)
+      
 # Get available director candidates id's
 
 @app.get("/game/{id}/director_candidates",
@@ -297,3 +316,4 @@ async def get_director_candidates(id: int):
          )
 async def set_director_candidate(id: int, formula: TurnFormula):
     return check_and_set_director_candidate(id, formula.minister_id, formula.director_id)
+
