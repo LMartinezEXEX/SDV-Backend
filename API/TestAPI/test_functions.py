@@ -5,6 +5,7 @@ from pony.orm import db_session, select
 from Database.database import *
 from fastapi.testclient import TestClient
 
+
 client = TestClient(app)
 
 '''
@@ -147,3 +148,35 @@ def set_director_candidate(game_id, minister_id, director_id):
         "director_id": director_id
     }
     )
+
+
+# --------------------------------------
+
+# Functions for test game
+
+@db_session()
+def check_players_roles(game_id: int):
+    game = Game[game_id]
+    for player in game.players:
+        if (player.rol != "Fenix Order") and (player.rol != "Death Eater") and (player.rol != "Voldemort"):
+            return 0
+    return 1
+
+
+@db_session()
+def check_players_loyalty(game_id: int):
+    game = Game[game_id]
+    for player in game.players:
+        if (player.loyalty != "Fenix Order") and (player.loyalty != "Death Eater"):
+            return 0
+    return 1
+
+
+@db_session()
+def count_roles_from_game(game_id: int, rol: str):
+    game = Game[game_id]
+    count = 0
+    for player in game.players:
+        if player.rol == rol:
+            count = count+1
+    return count

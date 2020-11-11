@@ -5,6 +5,7 @@ from datetime import *
 from Database.database import *
 from fastapi.testclient import TestClient
 from pydantic import EmailStr
+from API.TestAPI.test_functions import check_players_roles, check_players_loyalty, count_roles_from_game
 
 
 client = TestClient(app)
@@ -68,7 +69,7 @@ def init_data(request):
 # Test Functions
 
 def start_new_game(user_email: EmailStr):
-    return client.post('game/create/'. format(uu))
+    return client.post('game/create/')
 
 
 def join_a_game(game_id: int, user_email: EmailStr):
@@ -247,4 +248,86 @@ def test_init_game():
      assert response.status_code == 200
 
 
+def test_game_initialized():
+     game_id = 1
 
+
+def test_check_roles():
+     game_id = 1
+     result = check_players_roles(game_id=game_id)
+
+     assert result == 1
+
+
+def test_check_loyalty():
+     game_id = 1
+     result = check_players_loyalty(game_id=game_id)
+
+     assert result == 1
+
+def test_count_roles_from_game():
+     game_id = 1
+     fenixes = count_roles_from_game(game_id=game_id, rol="Fenix Order")
+     death_eaters = count_roles_from_game(game_id=game_id, rol="Death Eater")
+     voldemort = count_roles_from_game(game_id=game_id, rol="Voldemort")
+
+     assert fenixes == 3
+     assert death_eaters == 1
+     assert voldemort == 1
+
+
+def test_list_games():
+     game_params = {"email": 'tomasosiecki@gmail.com', "name": 'MLBB', "min_players": 5, "max_players": 5}
+     response1 = client.post(
+          'game/create/',
+          json = game_params
+     )
+     response2 = client.post(
+          'game/create/',
+          json = game_params
+     )
+     response3 = client.post(
+          'game/create/',
+          json = game_params
+     )
+
+     response = client.get(
+          'game/list_games/'
+     )
+
+     expected_list = [
+                      {
+                       "id": 2,
+                       "name": "MLBB",
+                       "owner": "tomi",
+                       "min_players": 5,
+                       "max_players": 5,
+                       "players": 1
+                     },
+                     {
+                      "id": 3,
+                      "name": "MLBB",
+                      "owner": "tomi",
+                      "min_players": 5,
+                      "max_players": 5,
+                      "players": 1
+                     },
+                     {
+                      "id": 4,
+                      "name": "MLBB",
+                      "owner": "tomi",
+                      "min_players": 5,
+                      "max_players": 5,
+                      "players": 1
+                     }
+                    ]
+     
+
+     assert response1.status_code == 201
+     assert response2.status_code == 201
+     assert response3.status_code == 201
+     assert response.status_code == 200
+     assert response.json() == expected_list
+     
+     
+     

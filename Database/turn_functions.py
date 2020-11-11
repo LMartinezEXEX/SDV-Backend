@@ -1,6 +1,6 @@
 from pony.orm import *
 from Database.database import *
-from Database.game_functions import get_player_by_id
+from Database.game_functions import get_player_by_id, get_game_by_id, get_player_set, assign_roles, set_game_init
 import random
 
 
@@ -493,6 +493,35 @@ def check_status(game_id: int):
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id]
 
+
+@db_session()
+def create_first_turn(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    players_set = get_player_set(game_id=game_id)
+    next_minister = get_next_candidate(players_set)
+    generate_turn(
+        game_instance=game,
+        turn_number=1,
+        candidate_minister=next_minister,
+        candidate_director=next_minister,
+        last_minister=None,
+        last_director=None,
+        current_minister=next_minister,
+        current_director=next_minister)
+    generate_card(3,1,game_id)
+    assign_roles(game_id=game_id)
+    set_game_init(game_id)
+    return next_minister.id
+
+
+@db_session()
+def get_current_minister(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    return turn.current_minister.id
+
+
 # -SPELLS-----------------------------------------------------------------------
 
 
@@ -606,3 +635,4 @@ def execute_crucio(game_id, player_id):
     board.spell_available = False
 
     return True if player.loyalty == "Fenix" else False
+
