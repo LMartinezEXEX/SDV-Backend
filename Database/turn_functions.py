@@ -87,6 +87,17 @@ def get_turn_in_game(game_id: int, turn_number: int):
                     game_id and t.turn_number == turn_number)
 
 
+@db_session()
+def is_player_investigated(player_id: int):
+    player = get_player_by_id(player_id)
+    return player.is_investigated
+
+
+@db_session()
+def is_board_available_spell(game_id):
+    return Board[game_id].spell_available
+
+
 '''
 Get all players id in the game
 '''
@@ -449,6 +460,7 @@ def promulgate(game_id: int, card_type: int):
 
     if card_type:
         board.death_eater_promulgation += 1
+        check_available_spell(game_id)
     else:
         board.fenix_promulgation += 1
 
@@ -481,8 +493,6 @@ def check_status(game_id: int):
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id]
 
-#----------------------------
-#Funciones Tomi
 
 @db_session()
 def create_first_turn(game_id: int):
@@ -512,4 +522,117 @@ def get_current_minister(game_id: int):
     return turn.current_minister.id
 
 
-#-------------------------------
+# -SPELLS-----------------------------------------------------------------------
+
+
+@db_session()
+def check_available_spell(game_id: int):
+    board = Board[game_id]
+    death_eater_promulgation = board.death_eater_promulgation
+    player_cuantity = Game[game_id].players.count()
+
+    if (player_cuantity == 5 or player_cuantity ==
+            6) and death_eater_promulgation >= 3:
+        board.spell_available = True
+
+    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2:
+        board.spell_available = True
+
+    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
+        board.spell_available = True
+
+
+@db_session()
+def get_current_turn_in_game(game_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+
+    return get_turn_in_game(game_id, turn_number)
+
+
+def available_spell_in_board_1(player_cuantity: int, promulgations: int):
+    if promulgations == 3:
+        spell = "Guessing"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+def available_spell_in_board_2(player_cuantity: int, promulgations: int):
+    if promulgations == 2:
+        spell = "Crucio"
+    elif promulgations == 3:
+        spell = "Imperius"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+def available_spell_in_board_3(player_cuantity: int, promulgations: int):
+    if promulgations == 1 or promulgations == 2:
+        spell = "Crucio"
+    elif promulgations == 3:
+        spell = "Imperius"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
+    else:
+        spell = ""
+
+    return spell
+
+
+@db_session()
+def available_spell_in_game_conditions(game_id: int):
+    board = Board[game_id]
+    current_turn = get_current_turn_in_game(game_id)
+    death_eater_promulgation = Board[game_id].death_eater_promulgation
+    player_cuantity = Game[game_id].players.count()
+
+    spell = ""
+    if player_cuantity == 5 or player_cuantity == 6:
+        spell = available_spell_in_board_1(
+            player_cuantity, death_eater_promulgation)
+
+    elif player_cuantity == 7 or player_cuantity == 8:
+        spell = available_spell_in_board_2(
+            player_cuantity, death_eater_promulgation)
+
+    elif player_cuantity == 9 or player_cuantity == 10:
+        spell = available_spell_in_board_3(
+            player_cuantity, death_eater_promulgation)
+
+    return spell
+
+
+@db_session()
+def execute_guessing(game_id):
+    game = Game[game_id]
+    board = Board[game_id]
+    game_deck_cuantity = len(game.card)
+    cards = Card.select(
+        lambda c: c.game.id == game_id and c.order > (
+            game_deck_cuantity -
+            3)).order_by(
+        Card.order)[
+                :3]
+
+    board.spell_available = False
+
+    return [cards[0].type, cards[1].type, cards[2].type]
+
+
+@db_session()
+def execute_crucio(game_id, player_id):
+    board = Board[game_id]
+    player = get_player_by_id(player_id)
+
+    player.is_investigated = True
+    board.spell_available = False
+
+    return True if player.loyalty == "Fenix" else False
+

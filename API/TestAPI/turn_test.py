@@ -9,7 +9,9 @@ def init_data(request):
     db.create_tables()
     request.addfinalizer(clean_db)
 
+
 # -TEAR-DOWN--------------------------------------------------------------------
+
 
 
 def clean_db():
@@ -17,8 +19,7 @@ def clean_db():
     db.create_tables()
 
 
-# -TESTS------------------------------------------------------------------------
-
+# TESTS--------------------------------------------------------------------------
 
 '''
 Test correct response when trying to take action in a game that hasn't started
@@ -454,6 +455,8 @@ def test_game_check_six_death_eater_promulgations():
             game_id=game_data[0],
             minister_id=game_data[1] + i + 2,
             card_type=1)
+        execute_spell(game_data[0], "Guessing", game_data[1] + i + 2, 1)
+
 
     response = check_game_state(game_id=game_data[0])
 
@@ -467,6 +470,333 @@ def test_game_check_six_death_eater_promulgations():
 
 
 '''
+Tests correct response when trying to execute any spell with a game with no turn
+'''
+
+
+def test_spell_with_with_no_turn():
+    game_data = game_factory(5, 0)
+
+    response = execute_spell(game_data[0], "Guessing", game_data[1], 1)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "No turn started yet"}
+
+
+'''
+Assert a spell cant be executed if the one executing it isn't the minister of
+the current turn
+'''
+
+
+def test_spell_with_wrong_minister_id():
+    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1] + 20,
+        game_data[1] + 2)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not minister"}
+
+
+'''
+Assert correct response when executing Guessing
+'''
+
+
+@db_session()
+def test_guessing():
+    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(game_data[0], "Guessing", game_data[1], 1)
+
+    cards = select(
+        c for c in Card if c.game.id == game_data[0] and c.order > 0).order_by(
+        Card.order)[
+            :3]
+    cards_type = [cards[0].type, cards[1].type, cards[2].type]
+
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json() == {"cards": cards_type}
+
+
+'''
+Assert correct response when executing Crucio
+'''
+
+
+def test_crucio():
+    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1],
+        game_data[1] + 2)
+
+    assert response.status_code == 200
+    assert response.json() == {"Fenix loyalty": False}
+
+
+'''
+Assert imposibility to execute Crucio in a dead player
+'''
+
+
+def test_crucio_in_dead_player():
+    game_data = game_factory(7, 2, 1, True, 2, 0, 1)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1] + 3,
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1] + 3,
+        game_data[1])
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is dead"}
+
+
+'''
+Test correct response when trying to execute crucio in a player who
+was already investigated
+'''
+
+
+def test_crucio_twice_in_player():
+    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1],
+        game_data[1] + 2)
+
+    start_new_turn(game_id=game_data[0])
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1] + 1,
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1] + 1,
+        game_data[1] + 2)
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Player has been already investigated"}
+
+
+'''
+Assert Crucio can't be executed in a player who isn't in the game
+'''
+
+
+def test_crucio_in_invalid_player():
+    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Crucio",
+        game_data[1],
+        game_data[1] + 20)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not in this game"}
+
+
+'''
+Test correct response with no available spells in a game with no turn
+'''
+
+
+def test_available_spell_with_no_turn():
+    game_data = game_factory(7, 0)
+
+    response = client.get('/game/{}/spell'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+
+'''
+Test correct response with a more or less than 10 or 5 (respectively) players.
+i.e. test with an 'non-existent' board
+'''
+
+
+def test_available_spells_board_with_invalid_players_count():
+    game_data = game_factory(2, 0)
+    response = client.get('/game/{}/spell'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": ""}
+
+
+'''
+Test correct spells in board with 5 to 6 players
+'''
+
+
+def test_available_spells_board_1():
+    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = client.get('/game/{}/spell'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Guessing"}
+
+    execute_spell(
+        game_data[0],
+        response.json()["Spell"],
+        game_data[1],
+        game_data[1])
+
+    for i in range(2):
+        start_new_turn(game_id=game_data[0])
+        response = minister_promulgate(
+            game_id=game_data[0],
+            minister_id=game_data[1] + 1 + i,
+            card_type=1)
+        response = client.get('/game/{}/spell'.format(game_data[0]))
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": "Avada Kedavra"}
+
+        # Dont use Avada Kedavra because it's not implemented, yet.
+        execute_spell(game_data[0], "Crucio", game_data[1], game_data[1] + i)
+
+
+'''
+Test correct spells in board with 7 to 8 players
+'''
+
+
+def test_available_spells_board_2():
+    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = client.get('/game/{}/spell'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Crucio"}
+
+    execute_spell(
+        game_data[0],
+        response.json()["Spell"],
+        game_data[1],
+        game_data[1] + 1)
+
+    spells = ["Imperius", "Avada Kedavra", "Avada Kedavra"]
+    for i in range(3):
+        start_new_turn(game_id=game_data[0])
+        response = minister_promulgate(
+            game_id=game_data[0],
+            minister_id=game_data[1] + 1 + i,
+            card_type=1)
+        response = client.get('/game/{}/spell'.format(game_data[0]))
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": spells[i]}
+
+        # Dont use Avada Kedavra or Imperius because it's not implemented, yet.
+        execute_spell(
+            game_data[0],
+            "Guessing",
+            game_data[1] + 1 + i,
+            game_data[1] + i)
+
+
+'''
+Test correct spells in board with 9 to 10 players
+'''
+
+
+def test_available_spells_board_3():
+    game_data = game_factory(10, 1, 1, False, 0, 0, 0)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = client.get('/game/{}/spell'.format(game_data[0]))
+
+    assert response.status_code == 200
+    assert response.json() == {"Spell": "Crucio"}
+
+    execute_spell(
+        game_data[0],
+        response.json()["Spell"],
+        game_data[1],
+        game_data[1] + 1)
+
+    spells = ["Crucio", "Imperius", "Avada Kedavra", "Avada Kedavra"]
+    for i in range(4):
+        start_new_turn(game_id=game_data[0])
+        minister_promulgate(
+            game_id=game_data[0],
+            minister_id=game_data[1] + 1 + i,
+            card_type=1)
+
+        response = client.get('/game/{}/spell'.format(game_data[0]))
+
+        assert response.status_code == 200
+        assert response.json() == {"Spell": spells[i]}
+
+        # Dont use Avada Kedavra or Imperius because it's not implemented, yet.
+        response = execute_spell(
+            game_data[0],
+            "Guessing",
+            game_data[1] + 1 + i,
+            game_data[1] + i)
+
+'''        
 Test endpoint returns all ids (except candidate for minister) when asking
 for director candidate ids, because theres no restriction with preivous
 selected formula

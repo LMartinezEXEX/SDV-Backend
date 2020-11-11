@@ -32,6 +32,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
                     creation_date=datetime.datetime.today(),
                     last_access_date=datetime.datetime.today(),
                     is_validated=True)
+
         users.append(user)
         total_players += 1
 
@@ -49,7 +50,8 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     Board(game=game,
           fenix_promulgation=fenix_promulgation,
           death_eater_promulgation=death_eater_promulgation,
-          election_counter=0)
+          election_counter=0,
+          spell_available=False)
     commit()
 
     game_id = game.id
@@ -58,10 +60,12 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     turn = 1
     # Join players in game
     for user in users:
+
+        is_Fenix = turn % 2 == 0
         player = Player(turn=turn,
                         user=user,
-                        rol='Fenix',
-                        loyalty='Fenix',
+                        rol='Fenix' if is_Fenix else 'Mortifago',
+                        loyalty='Fenix' if is_Fenix else 'Mortifago',
                         is_alive=True,
                         chat_enabled=True,
                         is_investigated=False,
@@ -114,6 +118,13 @@ def check_game_state(game_id):
 def get_director_candidates(game_id):
     return client.get('/game/{}/director_candidates'.format(game_id))
 
+
+def execute_spell(game_id: int, spell: str, minister_id: int, player_id: int):
+    return client.put('/game/{}/execute_spell?spell={}'.format(game_id, spell), json={
+        "minister_id": minister_id,
+        "player_id": player_id
+    }
+    )
 
 def player_vote(game_id, player_id, vote):
     return client.put('/game/{}/vote'.format(game_id), json={
