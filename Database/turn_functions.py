@@ -552,8 +552,8 @@ def get_current_turn_in_game(game_id: int):
 def available_spell_in_board_1(player_cuantity: int, promulgations: int):
     if promulgations == 3:
         spell = "Guessing"
-    elif promulgations == 4 or promulgations == 5:
-        spell = "Avada Kedavra"
+    #elif promulgations == 4 or promulgations == 5:
+    #    spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -565,8 +565,8 @@ def available_spell_in_board_2(player_cuantity: int, promulgations: int):
         spell = "Crucio"
     elif promulgations == 3:
         spell = "Imperius"
-    elif promulgations == 4 or promulgations == 5:
-        spell = "Avada Kedavra"
+    #elif promulgations == 4 or promulgations == 5:
+    #    spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -578,8 +578,8 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
         spell = "Crucio"
     elif promulgations == 3:
         spell = "Imperius"
-    elif promulgations == 4 or promulgations == 5:
-        spell = "Avada Kedavra"
+    #elif promulgations == 4 or promulgations == 5:
+    #    spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -635,4 +635,3 @@ def execute_crucio(game_id, player_id):
     board.spell_available = False
 
     return True if player.loyalty == "Fenix" else False
-
