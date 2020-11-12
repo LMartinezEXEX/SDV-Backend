@@ -531,14 +531,15 @@ def check_available_spell(game_id: int):
     death_eater_promulgation = board.death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
 
+    #The 'and death_eater_promulgation < 4' should be removed in next spint
     if (player_cuantity == 5 or player_cuantity ==
-            6) and death_eater_promulgation >= 3:
+            6) and death_eater_promulgation >= 3 and death_eater_promulgation < 4:
         board.spell_available = True
 
-    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2:
+    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2 and death_eater_promulgation < 4:
         board.spell_available = True
 
-    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
+    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1 and death_eater_promulgation < 4:
         board.spell_available = True
 
 
