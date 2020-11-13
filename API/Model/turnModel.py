@@ -1,6 +1,6 @@
 from enum import Enum
 import Database.turn_functions as db_turn
-from Database.game_functions import get_game_state, is_player_in_game_by_id
+from Database.game_functions import get_game_state, is_player_in_game_by_id, get_game_by_id
 from pydantic import BaseModel, StrictInt
 from API.Model.turnExceptions import *
 
@@ -27,6 +27,9 @@ class TurnFormula(BaseModel):
     minister_id: int
     director_id: int
 
+class DiscardData(BaseModel):
+    player_id: int
+    to_discard: int
 
 def check_game_state(game_id: int):
     state = get_game_state(game_id)
@@ -224,3 +227,23 @@ def check_and_set_director_candidate(game_id, minister_id, director_id):
     formula = db_turn.select_DD_candidate(game_id, director_id)
 
     return {"candidate minister id": formula[0], "candidate director id": formula[1]}
+
+
+#--------------------- Discard functions ------------------------
+
+def discard_selected_card(game_id: int, discard_data: DiscardData):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    if not db_turn.is_current_minister(game_id=game_id, player_id=discard_data.player_id):
+        raise player_isnt_minister_exception
+    return db_turn.discard_card(game_id=game_id, data=discard_data.to_discard)
+
+
+def get_cards_for_director(game_id: int, player_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    if not db_turn.is_current_director(game_id=game_id, player_id=player_id):
+        raise player_isnt_director_exception
+    return {"cards": db_turn.get_not_discarded_cards(game_id=game_id)}
+
+#----------------------------------------------

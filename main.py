@@ -202,6 +202,25 @@ async def list_games():
 async def has_the_game_started(id: int, player_id: int):
     return check_if_game_started(game_id=id, player_id=player_id)
 
+
+# Discard card
+
+@app.put("/game/{id}/discard",
+         status_code=status.HTTP_200_OK,
+         tags=["Discard card"])
+async def discard(id: int, discard_data: DiscardData):
+    return discard_selected_card(game_id=id, discard_data=discard_data)
+
+# Get the remaining two cards for the Director to promulgate
+
+@app.get("/game/{id}/director_cards",
+         status_code=status.HTTP_200_OK,
+         tags=["Not discarded cards"])
+async def get_director_cards_to_promulgate(id: int, player_id: int):
+    return get_cards_for_director(game_id=id, player_id=player_id)
+
+
+
 #-------------------------
 
 # Create Game
