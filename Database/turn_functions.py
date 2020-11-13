@@ -536,7 +536,10 @@ def get_not_discarded_cards(game_id: int):
     game_deck_quantity = len(game.card)
     card_list = []
     cards = Card.select(
-        lambda c: (c.game.id == game_id) and (c.order > (game_deck_quantity - 6)) and (not c.discarded)
+        lambda c: (c.game.id == game_id) and
+        (c.order > (game_deck_quantity - 6)) and
+        (c.order <= (game_deck_quantity - 3)) and
+         (not c.discarded)
         ).order_by(Card.order)[:2]
     for card in cards:
         card_list.append(card.type)
