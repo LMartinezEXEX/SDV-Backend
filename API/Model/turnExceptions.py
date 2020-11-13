@@ -80,9 +80,6 @@ director_candidate_already_set_exception = HTTPException(
     detail="Already set director candidate in current turn"
 )
 
-
-#-------------- Tomás Exceptions -------------------------
-
 invalid_card_type_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="The type of the card to discard is invalid"
