@@ -136,7 +136,7 @@ def check_join_conditions(game_id: int, user_email: EmailStr):
         raise user_not_found_exception
     if is_player_in_game_by_email(user_email, game_id):
         raise player_already_in_game_exception
-    if game.players.count() == game.max_players:
+    if game.players.count() >= game.max_players:
         raise max_players_reach_exception
     if game.state == 1:
         raise game_has_started_exception

@@ -2,6 +2,7 @@ from pony.orm import *
 from Database.database import *
 from Database.game_functions import get_player_by_id, get_game_by_id, get_player_set, assign_roles, set_game_init
 import random
+from API.Model.turnExceptions import invalid_card_type_exception
 
 
 '''
@@ -140,7 +141,8 @@ def generate_card(quantity: int, order_in_deck: int, game_id: int):
         card_type = random.randint(0, 1)
         Card(order=order_in_deck,
              type=card_type,
-             game=game)
+             game=game,
+             discarded=False)
         order_in_deck += 1
 
 
@@ -432,11 +434,8 @@ def generate_3_cards(game_id: int):
     game_deck_cuantity = len(game.card)
 
     cards = Card.select(
-        lambda c: c.game.id == game_id and c.order > (
-            game_deck_cuantity -
-            3)).order_by(
-        Card.order)[
-                :3]
+        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 3)
+        ).order_by(Card.order)[:3]
 
     generate_card(3, game_deck_cuantity + 1, game_id)
 
@@ -520,6 +519,44 @@ def get_current_minister(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id=game_id)
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_minister.id
+
+
+#------------- Discard Functions-----------------------------
+
+@db_session()
+def is_current_director(game_id: int, player_id: int):
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    return turn.current_director.id == player_id
+
+
+@db_session()
+def get_not_discarded_cards(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    game_deck_quantity = len(game.card)
+    card_list = []
+    cards = Card.select(
+        lambda c: (c.game.id == game_id) and (c.order > (game_deck_quantity - 6)) and (not c.discarded)
+        ).order_by(Card.order)[:2]
+    for card in cards:
+        card_list.append(card.type)
+    return card_list
+
+
+@db_session()
+def discard_card(game_id: int, data: int):
+    game = get_game_by_id(game_id=game_id)
+    deck_quantity = len(game.card)
+    card = Card.select(
+        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data) 
+        ).order_by(Card.order).first()
+    if not card:
+        raise invalid_card_type_exception
+    card.discarded = True
+    if not card.discarded:
+        raise not_discarded_exception
+    return {"message": "Card discarded"}
+    
 
 
 # -SPELLS-----------------------------------------------------------------------

@@ -4,6 +4,8 @@ from main import app
 from pony.orm import db_session, select
 from Database.database import *
 from fastapi.testclient import TestClient
+from API.Model.gameModel import GameParams, EmailParameter
+from API.Model.turnModel import DiscardData
 
 
 client = TestClient(app)
@@ -180,3 +182,56 @@ def count_roles_from_game(game_id: int, rol: str):
         if player.rol == rol:
             count = count+1
     return count
+
+#------ New functions for test games --------------
+
+@db_session()
+def users_factory(amount_users: int):
+
+    global total_players
+    users_email = []
+    for user in range(amount_users):
+        user = User(email='usuario{}@gmail.br'.format(total_players),
+                    username='User_{}'.format(total_players),
+                    password="fachero".encode(),
+                    icon="".encode(),
+                    creation_date=datetime.datetime.today(),
+                    last_access_date=datetime.datetime.today(),
+                    is_validated=True)
+        total_players += 1
+        users_email.append(user.email)
+    
+    return users_email
+
+
+def start_new_game(game_params: GameParams):
+    return client.post(
+         'game/create/',
+         json = game_params
+     )
+
+@db_session()
+def is_player_in_game_by_id(game_id: int, player_id: int):
+    return True if Player.get(
+        lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
+
+def join_a_game(game_id: int, user_email: EmailParameter):
+     return client.put('game/join/{}'.format(game_id),
+         json= user_email)
+
+def init_the_game(game_id: int, player_id: int):
+     return client.put('game/init/{}?player_id={}'.format(game_id, player_id))
+
+def get_3_cards(game_id: int):
+    return client.put('/game/{}/get_cards'.format(game_id))
+
+def card_discard(game_id: int, discard_data: DiscardData):
+    return client.put(
+        'game/{}/discard'.format(game_id),
+        json = discard_data
+    )
+
+def get_not_discarded_cards(game_id:int, player_id: int):
+    return client.get(
+        "/game/{}/director_cards?player_id={}".format(game_id, player_id)
+    )
