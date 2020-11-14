@@ -17,6 +17,34 @@ total_players = 0
 games = 0
 
 
+'''
+Game factory creates a new game with entablished conditions:
+
+* [Required] players cuantity: int
+* [Required] turns cuantity: int = note that if the state parameter is True, there
+would be one turn started because the game initiation.
+* start: bool = If game should be initialized (always with the init game endpoint)
+* game_state: int = 1 for uninitialized game state
+                    2 for initialized game state (therefore game will start
+                    without a first turn and cant be able to call init game endpoint)
+                    3 for finished game state
+
+* dead_player: bool = If should be dead players in the game.
+* dead_cuantity: int = amount of first players that should be dead, dead_player
+must be True
+* fenix_promulgation: int
+* death_eater_promulgation: int
+
+Return:
+
+* [game_id: int, first_player_id: int] = where:
+    * game_id is the id of the game created.
+    * first_player_id is the id of the first player in the game.
+
+Note:
+1) All players with even turn number would be Fenix.
+2) Last player in game would de Voldemort.
+'''
 @db_session()
 def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
                  game_state: int = 1, dead_player: bool = False, dead_cuantity: int = 0,
