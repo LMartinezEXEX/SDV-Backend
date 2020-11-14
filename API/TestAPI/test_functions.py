@@ -87,7 +87,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     for _ in range(turns_cuantity):
         response = client.put('game/{}/select_MM'.format(game_id))
 
-    return [game_id, players[0].id]
+    return [game_id, players[0].id, total_players]
 
 
 def make_vote_and_start_new_turn(
@@ -200,7 +200,7 @@ def users_factory(amount_users: int):
                     is_validated=True)
         total_players += 1
         users_email.append(user.email)
-    
+
     return users_email
 
 

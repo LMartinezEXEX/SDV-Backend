@@ -14,6 +14,7 @@ class PlayerPromulgate(BaseModel):
     candidate_id: int
     to_promulgate: StrictInt
 
+
 class Spell(str, Enum):
     GUESSING = "Guessing"
     CRUCIO = "Crucio"
@@ -23,13 +24,16 @@ class SpellData(BaseModel):
     minister_id: int
     player_id: int
 
+
 class TurnFormula(BaseModel):
     minister_id: int
     director_id: int
 
+
 class DiscardData(BaseModel):
     player_id: int
     to_discard: int
+
 
 def check_game_state(game_id: int):
     state = get_game_state(game_id)
@@ -62,6 +66,16 @@ def check_and_get_player_ids(game_id: int):
     check_game_state(game_id)
 
     return {"Player ids": db_turn.get_all_players_id(game_id)}
+
+
+def check_and_get_players_info(game_id: int):
+    state = get_game_state(game_id)
+
+    # Game not started
+    if state == 0:
+        raise game_not_started_exception
+
+    return {"Players info": db_turn.get_players_info(game_id)}
 
 
 def get_next_MM(game_id: int):
@@ -229,8 +243,6 @@ def check_and_set_director_candidate(game_id, minister_id, director_id):
     return {"candidate minister id": formula[0], "candidate director id": formula[1]}
 
 
-#--------------------- Discard functions ------------------------
-
 def discard_selected_card(game_id: int, discard_data: DiscardData):
     if not get_game_by_id(game_id=game_id):
         raise game_not_found_exception
@@ -245,5 +257,3 @@ def get_cards_for_director(game_id: int, player_id: int):
     if not db_turn.is_current_director(game_id=game_id, player_id=player_id):
         raise player_isnt_director_exception
     return {"cards": db_turn.get_not_discarded_cards(game_id=game_id)}
-
-#----------------------------------------------

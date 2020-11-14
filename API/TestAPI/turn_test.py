@@ -1053,3 +1053,41 @@ def test_get_director_candidate_ids_with_five_player_dead_players():
 
     assert response.status_code == 200
     assert response.json() == {"director candidates": candidates}
+
+
+'''
+Test correct response when geting players ids (should be in ascending order)
+'''
+
+
+def test_get_players_id():
+    game_data = game_factory(10, 1)
+
+    response = client.get('game/{}/players'.format(game_data[0]))
+
+    ids = []
+    for i in range(10):
+        ids.append(game_data[1]+i)
+
+    assert response.status_code == 200
+    assert response.json() == {"Player ids": ids}
+
+
+'''
+Assert correct response when geting players info
+'''
+
+
+def test_get_players_info():
+    game_data = game_factory(6, 1)
+
+    response = client.get('game/{}/players_info'.format(game_data[0]))
+
+    info = []
+    for i in range(6):
+        info.append({"player_id": game_data[1]+i,
+                     "username": 'User_{}'.format(game_data[2] - 6 + i),
+                     "loyalty": "Fenix" if (i + 1) % 2 == 0 else "Mortifago"})
+
+    assert response.status_code == 200
+    assert response.json() == {"Players info": info}
