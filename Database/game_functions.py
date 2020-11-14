@@ -195,3 +195,12 @@ def get_game_list():
     return g_list
 
 
+@db_session()
+def get_current_users_in_game(game_id: int):
+    game = get_game_by_id(game_id=game_id)
+    user_list = []
+    for user in game.players.user:
+        user_list.append(
+            {"username": user.username}
+        )
+    return user_list

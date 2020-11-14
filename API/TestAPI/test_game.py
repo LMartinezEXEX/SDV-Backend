@@ -328,3 +328,21 @@ def test_get_not_discarded_cards():
      assert response.status_code == 200
      assert response.json() == not_dis_cards
      
+
+def test_get_vote_formula_dir_not_selected():
+     game_data = game_factory(players_cuantity=5, turns_cuantity=1)
+     response = get_vote_formula(game_id=game_data[0])
+     minister_id = response.json().get("minister_id")
+     director_id = response.json().get("director_id")
+
+     assert response.status_code == 200
+     assert minister_id == director_id
+
+
+def test_game_state_not_initialized():
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
+     response = game_state_in_pregame(game_id=game_data[0], player_id=game_data[1])
+     users = response.json().get("users")
+
+     assert response.status_code == 200
+     assert len(users) == 5

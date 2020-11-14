@@ -64,14 +64,16 @@ def check_if_game_started(game_id: int, player_id: int):
     if not is_player_in_game_by_id(game_id=game_id, player_id=player_id):
         raise player_not_in_game_exception
     state = get_game_state(game_id)
+    users = get_current_users_in_game(game_id=game_id)
     if not state or state == 2:
-        return {"game_state": state}
+        return {"game_state": state, "users": users}
     else:
         minister_id = get_current_minister(game_id=game_id)
         amount_players = players_in_game(game_id=game_id)
         rol_and_loyalty = get_player_rol_and_loyalty(player_id=player_id)
+        users = get_current_users_in_game(game_id=game_id)
         return {"game_state": state, "minister_id": minister_id, "amount_of_players": amount_players,
-           "rol": rol_and_loyalty.get("Rol"), "loyalty": rol_and_loyalty.get("Loyalty")}
+           "rol": rol_and_loyalty.get("Rol"), "loyalty": rol_and_loyalty.get("Loyalty"), "users": users}
 
         
 
