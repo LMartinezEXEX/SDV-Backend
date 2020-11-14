@@ -69,11 +69,7 @@ def check_and_get_player_ids(game_id: int):
 
 
 def check_and_get_players_info(game_id: int):
-    state = get_game_state(game_id)
-
-    # Game not started
-    if state == 0:
-        raise game_not_started_exception
+    check_game_state(game_id)
 
     return {"Players info": db_turn.get_players_info(game_id)}
 
