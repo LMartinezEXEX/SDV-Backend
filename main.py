@@ -250,12 +250,23 @@ async def init_game(id: int, player_id: int):
 
 
 # Get list of player ids in the game
+
 @app.get("/game/{id}/players",
          status_code=status.HTTP_200_OK,
          tags=["Players id"]
          )
 async def get_player_ids(id: int):
     return check_and_get_player_ids(id)
+
+
+# Get list of player ids, username and loyalty in the game
+
+@app.get("/game/{id}/players_info",
+         status_code=status.HTTP_200_OK,
+         tags=["Players info"]
+         )
+async def get_players_info(id: int):
+    return check_and_get_players_info(id)
 
 # Get next player id candidate for minister
 
@@ -338,7 +349,7 @@ async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
         return check_and_execute_guessing(id, spell_data.minister_id)
     elif spell == Spell.CRUCIO:
         return check_and_execute_crucio(id, spell_data.minister_id, spell_data.player_id)
-      
+
 # Get available director candidates id's
 
 @app.get("/game/{id}/director_candidates",
@@ -358,7 +369,6 @@ async def get_director_candidates(id: int):
 async def set_director_candidate(id: int, formula: TurnFormula):
     return check_and_set_director_candidate(id, formula.minister_id, formula.director_id)
 
-
 # Get the minister-director formula
 
 @app.get("/game/get_candidates/{id}",
@@ -367,3 +377,4 @@ async def set_director_candidate(id: int, formula: TurnFormula):
          )
 async def get_vote_formula(id: int):
     return get_vote_candidates(game_id=id)
+

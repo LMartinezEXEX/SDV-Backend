@@ -88,11 +88,20 @@ def get_turn_in_game(game_id: int, turn_number: int):
                     game_id and t.turn_number == turn_number)
 
 
+'''
+Assert if a player was investigated previously
+'''
+
+
 @db_session()
 def is_player_investigated(player_id: int):
     player = get_player_by_id(player_id)
     return player.is_investigated
 
+
+'''
+Assert if there is a savilable spell to execute
+'''
 
 @db_session()
 def is_board_available_spell(game_id):
@@ -124,6 +133,24 @@ def create_players_id_list(players):
         player_ids.append(player.id)
 
     return player_ids
+
+
+'''
+Get players ids, username and loyalty in current game
+'''
+
+@db_session()
+def get_players_info(game_id):
+    players_id_list = get_all_players_id(game_id)
+
+    players_info_list = []
+    for id in players_id_list:
+        player = get_player_by_id(id)
+        players_info_list.append({"player_id": id,
+                                  "username": player.user.username,
+                                  "loyalty": player.loyalty})
+
+    return players_info_list
 
 
 '''
@@ -493,6 +520,11 @@ def check_status(game_id: int):
             turn.current_minister.id, turn.current_director.id]
 
 
+'''
+Generate first turn when game starts and therefore isnt a last minister or director
+'''
+
+
 @db_session()
 def create_first_turn(game_id: int):
     game = get_game_by_id(game_id=game_id)
@@ -513,12 +545,18 @@ def create_first_turn(game_id: int):
     return next_minister.id
 
 
+'''
+Get minister id in current turn
+'''
+
+
 @db_session()
 def get_current_minister(game_id: int):
     game = get_game_by_id(game_id=game_id)
     turn_number = get_current_turn_number_in_game(game_id=game_id)
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_minister.id
+
 
 
 @db_session()
@@ -530,14 +568,19 @@ def get_candidates(game_id: int):
     return candidates
 
 
-
-#------------- Discard Functions-----------------------------
+'''
+Assert if a player is the current director
+'''
 
 @db_session()
 def is_current_director(game_id: int, player_id: int):
     turn_number = get_current_turn_number_in_game(game_id=game_id)
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_director.id == player_id
+
+'''
+Get cards not discarded from the deck for the director
+'''
 
 
 @db_session()
@@ -555,13 +598,17 @@ def get_not_discarded_cards(game_id: int):
         card_list.append(card.type)
     return card_list
 
+'''
+Mark a card as discarded in the deck
+'''
+
 
 @db_session()
 def discard_card(game_id: int, data: int):
     game = get_game_by_id(game_id=game_id)
     deck_quantity = len(game.card)
     card = Card.select(
-        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data) 
+        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data)
         ).order_by(Card.order).first()
     if not card:
         raise invalid_card_type_exception
@@ -569,10 +616,10 @@ def discard_card(game_id: int, data: int):
     if not card.discarded:
         raise not_discarded_exception
     return {"message": "Card discarded"}
-    
 
-
-# -SPELLS-----------------------------------------------------------------------
+'''
+Check if with current promulgations a spell is available
+'''
 
 
 @db_session()
@@ -592,12 +639,20 @@ def check_available_spell(game_id: int):
     elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1 and death_eater_promulgation < 4:
         board.spell_available = True
 
+'''
+Get current turn in game
+'''
+
 
 @db_session()
 def get_current_turn_in_game(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
 
     return get_turn_in_game(game_id, turn_number)
+
+'''
+Get available spell string in a game with 5 or 6 players
+'''
 
 
 def available_spell_in_board_1(player_cuantity: int, promulgations: int):
@@ -609,6 +664,11 @@ def available_spell_in_board_1(player_cuantity: int, promulgations: int):
         spell = ""
 
     return spell
+
+
+'''
+Get available spell string in a game with 7 or 8 players
+'''
 
 
 def available_spell_in_board_2(player_cuantity: int, promulgations: int):
@@ -624,6 +684,11 @@ def available_spell_in_board_2(player_cuantity: int, promulgations: int):
     return spell
 
 
+'''
+Get available spell string in a game with 9 or 10 players
+'''
+
+
 def available_spell_in_board_3(player_cuantity: int, promulgations: int):
     if promulgations == 1 or promulgations == 2:
         spell = "Crucio"
@@ -636,6 +701,9 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
 
     return spell
 
+'''
+Get available spell string
+'''
 
 @db_session()
 def available_spell_in_game_conditions(game_id: int):
@@ -660,6 +728,11 @@ def available_spell_in_game_conditions(game_id: int):
     return spell
 
 
+'''
+Execute guessing
+'''
+
+
 @db_session()
 def execute_guessing(game_id):
     game = Game[game_id]
@@ -676,7 +749,9 @@ def execute_guessing(game_id):
 
     return [cards[0].type, cards[1].type, cards[2].type]
 
-
+'''
+Execute crucio to a player in game
+'''
 @db_session()
 def execute_crucio(game_id, player_id):
     board = Board[game_id]
