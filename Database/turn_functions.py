@@ -155,7 +155,7 @@ Get the next candidate for minister based on players turns and state
 def get_next_candidate(players: Set(Player), last_candidate: Player = None):
     next_candidate = None
 
-    if not last_candidate is None:
+    if last_candidate:
         next_candidate = players.select(
             lambda p: p.is_alive and p.turn > last_candidate.turn).order_by(
             Player.turn).first()
@@ -181,12 +181,13 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 turn_number=turn_number,
                 current_minister=current_minister,
                 current_director=current_director,
-                last_minister=last_minister if last_minister is not None else candidate_minister,
-                last_director=last_director if last_director is not None else candidate_director,
+                last_minister=last_minister if last_minister else candidate_minister,
+                last_director=last_director if last_director else candidate_director,
                 candidate_minister=candidate_minister,
                 candidate_director=candidate_director,
                 taken_cards=False,
-                promulgated=False)
+                promulgated=False,
+                imperius_player_id = 0)
 
     Vote(result=False,
          turn=turn)
@@ -205,42 +206,22 @@ def select_MM_candidate(game_id: int):
     players_set = game.players
     game_turns = get_current_turn_number_in_game(game_id)
 
-    if game_turns > 0:
-        last_turn = get_turn_in_game(game_id=game_id,
-                                     turn_number=game_turns)
+    last_turn = get_turn_in_game(game_id=game_id, turn_number=game_turns)
 
-        last_candidate_minister = last_turn.candidate_minister
+    last_candidate_minister = last_turn.candidate_minister
 
-        next_candidate_minister = get_next_candidate(
-            players_set, last_candidate_minister)
+    next_candidate_minister = get_next_candidate(
+        players_set, last_candidate_minister)
 
-        turn = generate_turn(
-            game_instance=game,
-            turn_number=game_turns + 1,
-            candidate_minister=next_candidate_minister,
-            candidate_director=next_candidate_minister,
-            last_minister=last_turn.current_minister,
-            last_director=last_turn.current_director,
-            current_minister=next_candidate_minister,
-            current_director=next_candidate_minister)
-
-    # Is the first turn in the game
-    else:
-
-        next_candidate_minister = get_next_candidate(players=players_set)
-
-        turn = generate_turn(
-            game_instance=game,
-            turn_number=game_turns + 1,
-            candidate_minister=next_candidate_minister,
-            candidate_director=next_candidate_minister,
-            last_minister=None,
-            last_director=None,
-            current_minister=next_candidate_minister,
-            current_director=next_candidate_minister)
-
-        # Generate the first set of cards
-        generate_card(3, 1, game_id)
+    turn = generate_turn(
+        game_instance=game,
+        turn_number=game_turns + 1,
+        candidate_minister=next_candidate_minister,
+        candidate_director=next_candidate_minister,
+        last_minister=last_turn.current_minister,
+        last_director=last_turn.current_director,
+        current_minister=next_candidate_minister,
+        current_director=next_candidate_minister)
 
     return next_candidate_minister.id
 
@@ -551,7 +532,7 @@ def discard_card(game_id: int, data: int):
     game = get_game_by_id(game_id=game_id)
     deck_quantity = len(game.card)
     card = Card.select(
-        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data) 
+        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data)
         ).order_by(Card.order).first()
     if not card:
         raise invalid_card_type_exception
@@ -559,7 +540,7 @@ def discard_card(game_id: int, data: int):
     if not card.discarded:
         raise not_discarded_exception
     return {"message": "Card discarded"}
-    
+
 
 
 # -SPELLS-----------------------------------------------------------------------
@@ -571,15 +552,14 @@ def check_available_spell(game_id: int):
     death_eater_promulgation = board.death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
 
-    #The 'and death_eater_promulgation < 4' should be removed in next spint
     if (player_cuantity == 5 or player_cuantity ==
-            6) and death_eater_promulgation >= 3 and death_eater_promulgation < 4:
+            6) and death_eater_promulgation >= 3:
         board.spell_available = True
 
-    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2 and death_eater_promulgation < 4:
+    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2:
         board.spell_available = True
 
-    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1 and death_eater_promulgation < 4:
+    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
         board.spell_available = True
 
 
@@ -593,8 +573,8 @@ def get_current_turn_in_game(game_id: int):
 def available_spell_in_board_1(player_cuantity: int, promulgations: int):
     if promulgations == 3:
         spell = "Guessing"
-    #elif promulgations == 4 or promulgations == 5:
-    #    spell = "Avada Kedavra"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -606,8 +586,8 @@ def available_spell_in_board_2(player_cuantity: int, promulgations: int):
         spell = "Crucio"
     elif promulgations == 3:
         spell = "Imperius"
-    #elif promulgations == 4 or promulgations == 5:
-    #    spell = "Avada Kedavra"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -619,8 +599,8 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
         spell = "Crucio"
     elif promulgations == 3:
         spell = "Imperius"
-    #elif promulgations == 4 or promulgations == 5:
-    #    spell = "Avada Kedavra"
+    elif promulgations == 4 or promulgations == 5:
+        spell = "Avada Kedavra"
     else:
         spell = ""
 
@@ -675,4 +655,18 @@ def execute_crucio(game_id, player_id):
     player.is_investigated = True
     board.spell_available = False
 
-    return True if player.loyalty == "Fenix" else False
+    return player.loyalty == "Fenix"
+
+
+@db_session()
+def execute_avada_kedavra(game_id, player_id):
+    game = Game[game_id]
+    player = get_player_by_id(player_id)
+    player.is_alive = False
+    player.chat_enabled = False
+
+    # If killed player is Voldemort, finish the game
+    if player.rol == "Voldemort":
+        game.state = 2
+
+    return player.rol == "Voldemort"

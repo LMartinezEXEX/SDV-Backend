@@ -18,7 +18,7 @@ games = 0
 
 
 @db_session()
-def game_factory(players_cuantity: int, turns_cuantity: int,
+def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
                  game_state: int = 1, dead_player: bool = False, dead_cuantity: int = 0,
                  fenix_promulgation: int = 0, death_eater_promulgation: int = 0):
     global total_players
@@ -46,7 +46,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
                 min_players=5,
                 max_players=10,
                 creation_date=datetime.datetime.today(),
-                state=game_state)
+                state=game_state-1)
     games += 1
 
     Board(game=game,
@@ -64,9 +64,10 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     for user in users:
 
         is_Fenix = turn % 2 == 0
+        is_Voldemort = turn % players_cuantity == 0
         player = Player(turn=turn,
                         user=user,
-                        rol='Fenix' if is_Fenix else 'Mortifago',
+                        rol='Voldemort' if is_Voldemort else 'Fenix',
                         loyalty='Fenix' if is_Fenix else 'Mortifago',
                         is_alive=True,
                         chat_enabled=True,
@@ -84,7 +85,11 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
             player_index += 1
     commit()
 
-    for _ in range(turns_cuantity):
+    # Start game with one turn if game_state is 0
+    if start:
+        response = client.put('game/init/{}?player_id={}'.format(game_id, players[0].id))
+
+    for _ in range(turns_cuantity-1):
         response = client.put('game/{}/select_MM'.format(game_id))
 
     return [game_id, players[0].id]
@@ -151,6 +156,9 @@ def set_director_candidate(game_id, minister_id, director_id):
     }
     )
 
+@db_session()
+def get_player_by_id(player_id: int):
+    return Player[player_id]
 
 # --------------------------------------
 
@@ -200,7 +208,7 @@ def users_factory(amount_users: int):
                     is_validated=True)
         total_players += 1
         users_email.append(user.email)
-    
+
     return users_email
 
 

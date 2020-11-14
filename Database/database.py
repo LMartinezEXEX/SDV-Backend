@@ -65,6 +65,7 @@ class Turn(db.Entity):
     vote = Optional('Vote')
     taken_cards = Required(bool)
     promulgated = Required(bool)
+    imperius_player_id = Required(int)
     PrimaryKey(game, turn_number)
 
 
