@@ -239,6 +239,16 @@ def check_and_set_director_candidate(game_id, minister_id, director_id):
     return {"candidate minister id": formula[0], "candidate director id": formula[1]}
 
 
+def get_vote_candidates(game_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise geme_not_found_exception
+    candidates = db_turn.get_candidates(game_id=game_id)
+    return TurnFormula(
+        minister_id = candidates[0],
+        director_id = candidates[1]
+    )
+
+
 def discard_selected_card(game_id: int, discard_data: DiscardData):
     if not get_game_by_id(game_id=game_id):
         raise game_not_found_exception

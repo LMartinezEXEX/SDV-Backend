@@ -368,3 +368,13 @@ async def get_director_candidates(id: int):
          )
 async def set_director_candidate(id: int, formula: TurnFormula):
     return check_and_set_director_candidate(id, formula.minister_id, formula.director_id)
+
+# Get the minister-director formula
+
+@app.get("/game/get_candidates/{id}",
+         status_code=status.HTTP_200_OK,
+         tags=["Get vote formula"]
+         )
+async def get_vote_formula(id: int):
+    return get_vote_candidates(game_id=id)
+

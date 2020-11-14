@@ -557,10 +557,20 @@ def get_current_minister(game_id: int):
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_minister.id
 
+
+
+@db_session()
+def get_candidates(game_id: int):
+    candidates = []
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    candidates.extend([turn.current_minister.id, turn.current_director.id])
+    return candidates
+
+
 '''
 Assert if a player is the current director
 '''
-
 
 @db_session()
 def is_current_director(game_id: int, player_id: int):
@@ -751,3 +761,5 @@ def execute_crucio(game_id, player_id):
     board.spell_available = False
 
     return True if player.loyalty == "Fenix" else False
+
+
