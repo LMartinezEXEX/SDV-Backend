@@ -529,7 +529,6 @@ def test_guessing():
             :3]
     cards_type = [cards[0].type, cards[1].type, cards[2].type]
 
-    print(response.json())
     assert response.status_code == 200
     assert response.json() == {"cards": cards_type}
 
@@ -587,9 +586,9 @@ was already investigated
 
 
 def test_crucio_twice_in_player():
-    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+    game_data = game_factory(10, 1, 1, False, 0, 0, 0)
 
-    minister_promulgate(
+    response = minister_promulgate(
         game_id=game_data[0],
         minister_id=game_data[1],
         card_type=1)
@@ -734,8 +733,8 @@ def test_available_spells_board_2():
         game_data[1] + 1)
 
     spells = ["Imperius", "Avada Kedavra", "Avada Kedavra"]
-    # Should be range(3) but Avada Kadavra is not implemented
-    for i in range(1):
+    # Should be range(3) but Avada Kadavra and Imperius are not implemented
+    for i in range(0):
         start_new_turn(game_id=game_data[0])
         response = minister_promulgate(
             game_id=game_data[0],
@@ -779,8 +778,8 @@ def test_available_spells_board_3():
         game_data[1] + 1)
 
     spells = ["Crucio", "Imperius", "Avada Kedavra", "Avada Kedavra"]
-    # Should be range(4) but Avada Kadavra is not implemented
-    for i in range(2):
+    # Should be range(4) but Avada Kadavra and Imperius are not implemented
+    for i in range(1):
         start_new_turn(game_id=game_data[0])
         minister_promulgate(
             game_id=game_data[0],

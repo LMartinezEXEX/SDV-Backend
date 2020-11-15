@@ -578,6 +578,7 @@ def is_current_director(game_id: int, player_id: int):
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_director.id == player_id
 
+
 '''
 Get cards not discarded from the deck for the director
 '''
@@ -598,6 +599,7 @@ def get_not_discarded_cards(game_id: int):
         card_list.append(card.type)
     return card_list
 
+
 '''
 Mark a card as discarded in the deck
 '''
@@ -617,6 +619,7 @@ def discard_card(game_id: int, data: int):
         raise not_discarded_exception
     return {"message": "Card discarded"}
 
+
 '''
 Check if with current promulgations a spell is available
 '''
@@ -628,15 +631,15 @@ def check_available_spell(game_id: int):
     death_eater_promulgation = board.death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
 
-    #The 'and death_eater_promulgation < 4' should be removed in next spint
+    #The 'and death_eater_promulgation < 4 or 3' should be removed in next spint
     if (player_cuantity == 5 or player_cuantity ==
             6) and death_eater_promulgation >= 3 and death_eater_promulgation < 4:
         board.spell_available = True
 
-    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2 and death_eater_promulgation < 4:
+    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2 and death_eater_promulgation < 3:
         board.spell_available = True
 
-    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1 and death_eater_promulgation < 4:
+    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1 and death_eater_promulgation < 3:
         board.spell_available = True
 
 '''
@@ -674,8 +677,8 @@ Get available spell string in a game with 7 or 8 players
 def available_spell_in_board_2(player_cuantity: int, promulgations: int):
     if promulgations == 2:
         spell = "Crucio"
-    elif promulgations == 3:
-        spell = "Imperius"
+    #elif promulgations == 3:
+    #    spell = "Imperius"
     #elif promulgations == 4 or promulgations == 5:
     #    spell = "Avada Kedavra"
     else:
@@ -692,8 +695,8 @@ Get available spell string in a game with 9 or 10 players
 def available_spell_in_board_3(player_cuantity: int, promulgations: int):
     if promulgations == 1 or promulgations == 2:
         spell = "Crucio"
-    elif promulgations == 3:
-        spell = "Imperius"
+    #elif promulgations == 3:
+    #    spell = "Imperius"
     #elif promulgations == 4 or promulgations == 5:
     #    spell = "Avada Kedavra"
     else:
@@ -761,5 +764,3 @@ def execute_crucio(game_id, player_id):
     board.spell_available = False
 
     return True if player.loyalty == "Fenix" else False
-
-
