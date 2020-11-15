@@ -374,7 +374,7 @@ If it is the first vote in the turn, create the Vote instance for the turn.
 
 
 @db_session()
-def vote_turn(game_id: int, player_id: int, player_vote: int):
+def vote_turn(game_id: int, player_id: int, player_vote: bool):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     player = get_player_by_id(player_id)
@@ -383,7 +383,22 @@ def vote_turn(game_id: int, player_id: int, player_vote: int):
 
     Player_vote(player=player,
                 vote=vote,
-                is_lumos=True if player_vote else False)
+                is_lumos= player_vote)
+    commit()
+
+    # Check and take action if all players voted
+    if len(vote.player_vote) == alive_players_count(game_id):
+        lumos_counter = select(
+            pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos).count()
+
+        result = False
+        if len(vote.player_vote) - lumos_counter < lumos_counter:
+            result = True
+            turn.current_minister = turn.candidate_minister
+            turn.current_director = turn.candidate_director
+
+        vote.result = result
+
 
     return len(vote.player_vote)
 
@@ -416,23 +431,13 @@ def get_result(game_id: int):
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn_number and v.turn.game.id == game_id)
 
-    lumos = Player_vote.select(
-        lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos).count()
-    lumos_votes = select(
-        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
+    lumos_votes = select(pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
 
     player_ids = []
     for _vote_ in lumos_votes:
         player_ids.append(_vote_.player.id)
 
-    result = False
-    if len(vote.player_vote) - lumos < lumos:
-        result = True
-        turn.current_minister = turn.candidate_minister
-        turn.current_director = turn.candidate_director
-
-    vote.result = result
-    return [result, player_ids]
+    return [vote.result, player_ids]
 
 
 '''
