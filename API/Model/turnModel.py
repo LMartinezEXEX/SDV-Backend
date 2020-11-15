@@ -11,7 +11,7 @@ class PlayerVote(BaseModel):
 
 
 class PlayerPromulgate(BaseModel):
-    candidate_id: int
+    player_id: int
     to_promulgate: StrictInt
 
 
@@ -129,19 +129,20 @@ def check_and_get_vote_result(game_id: int):
         raise votes_missing_exception
 
 
-def check_and_get_3_cards(game_id: int):
+def check_and_get_3_cards(game_id: int, player_id: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Cards were taken in this turn
     if db_turn.taked_cards(game_id):
-
         raise cards_taken_in_current_turn_exception
 
-    else:
-        return {"cards": db_turn.generate_3_cards(game_id)}
+    if not db_turn.is_current_minister(game_id, player_id):
+        raise player_isnt_minister_exception
+    
+    return {"cards": db_turn.generate_3_cards(game_id)}
 
 
-def promulgate_in_game(game_id: int, minister_id: int, card_type: int):
+def promulgate_in_game(game_id: int, director_id: int, card_type: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Already promulgated in this turn
@@ -149,8 +150,8 @@ def promulgate_in_game(game_id: int, minister_id: int, card_type: int):
         raise already_promulgated_in_turn_exception
 
     # Player is not current minister
-    if not db_turn.is_current_minister(game_id, minister_id):
-        raise player_isnt_minister_exception
+    if not db_turn.is_current_director(game_id, director_id):
+        raise player_isnt_director_exception
 
     board_state = db_turn.promulgate(game_id, card_type)
 

@@ -203,6 +203,16 @@ async def has_the_game_started(id: int, player_id: int):
     return check_if_game_started(game_id=id, player_id=player_id)
 
 
+# Get three cards
+
+@app.get("/game/{id}/minister_cards",
+         status_code=status.HTTP_200_OK,
+         tags=["Take three cards"]
+         )
+async def get_cards(id: int, player_id: int):
+    return check_and_get_3_cards(game_id=id, player_id=player_id)
+
+
 # Discard card
 
 @app.put("/game/{id}/discard",
@@ -299,16 +309,6 @@ async def vote_result(id: int):
     return check_and_get_vote_result(id)
 
 
-# Get three cards
-
-@app.put("/game/{id}/get_cards",
-         status_code=status.HTTP_200_OK,
-         tags=["Take three cards"]
-         )
-async def get_cards(id: int):
-    return check_and_get_3_cards(id)
-
-
 # Promulgate a card
 
 @app.put("/game/{id}/promulgate",
@@ -317,7 +317,7 @@ async def get_cards(id: int):
          )
 async def promulgate_card(id: int, promulgate: PlayerPromulgate):
     return promulgate_in_game(
-        id, promulgate.candidate_id, promulgate.to_promulgate)
+        id, promulgate.player_id, promulgate.to_promulgate)
 
 
 # Check the game status
