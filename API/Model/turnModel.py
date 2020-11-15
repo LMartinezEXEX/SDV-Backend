@@ -138,7 +138,7 @@ def check_and_get_3_cards(game_id: int, player_id: int):
 
     if not db_turn.is_current_minister(game_id, player_id):
         raise player_isnt_minister_exception
-    
+
     return {"cards": db_turn.generate_3_cards(game_id)}
 
 
@@ -169,7 +169,8 @@ def game_status(game_id: int):
             "fenix promulgations": status[1],
             "death eater promulgations": status[2],
             "current minister id": status[3],
-            "current director id": status[4]}
+            "current director id": status[4],
+            "vote done": status[5]}
 
 
 def check_and_get_available_spell(game_id: int):

@@ -521,8 +521,11 @@ def check_status(game_id: int):
         game_finished = True
         game.state = 2
 
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn.turn_number and v.turn.game.id == game_id)
+
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
-            turn.current_minister.id, turn.current_director.id]
+            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]
 
 
 '''
