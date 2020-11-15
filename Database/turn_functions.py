@@ -335,6 +335,7 @@ def select_DD_candidate(game_id, player_id):
     director_candidate_player = get_player_by_id(player_id)
 
     turn.candidate_director = director_candidate_player
+    turn.current_director = director_candidate_player
 
     return [turn.candidate_minister.id, director_candidate_player.id]
 
