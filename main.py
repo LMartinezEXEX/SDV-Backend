@@ -308,6 +308,14 @@ async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player 
 async def vote_result(id: int):
     return check_and_get_vote_result(id)
 
+# Notify that knows about rejection of candidates
+
+@app.put("/game/{id}/reject_notified",
+         status_code=status.HTTP_200_OK,
+         tags=["Notify that knows about rejection"]
+         )
+async def reject_notify(id: int, player_id: int):
+    return check_and_reject_notify(id, player_id)
 
 # Promulgate a card
 

@@ -65,6 +65,7 @@ class Turn(db.Entity):
     vote = Optional('Vote')
     taken_cards = Required(bool)
     pass_cards  = Required(bool)
+    reject_notified = Optional(IntArray)
     promulgated = Required(bool)
     PrimaryKey(game, turn_number)
 

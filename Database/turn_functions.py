@@ -214,6 +214,7 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_director=candidate_director,
                 taken_cards=False,
                 pass_cards=False,
+                reject_notified=[],
                 promulgated=False)
 
     Vote(result=False,
@@ -439,6 +440,29 @@ def get_result(game_id: int):
         player_ids.append(_vote_.player.id)
 
     return [vote.result, player_ids]
+
+
+@db_session()
+def notify_with_player(game_id: int, player_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    player = get_player_by_id(player_id)
+    if player.is_alive:
+        # If player has notified, don't let him do this again
+        if player_id in turn.reject_notified:
+            return { "notified": True }
+        
+        alive_players = alive_players_count(game_id)
+        if len(turn.reject_notified) < alive_players:
+            turn.reject_notified.append(player_id)
+            
+            # All players know that candidates were rejected, then go to next turn
+            if len(turn.reject_notified) == alive_players:
+                _ = select_MM_candidate(game_id)
+        
+        return { "notified": True }
+    else:
+        raise player_is_dead_exception
 
 
 '''
@@ -786,4 +810,4 @@ def execute_crucio(game_id, player_id):
     player.is_investigated = True
     board.spell_available = False
 
-    return True if player.loyalty == "Fenix" else False
+    return player.loyalty == "Fenix Order"
