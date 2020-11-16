@@ -264,4 +264,9 @@ def get_cards_for_director(game_id: int, player_id: int):
         raise game_not_found_exception
     if not db_turn.is_current_director(game_id=game_id, player_id=player_id):
         raise player_isnt_director_exception
+    if not db_turn.taked_cards(game_id):
+        raise cards_not_taken_in_current_turn_exception
+    if not db_turn.director_cards_set(game_id):
+        raise not_discarded_exception
+
     return {"cards": db_turn.get_not_discarded_cards(game_id=game_id)}

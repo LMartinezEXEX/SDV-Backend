@@ -213,6 +213,7 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_minister=candidate_minister,
                 candidate_director=candidate_director,
                 taken_cards=False,
+                pass_cards=False,
                 promulgated=False)
 
     Vote(result=False,
@@ -454,6 +455,18 @@ def taked_cards(game_id: int):
 
 
 '''
+Check if minister passed cards to director 
+'''
+
+@db_session()
+def director_cards_set(game_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    return turn.pass_cards
+
+
+'''
 Return the three cards in order, and create three new cards for future turns
 '''
 
@@ -622,6 +635,11 @@ def discard_card(game_id: int, data: int):
     card.discarded = True
     if not card.discarded:
         raise not_discarded_exception
+    
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    turn.pass_cards=True
+
     return {"message": "Card discarded"}
 
 

@@ -64,6 +64,7 @@ class Turn(db.Entity):
     candidate_director = Required('Player')
     vote = Optional('Vote')
     taken_cards = Required(bool)
+    pass_cards  = Required(bool)
     promulgated = Required(bool)
     PrimaryKey(game, turn_number)
 

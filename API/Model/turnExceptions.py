@@ -40,6 +40,11 @@ cards_taken_in_current_turn_exception = HTTPException(
     detail="Already taken the cards in this turn"
 )
 
+cards_not_taken_in_current_turn_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Cards were not taken by minister in this turn"
+)
+
 turn_hasnt_started_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="No turn started yet"
@@ -92,5 +97,5 @@ player_isnt_director_exception = HTTPException(
 
 not_discarded_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
-    detail="Player is not director"
+    detail="Card was not discarded"
 )
