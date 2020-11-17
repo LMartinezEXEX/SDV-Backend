@@ -47,8 +47,8 @@ def check_game_state(game_id: int):
         raise game_not_started_exception
 
     # Game finished
-    if state == 2:
-        raise game_finished_exception
+    #if state == 2:
+    #    raise game_finished_exception
 
 
 # Check game is 'IN GAME' and has at least one turn started
@@ -282,4 +282,10 @@ def check_and_reject_notify(game_id: int, player_id: int):
     if vote_result["result"]:
         return { "notified": False }
     
-    return db_turn.notify_with_player(game_id, player_id)
+    return db_turn.reject_notify_with_player(game_id, player_id)
+
+def check_and_end_game_notify(game_id: int, player_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+
+    return db_turn.end_game_notify_with_player(game_id, player_id)

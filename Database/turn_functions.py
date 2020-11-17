@@ -441,9 +441,12 @@ def get_result(game_id: int):
 
     return [vote.result, player_ids]
 
+'''
+Notify that player knows about rejection of candidates
+'''
 
 @db_session()
-def notify_with_player(game_id: int, player_id: int):
+def reject_notify_with_player(game_id: int, player_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     player = get_player_by_id(player_id)
@@ -553,10 +556,12 @@ def check_status(game_id: int):
     turn = get_turn_in_game(game_id, turn_number)
     board = Board[game_id]
 
-    if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 or (
-            board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
+    if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 \
+        or (board.death_eater_promulgation >= 3 \
+            and turn.current_director != turn.current_minister \
+            and turn.current_director.rol == "Voldemort") \
+        or not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
         game_finished = True
-        game.state = 2
 
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
@@ -564,6 +569,42 @@ def check_status(game_id: int):
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]
 
+
+'''
+Notify that player knows about game's ending
+'''
+
+
+@db_session()
+def end_game_notify_with_player(game_id: int, player_id: int):
+    game = Game[game_id]
+    if game.id < 1:
+        return { "game_result": "" }
+    
+    if not player_id in game.end_game_notified:
+        players_count = game.players.count()
+        if len(game.end_game_notified) < players_count:
+            game.end_game_notified.append(player_id)
+            if len(game.end_game_notified) == players_count:
+                game.state = 2
+    
+    # Check who won and why
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    board = Board[game_id]
+    message = ""
+    if board.fenix_promulgation == 5:
+        message = "La Orden del Fenix gana (5 promulgaciones)"
+    elif board.death_eater_promulgation == 6:
+        message = "Los Mortifagos ganan (6 promulgaciones)"
+    elif board.death_eater_promulgation >= 3 \
+        and turn.current_director != turn.current_minister \
+        and turn.current_director.rol == "Voldemort":
+        message = "Los Mortifagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortifagos)"
+    elif not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
+        message = "La Orden del Fenix gana (Voldemort está muerto)"
+    
+    return { "game_result": message }
 
 '''
 Generate first turn when game starts and therefore isnt a last minister or director
