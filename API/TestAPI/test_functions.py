@@ -17,8 +17,36 @@ total_players = 0
 games = 0
 
 
+'''
+Game factory creates a new game with entablished conditions:
+
+* [Required] players cuantity: int
+* [Required] turns cuantity: int = note that if the state parameter is True, there
+would be one turn started because the game initiation.
+* start: bool = If game should be initialized (always with the init game endpoint)
+* game_state: int = 1 for uninitialized game state
+                    2 for initialized game state (therefore game will start
+                    without a first turn and cant be able to call init game endpoint)
+                    3 for finished game state
+
+* dead_player: bool = If should be dead players in the game.
+* dead_cuantity: int = amount of first players that should be dead, dead_player
+must be True
+* fenix_promulgation: int
+* death_eater_promulgation: int
+
+Return:
+
+* [game_id: int, first_player_id: int] = where:
+    * game_id is the id of the game created.
+    * first_player_id is the id of the first player in the game.
+
+Note:
+1) All players with even turn number would be Fenix.
+2) Last player in game would de Voldemort.
+'''
 @db_session()
-def game_factory(players_cuantity: int, turns_cuantity: int,
+def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
                  game_state: int = 1, dead_player: bool = False, dead_cuantity: int = 0,
                  fenix_promulgation: int = 0, death_eater_promulgation: int = 0):
     global total_players
@@ -46,7 +74,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
                 min_players=5,
                 max_players=10,
                 creation_date=datetime.datetime.today(),
-                state=game_state)
+                state=game_state-1)
     games += 1
 
     Board(game=game,
@@ -64,9 +92,10 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
     for user in users:
 
         is_Fenix = turn % 2 == 0
+        is_Voldemort = turn % players_cuantity == 0
         player = Player(turn=turn,
                         user=user,
-                        rol='Fenix' if is_Fenix else 'Mortifago',
+                        rol='Voldemort' if is_Voldemort else 'Fenix',
                         loyalty='Fenix' if is_Fenix else 'Mortifago',
                         is_alive=True,
                         chat_enabled=True,
@@ -84,12 +113,19 @@ def game_factory(players_cuantity: int, turns_cuantity: int,
             player_index += 1
     commit()
 
+    # Start game with one turn if game_state is 0
+    if start:
+        response = client.put('game/init/{}?player_id={}'.format(game_id, players[0].id))
+
+#    for _ in range(turns_cuantity-1):
+
     candidate_id = players[0].id 
     # Correcting bug about minister selection for endpoint "promulgate". Director should select!
     # This loop sets current minister id, so when using this id is relative to the game_factory turns
     # If that is not the case, returns the id that was set without these changes
     # So be careful here, directions are relative if you know that turns_cuantity > 0
     for _ in range(turns_cuantity):
+
         response = client.put('game/{}/select_MM'.format(game_id))
         response_keys = response.json().keys()
         if (response.json() is not None) and (not "detail" in response_keys) and ("candidate_minister_id" in response_keys):
@@ -161,6 +197,9 @@ def set_director_candidate(game_id, minister_id, director_id):
     }
     )
 
+@db_session()
+def get_player_by_id(player_id: int):
+    return Player[player_id]
 
 # --------------------------------------
 
@@ -253,4 +292,5 @@ def get_vote_formula(game_id: int):
 
 def game_state_in_pregame(game_id: int, player_id: int):
     return client.get("game/initialized/{}?player_id={}".format(game_id, player_id))
+
 

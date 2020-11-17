@@ -1,4 +1,5 @@
 from API.TestAPI.test_functions import *
+from Database.turn_functions import create_first_turn
 
 # -SET-UP-----------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ Test correct response when trying to take action in a game that hasn't started
 
 
 def test_action_in_uninitialized_game():
-    game_data = game_factory(5, 1, 0)
+    game_data = game_factory(5, 1, False, 1, False, 0, 0, 0)
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 409
@@ -40,7 +41,7 @@ Test correct response when trying to take action in a finished game
 
 
 def test_action_in_finished_game():
-    game_data = game_factory(5, 1, 2)
+    game_data = game_factory(5, 1, False, 3)
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 409
@@ -69,7 +70,7 @@ def test_candidate_minister():
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": game_data[1]}
+    assert response.json() == {"candidate_minister_id": game_data[1]+1}
 
 
 '''
@@ -92,11 +93,11 @@ Test a dead player can't be selected as minister candidate
 
 
 def test_candidate_minister_when_dead():
-    game_data = game_factory(5, 0, 1, True, 1)
+    game_data = game_factory(5, 0, True, 1, True, 1)
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": game_data[1] + 1}
+    assert response.json() == {"candidate_minister_id": game_data[1] + 2}
 
 
 '''
@@ -105,7 +106,7 @@ Test correct turn assignment in minister candidate when dead players are present
 
 
 def test_ciclic_candidate_minister_when_dead():
-    game_data = game_factory(5, 12, 1, True, 2)
+    game_data = game_factory(5, 12, True, 1, True, 2)
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
@@ -148,6 +149,7 @@ def test_get_cards_twice_in_same_turn():
         "detail": "Already taken the cards in this turn"}
 
 
+  
 '''
 Test get cards when a turn hasn't even started in a game
 '''
@@ -159,7 +161,7 @@ def test_get_cards_with_no_turn():
 
     assert response.status_code == 409
     assert response.json() == {"detail": "No turn started yet"}
-
+    
 
 '''
 Test correct response when a player vote
@@ -198,22 +200,6 @@ def test_several_vote_count():
 
 
 '''
-Test a player cant vote when the game has no turn started
-'''
-
-
-def test_vote_with_no_turn_in_game():
-    game_data = game_factory(5, 0)
-    response = player_vote(
-        game_id=game_data[0],
-        player_id=game_data[1],
-        vote=True)
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
-
-
-'''
 Test a player can't vote in a game it is not in
 '''
 
@@ -243,20 +229,6 @@ def test_get_result_when_votes_missing():
 
 
 '''
-Test correct response when trying to get a vote result when the gama has
-no turn started and therefore a vote session
-'''
-
-
-def test_get_result_when_no_turn():
-    game_data = game_factory(10, 0)
-    response = client.put('game/{}/result'.format(game_data[0]))
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
-
-
-'''
 Test correct result when all players voted
 '''
 
@@ -281,23 +253,6 @@ def test_get_result():
 
     assert response.status_code == 200
     assert response.json() == {"result": True, "voted_lumos": voted_lumos}
-
-
-'''
-Test correct response when trying to promulgate when the gama has
-no turn started and therefore no legislative session
-'''
-
-
-def test_promulgate_with_no_turn():
-    game_data = game_factory(7, 0)
-    response = director_promulgate(
-        game_id=game_data[0],
-        player_id=game_data[1],
-        card_type=0)
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
 
 
 '''
@@ -379,24 +334,6 @@ def test_promulgate_regular_player():
 
 
 '''
-Test correct response when getting the initial game state without turn started
-'''
-
-
-def test_game_check_with_no_turn():
-    game_data = game_factory(10, 0)
-    response = check_game_state(game_id=game_data[0])
-
-    assert response.status_code == 200
-    assert response.json() == {"game id": game_data[0],
-                               "finished": False,
-                               "fenix promulgations": 0,
-                               "death eater promulgations": 0,
-                               "current minister id": None,
-                               "current director id": None}
-
-
-'''
 Test correct game status response
 '''
 
@@ -421,7 +358,7 @@ Test correct game status when fenix should win with 5 promulgations
 
 
 def test_game_check_fenix_five_promulgations():
-    game_data = game_factory(8, 0, 1, True, 3)
+    game_data = game_factory(8, 0, True, 1, True, 2)
 
     for i in range(5):
         start_new_turn(game_id=game_data[0])
@@ -447,15 +384,15 @@ Test correct game status when death eaters should win with 6 promulgations
 
 
 def test_game_check_six_death_eater_promulgations():
-    game_data = game_factory(10, 0, 1, True, 2)
+    game_data = game_factory(10, 1, True, 1, True, 2)
 
     for i in range(6):
         start_new_turn(game_id=game_data[0])
         director_promulgate(
             game_id=game_data[0],
-            player_id=game_data[1] + i + 2,
+            minister_id=game_data[1] + i + 3,
             card_type=1)
-        execute_spell(game_data[0], "Guessing", game_data[1] + i + 2, 1)
+        execute_spell(game_data[0], "Guessing", game_data[1] + i + 3, 1)
 
 
     response = check_game_state(game_id=game_data[0])
@@ -465,22 +402,8 @@ def test_game_check_six_death_eater_promulgations():
                                "finished": True,
                                "fenix promulgations": 0,
                                "death eater promulgations": 6,
-                               "current minister id": game_data[1] + 7,
-                               "current director id": game_data[1] + 7}
-
-
-'''
-Tests correct response when trying to execute any spell with a game with no turn
-'''
-
-
-def test_spell_with_with_no_turn():
-    game_data = game_factory(5, 0)
-
-    response = execute_spell(game_data[0], "Guessing", game_data[1], 1)
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
+                               "current minister id": game_data[1] + 8,
+                               "current director id": game_data[1] + 8}
 
 
 '''
@@ -490,7 +413,7 @@ the current turn
 
 
 def test_spell_with_wrong_minister_id():
-    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+    game_data = game_factory(5, 1, True, 1, False, 0, 0, 2)
 
     director_promulgate(
         game_id=game_data[0],
@@ -507,6 +430,24 @@ def test_spell_with_wrong_minister_id():
     assert response.json() == {"detail": "Player is not minister"}
 
 
+def test_spell_with_no_board_spell_condition():
+    game_data = game_factory(5, 1, True, 1, False, 0, 0, 0)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Avada Kedavra",
+        game_data[1],
+        game_data[1] + 2)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "The requirements to cast the spell are not met"}
+
+
 '''
 Assert correct response when executing Guessing
 '''
@@ -514,7 +455,7 @@ Assert correct response when executing Guessing
 
 @db_session()
 def test_guessing():
-    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+    game_data = game_factory(5, 1, True, 1, False, 0, 0, 2)
 
     director_promulgate(
         game_id=game_data[0],
@@ -539,7 +480,7 @@ Assert correct response when executing Crucio
 
 
 def test_crucio():
-    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+    game_data = game_factory(7, 1, True, 1, False, 0, 0, 1)
 
     director_promulgate(
         game_id=game_data[0],
@@ -562,7 +503,7 @@ Assert imposibility to execute Crucio in a dead player
 
 
 def test_crucio_in_dead_player():
-    game_data = game_factory(7, 2, 1, True, 2, 0, 1)
+    game_data = game_factory(7, 2, True, 1, True, 2, 0, 1)
 
     director_promulgate(
         game_id=game_data[0],
@@ -586,7 +527,8 @@ was already investigated
 
 
 def test_crucio_twice_in_player():
-    game_data = game_factory(10, 1, 1, False, 0, 0, 0)
+
+    game_data = game_factory(7, 1, True, 1, False, 0, 0, 1)
 
     response = director_promulgate(
         game_id=game_data[0],
@@ -623,7 +565,7 @@ Assert Crucio can't be executed in a player who isn't in the game
 
 
 def test_crucio_in_invalid_player():
-    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+    game_data = game_factory(7, 1, True, 1, False, 0, 0, 1)
 
     director_promulgate(
         game_id=game_data[0],
@@ -640,32 +582,78 @@ def test_crucio_in_invalid_player():
     assert response.json() == {"detail": "Player is not in this game"}
 
 
-'''
-Test correct response with no available spells in a game with no turn
-'''
+def test_avada_kedavra():
+    game_data = game_factory(5, 1, False, 2, False, 0, 3, 3)
 
+    # If we call init game endpoint, it will select randomly the rol's
+    minister = create_first_turn(game_data[0])
 
-def test_available_spell_with_no_turn():
-    game_data = game_factory(7, 0)
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1],
+        card_type=1)
 
-    response = client.get('/game/{}/spell'.format(game_data[0]))
+    to_kill = 0
+    for i in range(9):
+        player = get_player_by_id(game_data[1]+i)
+        if player.rol != "Voldemort":
+            to_kill = game_data[1]+i
+            break
+
+    response = execute_spell(
+        game_data[0],
+        "Avada Kedavra",
+        minister,
+        to_kill)
 
     assert response.status_code == 200
-    assert response.json() == {"Spell": ""}
+    assert response.json() == {"Finished": False}
 
 
-'''
-Test correct response with a more or less than 10 or 5 (respectively) players.
-i.e. test with an 'non-existent' board
-'''
+def test_avada_kedavra_Voldemort():
+    game_data = game_factory(9, 0, False, 2, False, 0, 0, 3)
 
+    # If we call init game endpoint, it will select randomly the rol's
+    minister = create_first_turn(game_data[0])
 
-def test_available_spells_board_with_invalid_players_count():
-    game_data = game_factory(2, 0)
-    response = client.get('/game/{}/spell'.format(game_data[0]))
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=minister,
+        card_type=1)
+
+    to_kill = 0
+    for i in range(9):
+        player = get_player_by_id(game_data[1]+i)
+        if player.rol == "Voldemort":
+            to_kill = game_data[1]+i
+            break
+
+    response = execute_spell(
+        game_data[0],
+        "Avada Kedavra",
+        minister,
+        to_kill)
 
     assert response.status_code == 200
-    assert response.json() == {"Spell": ""}
+    assert response.json() == {"Finished": True}
+
+
+def test_avada_kedavra_in_dead_player():
+    game_data = game_factory(9, 2, True, 1, True, 1, 3, 3)
+
+    minister_promulgate(
+        game_id=game_data[0],
+        minister_id=game_data[1] + 2,
+        card_type=1)
+
+    response = execute_spell(
+        game_data[0],
+        "Avada Kedavra",
+        game_data[1] + 2,
+        game_data[1])
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is dead"}
 
 
 '''
@@ -674,7 +662,7 @@ Test correct spells in board with 5 to 6 players
 
 
 def test_available_spells_board_1():
-    game_data = game_factory(5, 1, 1, False, 0, 0, 2)
+    game_data = game_factory(5, 1, True, 1, False, 0, 0, 2)
 
     director_promulgate(
         game_id=game_data[0],
@@ -686,8 +674,7 @@ def test_available_spells_board_1():
     assert response.status_code == 200
     assert response.json() == {"Spell": "Guessing"}
 
-    # Avada Kedavra not implemented in this sprint
-    '''execute_spell(
+    execute_spell(
         game_data[0],
         response.json()["Spell"],
         game_data[1],
@@ -704,9 +691,8 @@ def test_available_spells_board_1():
         assert response.status_code == 200
         assert response.json() == {"Spell": "Avada Kedavra"}
 
-        # Dont use Avada Kedavra because it's not implemented, yet.
         execute_spell(game_data[0], "Crucio", game_data[1], game_data[1] + i)
-'''
+
 
 '''
 Test correct spells in board with 7 to 8 players
@@ -714,7 +700,7 @@ Test correct spells in board with 7 to 8 players
 
 
 def test_available_spells_board_2():
-    game_data = game_factory(7, 1, 1, False, 0, 0, 1)
+    game_data = game_factory(7, 1, True, 1, False, 0, 0, 1)
 
     director_promulgate(
         game_id=game_data[0],
@@ -733,8 +719,8 @@ def test_available_spells_board_2():
         game_data[1] + 1)
 
     spells = ["Imperius", "Avada Kedavra", "Avada Kedavra"]
-    # Should be range(3) but Avada Kadavra and Imperius are not implemented
-    for i in range(0):
+
+    for i in range(3):
         start_new_turn(game_id=game_data[0])
         response = director_promulgate(
             game_id=game_data[0],
@@ -745,7 +731,7 @@ def test_available_spells_board_2():
         assert response.status_code == 200
         assert response.json() == {"Spell": spells[i]}
 
-        # Dont use Avada Kedavra or Imperius because it's not implemented, yet.
+        # Dont use Imperius because it's not implemented, yet.
         execute_spell(
             game_data[0],
             "Guessing",
@@ -759,7 +745,7 @@ Test correct spells in board with 9 to 10 players
 
 
 def test_available_spells_board_3():
-    game_data = game_factory(10, 1, 1, False, 0, 0, 0)
+    game_data = game_factory(10, 1, True, 1, False, 0, 0, 0)
 
     director_promulgate(
         game_id=game_data[0],
@@ -778,8 +764,9 @@ def test_available_spells_board_3():
         game_data[1] + 1)
 
     spells = ["Crucio", "Imperius", "Avada Kedavra", "Avada Kedavra"]
-    # Should be range(4) but Avada Kadavra and Imperius are not implemented
-    for i in range(1):
+
+    for i in range(4):
+
         start_new_turn(game_id=game_data[0])
         director_promulgate(
             game_id=game_data[0],
@@ -791,7 +778,7 @@ def test_available_spells_board_3():
         assert response.status_code == 200
         assert response.json() == {"Spell": spells[i]}
 
-        # Dont use Avada Kedavra or Imperius because it's not implemented, yet.
+        # Dont use Imperius because it's not implemented, yet.
         response = execute_spell(
             game_data[0],
             "Guessing",
@@ -817,21 +804,6 @@ def test_get_director_candidate_ids_with_no_restriction():
 
     assert response.status_code == 200
     assert response.json() == {"director candidates": candidates}
-
-
-'''
-Assert correst response when trying ro get director candidates with
-no turn, (i.e. candidate minister) yet.
-'''
-
-
-def test_get_director_candidate_ids_with_no_turn():
-    game_data = game_factory(10, 0)
-
-    response = get_director_candidates(game_data[0])
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
 
 
 '''
@@ -875,21 +847,6 @@ def test_set_director_candidate():
     assert response.json() == {
         "candidate minister id": game_data[1],
         "candidate director id": game_data[1] + 7}
-
-
-'''
-Assert that is not possible set director with no turn started
-'''
-
-
-def test_set_director_with_no_turn():
-    game_data = game_factory(10, 0)
-
-    response = set_director_candidate(
-        game_data[0], game_data[1], game_data[1] + 7)
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
 
 
 '''
@@ -1045,7 +1002,7 @@ Test director candidates elegibility with 5 alive player between 7 players
 
 
 def test_get_director_candidate_ids_with_five_player_dead_players():
-    game_data = game_factory(7, 1, 1, True, 2)
+    game_data = game_factory(7, 1, True, 1, True, 2)
 
     set_director_candidate(game_data[0], game_data[1], game_data[1] + 4)
 

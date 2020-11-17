@@ -354,9 +354,12 @@ async def get_available_spell(id: int):
          )
 async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
     if spell == Spell.GUESSING:
-        return check_and_execute_guessing(id, spell_data.minister_id)
+        return check_and_execute_guessing(id, spell_data)
     elif spell == Spell.CRUCIO:
-        return check_and_execute_crucio(id, spell_data.minister_id, spell_data.player_id)
+        return check_and_execute_crucio(id, spell_data)
+    elif spell == Spell.AVADA_KEDAVRA:
+        return check_and_execute_avada_kedavra(id, spell_data)
+
 
 # Get available director candidates id's
 
@@ -385,4 +388,5 @@ async def set_director_candidate(id: int, formula: TurnFormula):
          )
 async def get_vote_formula(id: int):
     return get_vote_candidates(game_id=id)
+
 

@@ -30,7 +30,7 @@ def test_create_game_with_invalid_email():
      )
 
      assert response.status_code == 404
-     assert response.json() == {"detail": "User not found"} 
+     assert response.json() == {"detail": "User not found"}
 
 
 
@@ -49,16 +49,16 @@ def test_create_game_max_players_more_than_10():
      response = start_new_game(game_params)
 
      assert response.status_code == 409
-     assert response.json() == {"detail": "The game must have less than 10 players"} 
+     assert response.json() == {"detail": "The game must have less than 10 players"}
 
-     
+
 def test_incoherent_amount_of_players_to_create_game():
      users = users_factory(amount_users=1)
      game_params = {"email": users[0], "name": users[0], "min_players": 15, "max_players": 6}
      response = start_new_game(game_params)
 
      assert response.status_code == 409
-     assert response.json() == {"detail": "The minimum of players is higher than the maximum"} 
+     assert response.json() == {"detail": "The minimum of players is higher than the maximum"}
 
 
 def test_create_game_correctly():
@@ -69,10 +69,10 @@ def test_create_game_correctly():
      player_id = response.json().get("Player_Id")
 
      assert response.status_code == 201
-     assert response.json() == {"Game_Id": game_id, "Player_Id": player_id} 
+     assert response.json() == {"Game_Id": game_id, "Player_Id": player_id}
 
 
-def test_join_game_with_invalid_email():     
+def test_join_game_with_invalid_email():
      invalid_user = {"email": "fake_email@gmail.com"}
      game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
      response = join_a_game(game_id=game_data[0], user_email=invalid_user)
@@ -102,7 +102,7 @@ def test_join_game_with_max_reached():
 
 
 def test_join_game():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, start=False, game_state=0)
      user = users_factory(amount_users=1)
      user_email = {"email": user[0]}
      response = join_a_game(game_id=game_data[0], user_email=user_email)
@@ -114,7 +114,7 @@ def test_join_game():
 def test_init_bad_game_id():
      fake_game_id = 10000
      response = init_the_game(game_id=fake_game_id, player_id=50)
-     
+
      assert response.status_code == 404
      assert response.json() == {"detail": "Game not found"}
 
@@ -135,7 +135,7 @@ def test_init_game_without_minimum_players():
      assert response.status_code == 409
      assert response.json() == {"detail": "The game has not reach the minimum amount of players"}
 
-     
+
 def test_init_game_not_owner():
      users = users_factory(amount_users=5)
      game_params = {"email": users[0], "name": users[0], "min_players": 5, "max_players": 10}
@@ -160,7 +160,7 @@ def test_init_game_already_initialized():
 
 
 def test_init_game_finalized():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=1, game_state=2)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=1, start=False, game_state=3)
      response = init_the_game(game_id=game_data[0], player_id=game_data[1])
 
      assert response.status_code == 409
@@ -168,7 +168,7 @@ def test_init_game_finalized():
 
 
 def test_init_game_correctly():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=1, game_state=0)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=1, start=False, game_state=0)
      response = init_the_game(game_id=game_data[0], player_id=game_data[1])
 
      assert response.status_code == 200
@@ -178,7 +178,7 @@ def test_check_loyalty_5_players():
      game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -186,7 +186,7 @@ def test_check_loyalty_6_players():
      game_data = game_factory(players_cuantity=6, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -194,7 +194,7 @@ def test_check_loyalty_7_players():
      game_data = game_factory(players_cuantity=7, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -202,7 +202,7 @@ def test_check_loyalty_8_players():
      game_data = game_factory(players_cuantity=8, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -210,7 +210,7 @@ def test_check_loyalty_9_players():
      game_data = game_factory(players_cuantity=9, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -218,7 +218,7 @@ def test_check_loyalty_10_players():
      game_data = game_factory(players_cuantity=10, turns_cuantity=0, game_state=0)
      init_the_game(game_id=game_data[0], player_id=game_data[1])
      result = check_players_loyalty(game_data[0])
-     
+
      assert result == 1
 
 
@@ -320,14 +320,14 @@ def test_get_not_discarded_cards():
      game_data = game_factory(players_cuantity=5, turns_cuantity=1)
      cards = get_3_cards(game_id=game_data[0], player_id=game_data[1])
      to_discard = cards.json().get("cards")
-     discard_data = {"player_id": game_data[1], "to_discard": to_discard[0]} 
+     discard_data = {"player_id": game_data[1], "to_discard": to_discard[0]}
      card_discard(game_id=game_data[0], discard_data=discard_data)
      not_dis_cards = {"cards": [to_discard[1], to_discard[2]]}
      response = get_not_discarded_cards(game_id=game_data[0], player_id=game_data[1])
 
      assert response.status_code == 200
      assert response.json() == not_dis_cards
-     
+
 
 def test_get_vote_formula_dir_not_selected():
      game_data = game_factory(players_cuantity=5, turns_cuantity=1)
@@ -346,3 +346,4 @@ def test_game_state_not_initialized():
 
      assert response.status_code == 200
      assert len(users) == 5
+

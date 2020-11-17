@@ -18,6 +18,7 @@ class PlayerPromulgate(BaseModel):
 class Spell(str, Enum):
     GUESSING = "Guessing"
     CRUCIO = "Crucio"
+    AVADA_KEDAVRA = "Avada Kedavra"
 
 
 class SpellData(BaseModel):
@@ -199,25 +200,38 @@ def check_spell_base_conditions(game_id: int, minister_id: int):
         raise no_spell_available_exception
 
 
-def check_and_execute_guessing(game_id: int, minister_id: int):
-    check_spell_base_conditions(game_id, minister_id)
+def check_and_execute_guessing(game_id: int, spell_data: SpellData):
+    check_spell_base_conditions(game_id, spell_data.minister_id)
 
     return {"cards": db_turn.execute_guessing(game_id)}
 
 
-def check_and_execute_crucio(game_id: int, minister_id: int, player_id: int):
-    check_spell_base_conditions(game_id, minister_id)
+def check_and_execute_crucio(game_id: int, spell_data: SpellData):
+    check_spell_base_conditions(game_id, spell_data.minister_id)
 
-    if not is_player_in_game_by_id(game_id, player_id):
+    if not is_player_in_game_by_id(game_id, spell_data.player_id):
         raise invalid_player_in_game_exception
 
-    if not db_turn.is_alive(game_id, player_id):
+    if not db_turn.is_alive(game_id, spell_data.player_id):
         raise player_is_dead_exception
 
-    if db_turn.is_player_investigated(player_id):
+    if db_turn.is_player_investigated(spell_data.player_id):
         raise player_already_investigated_exception
 
-    return {"Fenix loyalty": db_turn.execute_crucio(game_id, player_id)}
+    return {"Fenix loyalty": db_turn.execute_crucio(game_id, spell_data.player_id)}
+
+
+def check_and_execute_avada_kedavra(game_id: int, spell_data: SpellData):
+    check_spell_base_conditions(game_id, spell_data.minister_id)
+
+    if not is_player_in_game_by_id(game_id, spell_data.player_id):
+        raise invalid_player_in_game_exception
+
+    if not db_turn.is_alive(game_id, spell_data.player_id):
+        raise player_is_dead_exception
+
+    return {"Finished": db_turn.execute_avada_kedavra(game_id, spell_data.player_id)}
+
 
 def check_and_get_director_candidates(game_id: int):
     check_game_with_at_least_one_turn(game_id)
@@ -283,3 +297,4 @@ def check_and_reject_notify(game_id: int, player_id: int):
         return { "notified": False }
     
     return db_turn.notify_with_player(game_id, player_id)
+
