@@ -117,10 +117,21 @@ def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
     if start:
         response = client.put('game/init/{}?player_id={}'.format(game_id, players[0].id))
 
-    for _ in range(turns_cuantity-1):
-        response = client.put('game/{}/select_MM'.format(game_id))
+#    for _ in range(turns_cuantity-1):
 
-    return [game_id, players[0].id]
+    candidate_id = players[0].id 
+    # Correcting bug about minister selection for endpoint "promulgate". Director should select!
+    # This loop sets current minister id, so when using this id is relative to the game_factory turns
+    # If that is not the case, returns the id that was set without these changes
+    # So be careful here, directions are relative if you know that turns_cuantity > 0
+    for _ in range(turns_cuantity):
+
+        response = client.put('game/{}/select_MM'.format(game_id))
+        response_keys = response.json().keys()
+        if (response.json() is not None) and (not "detail" in response_keys) and ("candidate_minister_id" in response_keys):
+            candidate_id = response.json()["candidate_minister_id"]
+
+    return [game_id, candidate_id, total_players]
 
 
 def make_vote_and_start_new_turn(
@@ -142,8 +153,10 @@ def start_new_turn(game_id):
     return client.put('game/{}/select_MM'.format(game_id))
 
 
-def get_3_cards(game_id):
-    return client.put('/game/{}/get_cards'.format(game_id))
+def get_3_cards(game_id, player_id):
+    return client.get(
+        '/game/{}/minister_cards?player_id={}'.format(game_id, player_id)
+    )
 
 
 def check_game_state(game_id):
@@ -169,9 +182,9 @@ def player_vote(game_id, player_id, vote):
     )
 
 
-def minister_promulgate(game_id, minister_id, card_type):
+def director_promulgate(game_id, player_id, card_type):
     return client.put('/game/{}/promulgate'.format(game_id), json={
-        "candidate_id": minister_id,
+        "player_id": player_id,
         "to_promulgate": card_type
     }
     )
@@ -258,8 +271,10 @@ def join_a_game(game_id: int, user_email: EmailParameter):
 def init_the_game(game_id: int, player_id: int):
      return client.put('game/init/{}?player_id={}'.format(game_id, player_id))
 
-def get_3_cards(game_id: int):
-    return client.put('/game/{}/get_cards'.format(game_id))
+def get_3_cards(game_id: int, player_id: int):
+    return client.get(
+        '/game/{}/minister_cards?player_id={}'.format(game_id, player_id)
+    )
 
 def card_discard(game_id: int, discard_data: DiscardData):
     return client.put(
@@ -271,3 +286,11 @@ def get_not_discarded_cards(game_id:int, player_id: int):
     return client.get(
         "/game/{}/director_cards?player_id={}".format(game_id, player_id)
     )
+
+def get_vote_formula(game_id: int):
+    return client.get('game/{}/get_candidates'.format(game_id))
+
+def game_state_in_pregame(game_id: int, player_id: int):
+    return client.get("game/initialized/{}?player_id={}".format(game_id, player_id))
+
+

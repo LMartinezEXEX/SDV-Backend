@@ -88,11 +88,20 @@ def get_turn_in_game(game_id: int, turn_number: int):
                     game_id and t.turn_number == turn_number)
 
 
+'''
+Assert if a player was investigated previously
+'''
+
+
 @db_session()
 def is_player_investigated(player_id: int):
     player = get_player_by_id(player_id)
     return player.is_investigated
 
+
+'''
+Assert if there is a savilable spell to execute
+'''
 
 @db_session()
 def is_board_available_spell(game_id):
@@ -124,6 +133,24 @@ def create_players_id_list(players):
         player_ids.append(player.id)
 
     return player_ids
+
+
+'''
+Get players ids, username and loyalty in current game
+'''
+
+@db_session()
+def get_players_info(game_id):
+    players_id_list = get_all_players_id(game_id)
+
+    players_info_list = []
+    for id in players_id_list:
+        player = get_player_by_id(id)
+        players_info_list.append({"player_id": id,
+                                  "username": player.user.username,
+                                  "loyalty": player.loyalty})
+
+    return players_info_list
 
 
 '''
@@ -186,8 +213,11 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 candidate_minister=candidate_minister,
                 candidate_director=candidate_director,
                 taken_cards=False,
-                promulgated=False,
                 imperius_player_id = 0)
+                pass_cards=False,
+                reject_notified=[],
+                promulgated=False)
+
 
     Vote(result=False,
          turn=turn)
@@ -328,7 +358,7 @@ If it is the first vote in the turn, create the Vote instance for the turn.
 
 
 @db_session()
-def vote_turn(game_id: int, player_id: int, player_vote: int):
+def vote_turn(game_id: int, player_id: int, player_vote: bool):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
     player = get_player_by_id(player_id)
@@ -337,7 +367,22 @@ def vote_turn(game_id: int, player_id: int, player_vote: int):
 
     Player_vote(player=player,
                 vote=vote,
-                is_lumos=True if player_vote else False)
+                is_lumos= player_vote)
+    commit()
+
+    # Check and take action if all players voted
+    if len(vote.player_vote) == alive_players_count(game_id):
+        lumos_counter = select(
+            pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos).count()
+
+        result = False
+        if len(vote.player_vote) - lumos_counter < lumos_counter:
+            result = True
+            turn.current_minister = turn.candidate_minister
+            turn.current_director = turn.candidate_director
+
+        vote.result = result
+
 
     return len(vote.player_vote)
 
@@ -370,23 +415,36 @@ def get_result(game_id: int):
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn_number and v.turn.game.id == game_id)
 
-    lumos = Player_vote.select(
-        lambda pv: pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos).count()
-    lumos_votes = select(
-        pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
+    lumos_votes = select(pv for pv in Player_vote if pv.vote.turn.turn_number == turn.turn_number and pv.vote.turn.game.id == game_id and pv.is_lumos)[:]
 
     player_ids = []
     for _vote_ in lumos_votes:
         player_ids.append(_vote_.player.id)
 
-    result = False
-    if len(vote.player_vote) - lumos < lumos:
-        result = True
-        turn.current_minister = turn.candidate_minister
-        turn.current_director = turn.candidate_director
+    return [vote.result, player_ids]
 
-    vote.result = result
-    return [result, player_ids]
+
+@db_session()
+def notify_with_player(game_id: int, player_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    player = get_player_by_id(player_id)
+    if player.is_alive:
+        # If player has notified, don't let him do this again
+        if player_id in turn.reject_notified:
+            return { "notified": True }
+        
+        alive_players = alive_players_count(game_id)
+        if len(turn.reject_notified) < alive_players:
+            turn.reject_notified.append(player_id)
+            
+            # All players know that candidates were rejected, then go to next turn
+            if len(turn.reject_notified) == alive_players:
+                _ = select_MM_candidate(game_id)
+        
+        return { "notified": True }
+    else:
+        raise player_is_dead_exception
 
 
 '''
@@ -400,6 +458,18 @@ def taked_cards(game_id: int):
     turn = get_turn_in_game(game_id, turn_number)
 
     return turn.taken_cards
+
+
+'''
+Check if minister passed cards to director 
+'''
+
+@db_session()
+def director_cards_set(game_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    return turn.pass_cards
 
 
 '''
@@ -470,8 +540,16 @@ def check_status(game_id: int):
         game_finished = True
         game.state = 2
 
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn.turn_number and v.turn.game.id == game_id)
+
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
-            turn.current_minister.id, turn.current_director.id]
+            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]
+
+
+'''
+Generate first turn when game starts and therefore isnt a last minister or director
+'''
 
 
 @db_session()
@@ -494,6 +572,11 @@ def create_first_turn(game_id: int):
     return next_minister.id
 
 
+'''
+Get minister id in current turn
+'''
+
+
 @db_session()
 def get_current_minister(game_id: int):
     game = get_game_by_id(game_id=game_id)
@@ -502,13 +585,27 @@ def get_current_minister(game_id: int):
     return turn.current_minister.id
 
 
-#------------- Discard Functions-----------------------------
+@db_session()
+def get_candidates(game_id: int):
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    return (turn.candidate_minister.id, turn.candidate_director.id)
+
+
+'''
+Assert if a player is the current director
+'''
 
 @db_session()
 def is_current_director(game_id: int, player_id: int):
     turn_number = get_current_turn_number_in_game(game_id=game_id)
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_director.id == player_id
+
+
+'''
+Get cards not discarded from the deck for the director
+'''
 
 
 @db_session()
@@ -527,6 +624,11 @@ def get_not_discarded_cards(game_id: int):
     return card_list
 
 
+'''
+Mark a card as discarded in the deck
+'''
+
+
 @db_session()
 def discard_card(game_id: int, data: int):
     game = get_game_by_id(game_id=game_id)
@@ -539,11 +641,17 @@ def discard_card(game_id: int, data: int):
     card.discarded = True
     if not card.discarded:
         raise not_discarded_exception
+    
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    turn.pass_cards=True
+
     return {"message": "Card discarded"}
 
 
-
-# -SPELLS-----------------------------------------------------------------------
+'''
+Check if with current promulgations a spell is available
+'''
 
 
 @db_session()
@@ -560,7 +668,12 @@ def check_available_spell(game_id: int):
         board.spell_available = True
 
     elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
+
         board.spell_available = True
+
+'''
+Get current turn in game
+'''
 
 
 @db_session()
@@ -568,6 +681,10 @@ def get_current_turn_in_game(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
 
     return get_turn_in_game(game_id, turn_number)
+
+'''
+Get available spell string in a game with 5 or 6 players
+'''
 
 
 def available_spell_in_board_1(player_cuantity: int, promulgations: int):
@@ -579,6 +696,11 @@ def available_spell_in_board_1(player_cuantity: int, promulgations: int):
         spell = ""
 
     return spell
+
+
+'''
+Get available spell string in a game with 7 or 8 players
+'''
 
 
 def available_spell_in_board_2(player_cuantity: int, promulgations: int):
@@ -594,6 +716,11 @@ def available_spell_in_board_2(player_cuantity: int, promulgations: int):
     return spell
 
 
+'''
+Get available spell string in a game with 9 or 10 players
+'''
+
+
 def available_spell_in_board_3(player_cuantity: int, promulgations: int):
     if promulgations == 1 or promulgations == 2:
         spell = "Crucio"
@@ -606,6 +733,9 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
 
     return spell
 
+'''
+Get available spell string
+'''
 
 @db_session()
 def available_spell_in_game_conditions(game_id: int):
@@ -630,6 +760,11 @@ def available_spell_in_game_conditions(game_id: int):
     return spell
 
 
+'''
+Execute guessing
+'''
+
+
 @db_session()
 def execute_guessing(game_id):
     game = Game[game_id]
@@ -646,7 +781,9 @@ def execute_guessing(game_id):
 
     return [cards[0].type, cards[1].type, cards[2].type]
 
-
+'''
+Execute crucio to a player in game
+'''
 @db_session()
 def execute_crucio(game_id, player_id):
     board = Board[game_id]
@@ -655,7 +792,7 @@ def execute_crucio(game_id, player_id):
     player.is_investigated = True
     board.spell_available = False
 
-    return player.loyalty == "Fenix"
+    return player.loyalty == "Fenix Order"
 
 
 @db_session()
@@ -670,3 +807,4 @@ def execute_avada_kedavra(game_id, player_id):
         game.state = 2
 
     return player.rol == "Voldemort"
+

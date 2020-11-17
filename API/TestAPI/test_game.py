@@ -296,7 +296,7 @@ def test_count_roles_with_10_players():
 
 def test_minister_discard():
      game_data = game_factory(players_cuantity=5, turns_cuantity=1)
-     cards = get_3_cards(game_id=game_data[0])
+     cards = get_3_cards(game_id=game_data[0], player_id=game_data[1])
      to_discard = cards.json().get("cards")
      discard_data = {"player_id": game_data[1], "to_discard": to_discard[0]}
      response = card_discard(game_id=game_data[0], discard_data=discard_data)
@@ -307,7 +307,7 @@ def test_minister_discard():
 def test_discard_not_minister():
      fake_player_id = 5000
      game_data = game_factory(players_cuantity=5, turns_cuantity=1)
-     cards = get_3_cards(game_id=game_data[0])
+     cards = get_3_cards(game_id=game_data[0], player_id=game_data[1])
      to_discard = cards.json().get("cards")
      discard_data = {"player_id": fake_player_id, "to_discard": to_discard[0]}
      response = card_discard(game_id=game_data[0], discard_data=discard_data)
@@ -318,7 +318,7 @@ def test_discard_not_minister():
 
 def test_get_not_discarded_cards():
      game_data = game_factory(players_cuantity=5, turns_cuantity=1)
-     cards = get_3_cards(game_id=game_data[0])
+     cards = get_3_cards(game_id=game_data[0], player_id=game_data[1])
      to_discard = cards.json().get("cards")
      discard_data = {"player_id": game_data[1], "to_discard": to_discard[0]}
      card_discard(game_id=game_data[0], discard_data=discard_data)
@@ -327,3 +327,23 @@ def test_get_not_discarded_cards():
 
      assert response.status_code == 200
      assert response.json() == not_dis_cards
+
+
+def test_get_vote_formula_dir_not_selected():
+     game_data = game_factory(players_cuantity=5, turns_cuantity=1)
+     response = get_vote_formula(game_id=game_data[0])
+     minister_id = response.json().get("minister_id")
+     director_id = response.json().get("director_id")
+
+     assert response.status_code == 200
+     assert minister_id == director_id
+
+
+def test_game_state_not_initialized():
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
+     response = game_state_in_pregame(game_id=game_data[0], player_id=game_data[1])
+     users = response.json().get("users")
+
+     assert response.status_code == 200
+     assert len(users) == 5
+

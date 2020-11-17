@@ -11,8 +11,9 @@ class PlayerVote(BaseModel):
 
 
 class PlayerPromulgate(BaseModel):
-    candidate_id: int
+    player_id: int
     to_promulgate: StrictInt
+
 
 class Spell(str, Enum):
     GUESSING = "Guessing"
@@ -24,13 +25,16 @@ class SpellData(BaseModel):
     minister_id: int
     player_id: int
 
+
 class TurnFormula(BaseModel):
     minister_id: int
     director_id: int
 
+
 class DiscardData(BaseModel):
     player_id: int
     to_discard: int
+
 
 def check_game_state(game_id: int):
     state = get_game_state(game_id)
@@ -63,6 +67,12 @@ def check_and_get_player_ids(game_id: int):
     check_game_state(game_id)
 
     return {"Player ids": db_turn.get_all_players_id(game_id)}
+
+
+def check_and_get_players_info(game_id: int):
+    check_game_state(game_id)
+
+    return {"Players info": db_turn.get_players_info(game_id)}
 
 
 def get_next_MM(game_id: int):
@@ -120,19 +130,20 @@ def check_and_get_vote_result(game_id: int):
         raise votes_missing_exception
 
 
-def check_and_get_3_cards(game_id: int):
+def check_and_get_3_cards(game_id: int, player_id: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Cards were taken in this turn
     if db_turn.taked_cards(game_id):
-
         raise cards_taken_in_current_turn_exception
 
-    else:
-        return {"cards": db_turn.generate_3_cards(game_id)}
+    if not db_turn.is_current_minister(game_id, player_id):
+        raise player_isnt_minister_exception
+
+    return {"cards": db_turn.generate_3_cards(game_id)}
 
 
-def promulgate_in_game(game_id: int, minister_id: int, card_type: int):
+def promulgate_in_game(game_id: int, director_id: int, card_type: int):
     check_game_with_at_least_one_turn(game_id)
 
     # Already promulgated in this turn
@@ -140,8 +151,8 @@ def promulgate_in_game(game_id: int, minister_id: int, card_type: int):
         raise already_promulgated_in_turn_exception
 
     # Player is not current minister
-    if not db_turn.is_current_minister(game_id, minister_id):
-        raise player_isnt_minister_exception
+    if not db_turn.is_current_director(game_id, director_id):
+        raise player_isnt_director_exception
 
     board_state = db_turn.promulgate(game_id, card_type)
 
@@ -159,7 +170,8 @@ def game_status(game_id: int):
             "fenix promulgations": status[1],
             "death eater promulgations": status[2],
             "current minister id": status[3],
-            "current director id": status[4]}
+            "current director id": status[4],
+            "vote done": status[5]}
 
 
 def check_and_get_available_spell(game_id: int):
@@ -243,7 +255,15 @@ def check_and_set_director_candidate(game_id, minister_id, director_id):
     return {"candidate minister id": formula[0], "candidate director id": formula[1]}
 
 
-#--------------------- Discard functions ------------------------
+def get_vote_candidates(game_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise geme_not_found_exception
+    candidates = db_turn.get_candidates(game_id=game_id)
+    return TurnFormula(
+        minister_id = candidates[0],
+        director_id = candidates[1]
+    )
+
 
 def discard_selected_card(game_id: int, discard_data: DiscardData):
     if not get_game_by_id(game_id=game_id):
@@ -258,6 +278,23 @@ def get_cards_for_director(game_id: int, player_id: int):
         raise game_not_found_exception
     if not db_turn.is_current_director(game_id=game_id, player_id=player_id):
         raise player_isnt_director_exception
+    if not db_turn.taked_cards(game_id):
+        raise cards_not_taken_in_current_turn_exception
+    if not db_turn.director_cards_set(game_id):
+        raise not_discarded_exception
+
     return {"cards": db_turn.get_not_discarded_cards(game_id=game_id)}
 
-#----------------------------------------------
+
+def check_and_reject_notify(game_id: int, player_id: int):
+    if not get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    
+    vote_result = check_and_get_vote_result(game_id)
+    
+    # If candidates were elected then don't notify
+    if vote_result["result"]:
+        return { "notified": False }
+    
+    return db_turn.notify_with_player(game_id, player_id)
+

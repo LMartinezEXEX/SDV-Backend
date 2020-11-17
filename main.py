@@ -203,6 +203,16 @@ async def has_the_game_started(id: int, player_id: int):
     return check_if_game_started(game_id=id, player_id=player_id)
 
 
+# Get three cards
+
+@app.get("/game/{id}/minister_cards",
+         status_code=status.HTTP_200_OK,
+         tags=["Take three cards"]
+         )
+async def get_cards(id: int, player_id: int):
+    return check_and_get_3_cards(game_id=id, player_id=player_id)
+
+
 # Discard card
 
 @app.put("/game/{id}/discard",
@@ -250,12 +260,23 @@ async def init_game(id: int, player_id: int):
 
 
 # Get list of player ids in the game
+
 @app.get("/game/{id}/players",
          status_code=status.HTTP_200_OK,
          tags=["Players id"]
          )
 async def get_player_ids(id: int):
     return check_and_get_player_ids(id)
+
+
+# Get list of player ids, username and loyalty in the game
+
+@app.get("/game/{id}/players_info",
+         status_code=status.HTTP_200_OK,
+         tags=["Players info"]
+         )
+async def get_players_info(id: int):
+    return check_and_get_players_info(id)
 
 # Get next player id candidate for minister
 
@@ -287,16 +308,14 @@ async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player 
 async def vote_result(id: int):
     return check_and_get_vote_result(id)
 
+# Notify that knows about rejection of candidates
 
-# Get three cards
-
-@app.put("/game/{id}/get_cards",
+@app.put("/game/{id}/reject_notified",
          status_code=status.HTTP_200_OK,
-         tags=["Take three cards"]
+         tags=["Notify that knows about rejection"]
          )
-async def get_cards(id: int):
-    return check_and_get_3_cards(id)
-
+async def reject_notify(id: int, player_id: int):
+    return check_and_reject_notify(id, player_id)
 
 # Promulgate a card
 
@@ -306,7 +325,7 @@ async def get_cards(id: int):
          )
 async def promulgate_card(id: int, promulgate: PlayerPromulgate):
     return promulgate_in_game(
-        id, promulgate.candidate_id, promulgate.to_promulgate)
+        id, promulgate.player_id, promulgate.to_promulgate)
 
 
 # Check the game status
@@ -341,6 +360,7 @@ async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
     elif spell == Spell.AVADA_KEDAVRA:
         return check_and_execute_avada_kedavra(id, spell_data)
 
+
 # Get available director candidates id's
 
 @app.get("/game/{id}/director_candidates",
@@ -359,3 +379,14 @@ async def get_director_candidates(id: int):
          )
 async def set_director_candidate(id: int, formula: TurnFormula):
     return check_and_set_director_candidate(id, formula.minister_id, formula.director_id)
+
+# Get the minister-director formula
+
+@app.get("/game/{id}/get_candidates",
+         status_code=status.HTTP_200_OK,
+         tags=["Get vote formula"]
+         )
+async def get_vote_formula(id: int):
+    return get_vote_candidates(game_id=id)
+
+
