@@ -81,7 +81,8 @@ def save_new_game(owner: EmailStr, name: str,
         creation_date=datetime.today(),
         state=0,
         min_players=min_players,
-        max_players=max_players
+        max_players=max_players,
+        end_game_notified=[]
     )
     board = Board(
         game=game,
