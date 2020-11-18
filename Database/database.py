@@ -48,6 +48,7 @@ class Game(db.Entity):
     creation_date = Required(datetime.datetime)
     state = Required(int)
     players = Set('Player')
+    end_game_notified = Optional(IntArray)
     turn = Set('Turn')
     card = Set('Card')
     board = Optional('Board')

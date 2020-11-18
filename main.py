@@ -175,8 +175,6 @@ async def user_update_icon(
     else:
         raise credentials_exception
 
-# ----------------------
-# New Endpoints tomi
 
 #List games
 
@@ -223,9 +221,6 @@ async def get_director_cards_to_promulgate(id: int, player_id: int):
     return get_cards_for_director(game_id=id, player_id=player_id)
 
 
-
-#-------------------------
-
 # Create Game
 
 @app.post("/game/create/",
@@ -233,6 +228,7 @@ async def get_director_cards_to_promulgate(id: int, player_id: int):
           tags=["Create Game"])
 async def create_game(params: GameParams):
     return create_new_game(game_params=params)
+
 
 # Join Game
 
@@ -242,8 +238,8 @@ async def create_game(params: GameParams):
 async def join_game(id: int, user_email: EmailParameter):
     return join_game_with_keys(game_id=id, user_email=user_email.email)
 
-# Init Game
 
+# Init Game
 
 @app.put("/game/{id}/init",
          status_code=status.HTTP_200_OK,
@@ -271,8 +267,8 @@ async def get_player_ids(id: int):
 async def get_players_info(id: int):
     return check_and_get_players_info(id)
 
-# Get next player id candidate for minister
 
+# Get next player id candidate for minister
 
 @app.put("/game/{id}/select_MM",
          status_code=status.HTTP_200_OK,
@@ -301,6 +297,7 @@ async def vote(id: int, player_vote: PlayerVote = Body(..., description="Player 
 async def vote_result(id: int):
     return check_and_get_vote_result(id)
 
+
 # Notify that knows about rejection of candidates
 
 @app.put("/game/{id}/reject_notified",
@@ -309,6 +306,7 @@ async def vote_result(id: int):
          )
 async def reject_notify(id: int, player_id: int):
     return check_and_reject_notify(id, player_id)
+
 
 # Promulgate a card
 
@@ -331,7 +329,18 @@ async def get_game_status(id: int):
     return game_status(id)
 
 
+# Notify that player knows about ending
+
+@app.put("/game/{id}/end_game_notified",
+         status_code=status.HTTP_200_OK,
+         tags=["Notify knowledge about ending"]
+         )
+async def end_game_notify(id: int, player_id: int):
+    return check_and_end_game_notify(id, player_id)
+
+
 # Get available spell in current turn
+
 @app.get("/game/{id}/spell",
          status_code=status.HTTP_200_OK,
          tags=["Available spell"]
@@ -341,6 +350,7 @@ async def get_available_spell(id: int):
 
 
 # Execute a spell
+
 @app.put("/game/{id}/execute_spell",
          status_code=status.HTTP_200_OK,
          tags=["Execute spell"]

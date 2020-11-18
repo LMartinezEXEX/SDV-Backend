@@ -101,7 +101,9 @@ def player_voted(game_id: int, player_id: int):
 def notify_with_player(game_id: int, player_id: int):
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     turn = db_turn.get_turn_in_game(game_id, turn_number)
+
     player = get_player_by_id(player_id)
+
     if player.is_alive:
         # If player has notified, don't let him do this again
         if player_id in turn.reject_notified:
@@ -118,3 +120,36 @@ def notify_with_player(game_id: int, player_id: int):
         return { "notified": True }
     else:
         raise player_is_dead_exception
+
+@db_session
+def end_game_notify_with_player(game_id: int, player_id: int):
+    game = Game[game_id]
+    if game.state <= 1:
+        return { "game_result": "" }
+    
+    if not player_id in game.end_game_notified:
+        players_count = game.players.count()
+        if len(game.end_game_notified) < players_count:
+            game.end_game_notified.append(player_id)
+            if len(game.end_game_notified) == players_count:
+                game.state = 2
+    
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+
+    board = Board[game_id]
+    
+    # Check who won and why
+    message = ""
+    if board.fenix_promulgation == 5:
+        message = "La Orden del Fenix gana (5 promulgaciones)"
+    elif board.death_eater_promulgation == 6:
+        message = "Los Mortifagos ganan (6 promulgaciones)"
+    elif board.death_eater_promulgation >= 3 \
+        and turn.current_director != turn.current_minister \
+        and turn.current_director.rol == "Voldemort":
+        message = "Los Mortifagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortifagos)"
+    elif not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
+        message = "La Orden del Fenix gana (Voldemort está muerto)"
+    
+    return { "game_result": message }

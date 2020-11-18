@@ -52,7 +52,8 @@ def save_new_game(owner: EmailStr, name: str,
         creation_date=datetime.datetime.today(),
         state=0,
         min_players=min_players,
-        max_players=max_players
+        max_players=max_players,
+        end_game_notified=[]
     )
     board = Board(
         game=game,
@@ -185,8 +186,6 @@ def get_all_players_id(game_id: int):
     return aux.create_players_id_list(players)
 
 
-
-
 '''
 Get players ids, username and loyalty in current game
 '''
@@ -203,7 +202,6 @@ def get_players_info(game_id):
                                   "loyalty": player.loyalty})
 
     return players_info_list
-
 
 
 '''
@@ -223,10 +221,12 @@ def check_status(game_id: int):
     turn = db_turn.get_turn_in_game(game_id, turn_number)
     board = Board[game_id]
 
-    if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 or (
-            board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
+    if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 \
+        or (board.death_eater_promulgation >= 3 \
+            and turn.current_director != turn.current_minister \
+            and turn.current_director.rol == "Voldemort") \
+        or not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
         game_finished = True
-        game.state = 2
 
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
