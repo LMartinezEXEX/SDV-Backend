@@ -11,14 +11,14 @@ from API.Model.token_data import *
 from USER_URLS import USER_LOGIN_URL
 from API.Model.security_scheme import OAuth2PasswordBearer
 from API.Model.models import *
-from Database.user_functions import *
+import Database.user_functions as db_user 
 
 
 # Actual security scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=USER_LOGIN_URL)
 
 async def get_user_profile_by_email(email: EmailStr):
-    user = get_user_by_email(email)
+    user = db_user.get_user_by_email(email)
     return UserProfile(
         email=user.email,
         username=user.username,
@@ -28,12 +28,12 @@ async def get_user_profile_by_email(email: EmailStr):
 
 
 async def get_user_icon_by_email(email: EmailStr):
-    user = get_user_by_email(email)
+    user = db_user.get_user_by_email(email)
     return user.icon
 
 
 async def register(new_user: UserRegisterIn):
-    register_user(
+    db_user.register_user(
         User(
             email=new_user.email,
             username=new_user.username,
@@ -52,7 +52,7 @@ async def is_valid_user(email: EmailStr):
 
 
 async def authenticate(email: EmailStr, password: str):
-    if auth_user_password(email, password):
+    if db_user.auth_user_password(email, password):
         user = await get_user_profile_by_email(email)
         access_token = await new_access_token(
             data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
@@ -61,7 +61,7 @@ async def authenticate(email: EmailStr, password: str):
 
         last_access_date = datetime.utcnow()
 
-        last_access(
+        db_user.last_access(
             user.email,
             last_access_date)
 
@@ -110,25 +110,25 @@ async def get_this_user(
 
 
 async def change_username(update_data: UserUpdateUsername):
-    if auth_user_password(
+    if db_user.auth_user_password(
             update_data.email, update_data.password):
-        return update_data.new_username == change_username(
+        return update_data.new_username == db_user.change_username(
             update_data)
     else:
         return False
 
 
 async def change_password(update_data: UserUpdatePassword):
-    if update_data.old_password != update_data.new_password and auth_user_password(
+    if update_data.old_password != update_data.new_password and db_user.auth_user_password(
             update_data.email, update_data.old_password):
-        return change_password(update_data)
+        return db_user.change_password(update_data)
     return False
 
 
 async def change_icon(update_data: UserUpdateIcon, new_icon: bytes):
-    if auth_user_password(
+    if db_user.auth_user_password(
             update_data.email, update_data.password):
-        return new_icon == change_icon(
+        return new_icon == db_user.change_icon(
             update_data, new_icon)
     else:
         return False
