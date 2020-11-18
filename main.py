@@ -187,7 +187,7 @@ async def list_games():
 
 # For polling: Has the game started?
 
-@app.get("/game/initialized/{id}",
+@app.get("/game/{id}/initialized",
          status_code=status.HTTP_200_OK,
          tags=["Has the Game started"])
 async def has_the_game_started(id: int, player_id: int):
