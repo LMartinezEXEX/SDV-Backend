@@ -1,7 +1,7 @@
 from pony   import orm
 from typing import Optional
 from pydantic import EmailStr
-from Database.database import User 
+from Database.database import *
 
 from datetime import datetime
 import bcrypt

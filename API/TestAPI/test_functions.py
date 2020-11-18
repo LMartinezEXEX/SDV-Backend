@@ -1,11 +1,20 @@
 import json
 import pytest
+import datetime
 from main import app
 from pony.orm import db_session, select
 from Database.database import *
 from fastapi.testclient import TestClient
-from API.Model.gameModel import GameParams, EmailParameter
-from API.Model.turnModel import DiscardData
+from API.Model.userAPI import *
+from API.Model.gameAPI import *
+from API.Model.turnAPI import *
+from API.Model.voteAPI import *
+from API.Model.cardAPI import *
+from API.Model.playerAPI import *
+from API.Model.spellAPI import *
+from API.Model.boardAPI import *
+from API.Model.exceptions import *
+from API.Model.metadata import *
 
 
 client = TestClient(app)
@@ -95,8 +104,8 @@ def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
         is_Voldemort = turn % players_cuantity == 0
         player = Player(turn=turn,
                         user=user,
-                        rol='Voldemort' if is_Voldemort else 'Fenix',
-                        loyalty='Fenix' if is_Fenix else 'Mortifago',
+                        rol='Voldemort' if is_Voldemort else 'Fenix Order',
+                        loyalty='Fenix Order' if is_Fenix and not is_Voldemort else 'Death Eater',
                         is_alive=True,
                         chat_enabled=True,
                         is_investigated=False,
@@ -115,11 +124,9 @@ def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
 
     # Start game with one turn if game_state is 0
     if start:
-        response = client.put('game/init/{}?player_id={}'.format(game_id, players[0].id))
+        response = client.put('game/{}/init?player_id={}'.format(game_id, players[0].id))
 
-#    for _ in range(turns_cuantity-1):
-
-    candidate_id = players[0].id 
+    candidate_id = players[0].id
     # Correcting bug about minister selection for endpoint "promulgate". Director should select!
     # This loop sets current minister id, so when using this id is relative to the game_factory turns
     # If that is not the case, returns the id that was set without these changes
@@ -265,11 +272,11 @@ def is_player_in_game_by_id(game_id: int, player_id: int):
         lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
 
 def join_a_game(game_id: int, user_email: EmailParameter):
-     return client.put('game/join/{}'.format(game_id),
+     return client.put('game/{}/join'.format(game_id),
          json= user_email)
 
 def init_the_game(game_id: int, player_id: int):
-     return client.put('game/init/{}?player_id={}'.format(game_id, player_id))
+     return client.put('game/{}/init?player_id={}'.format(game_id, player_id))
 
 def get_3_cards(game_id: int, player_id: int):
     return client.get(
@@ -292,5 +299,3 @@ def get_vote_formula(game_id: int):
 
 def game_state_in_pregame(game_id: int, player_id: int):
     return client.get("game/initialized/{}?player_id={}".format(game_id, player_id))
-
-

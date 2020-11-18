@@ -45,7 +45,7 @@ def test_action_in_finished_game():
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 409
-    assert response.json() == {"detail": "Game finished"}
+    assert response.json() == {"detail": "The game has finished"}
 
 
 '''
@@ -57,7 +57,7 @@ def test_action_in_unexisting_game():
     response = start_new_turn(game_id=64)
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Game doesn't exist"}
+    assert response.json() == {"detail": "Game not found"}
 
 
 '''
@@ -110,7 +110,7 @@ def test_ciclic_candidate_minister_when_dead():
     response = start_new_turn(game_id=game_data[0])
 
     assert response.status_code == 200
-    assert response.json() == {"candidate_minister_id": game_data[1] - 2}
+    assert response.json() == {"candidate_minister_id": game_data[1]+1}
 
 
 '''
@@ -149,20 +149,6 @@ def test_get_cards_twice_in_same_turn():
         "detail": "Already taken the cards in this turn"}
 
 
-  
-'''
-Test get cards when a turn hasn't even started in a game
-'''
-
-
-def test_get_cards_with_no_turn():
-    game_data = game_factory(7, 0)
-    response = get_3_cards(game_id=game_data[0], player_id=game_data[1])
-
-    assert response.status_code == 409
-    assert response.json() == {"detail": "No turn started yet"}
-    
-
 '''
 Test correct response when a player vote
 '''
@@ -185,7 +171,7 @@ Test correct response when several player vote
 
 
 def test_several_vote_count():
-    game_data = game_factory(5, 1)
+    game_data = game_factory(5, 0)
     response = None
 
     votes = [True, False, True, True, False]
@@ -234,7 +220,7 @@ Test correct result when all players voted
 
 
 def test_get_result():
-    game_data = game_factory(7, 1)
+    game_data = game_factory(7, 0)
 
     votes = [True, True, False, True, True, False, False]
     voted_lumos = [
@@ -339,7 +325,7 @@ Test correct game status response
 
 
 def test_initial_game_check():
-    game_data = game_factory(8, 1)
+    game_data = game_factory(8, 0)
 
     response = check_game_state(game_id=game_data[0])
 
@@ -349,7 +335,8 @@ def test_initial_game_check():
                                "fenix promulgations": 0,
                                "death eater promulgations": 0,
                                "current minister id": game_data[1],
-                               "current director id": game_data[1]}
+                               "current director id": game_data[1],
+                               "vote done": False}
 
 
 '''
@@ -375,7 +362,8 @@ def test_game_check_fenix_five_promulgations():
                                "fenix promulgations": 5,
                                "death eater promulgations": 0,
                                "current minister id": game_data[1] + 7,
-                               "current director id": game_data[1] + 7}
+                               "current director id": game_data[1] + 7,
+                               "vote done": False}
 
 
 '''
@@ -384,13 +372,13 @@ Test correct game status when death eaters should win with 6 promulgations
 
 
 def test_game_check_six_death_eater_promulgations():
-    game_data = game_factory(10, 1, True, 1, True, 2)
+    game_data = game_factory(10, 0, True, 1, True, 2)
 
     for i in range(6):
         start_new_turn(game_id=game_data[0])
         director_promulgate(
             game_id=game_data[0],
-            minister_id=game_data[1] + i + 3,
+            player_id=game_data[1] + i + 3,
             card_type=1)
         execute_spell(game_data[0], "Guessing", game_data[1] + i + 3, 1)
 
@@ -403,7 +391,8 @@ def test_game_check_six_death_eater_promulgations():
                                "fenix promulgations": 0,
                                "death eater promulgations": 6,
                                "current minister id": game_data[1] + 8,
-                               "current director id": game_data[1] + 8}
+                               "current director id": game_data[1] + 8,
+                               "vote done": False}
 
 
 '''
@@ -433,9 +422,9 @@ def test_spell_with_wrong_minister_id():
 def test_spell_with_no_board_spell_condition():
     game_data = game_factory(5, 1, True, 1, False, 0, 0, 0)
 
-    minister_promulgate(
+    director_promulgate(
         game_id=game_data[0],
-        minister_id=game_data[1],
+        player_id=game_data[1],
         card_type=1)
 
     response = execute_spell(
@@ -480,7 +469,9 @@ Assert correct response when executing Crucio
 
 
 def test_crucio():
-    game_data = game_factory(7, 1, True, 1, False, 0, 0, 1)
+    game_data = game_factory(7, 0, False, 1, False, 0, 0, 1)
+
+    minister = create_first_turn(game_data[0])
 
     director_promulgate(
         game_id=game_data[0],
@@ -503,7 +494,7 @@ Assert imposibility to execute Crucio in a dead player
 
 
 def test_crucio_in_dead_player():
-    game_data = game_factory(7, 2, True, 1, True, 2, 0, 1)
+    game_data = game_factory(7, 1, True, 1, True, 2, 0, 1)
 
     director_promulgate(
         game_id=game_data[0],
@@ -583,14 +574,14 @@ def test_crucio_in_invalid_player():
 
 
 def test_avada_kedavra():
-    game_data = game_factory(5, 1, False, 2, False, 0, 3, 3)
+    game_data = game_factory(5, 0, False, 2, False, 0, 3, 3)
 
     # If we call init game endpoint, it will select randomly the rol's
     minister = create_first_turn(game_data[0])
 
-    minister_promulgate(
+    director_promulgate(
         game_id=game_data[0],
-        minister_id=game_data[1],
+        player_id=game_data[1],
         card_type=1)
 
     to_kill = 0
@@ -616,9 +607,9 @@ def test_avada_kedavra_Voldemort():
     # If we call init game endpoint, it will select randomly the rol's
     minister = create_first_turn(game_data[0])
 
-    minister_promulgate(
+    director_promulgate(
         game_id=game_data[0],
-        minister_id=minister,
+        player_id=minister,
         card_type=1)
 
     to_kill = 0
@@ -639,17 +630,20 @@ def test_avada_kedavra_Voldemort():
 
 
 def test_avada_kedavra_in_dead_player():
-    game_data = game_factory(9, 2, True, 1, True, 1, 3, 3)
+    game_data = game_factory(9, 0, False, 1, True, 1, 3, 3)
 
-    minister_promulgate(
+    # If we call init game endpoint, it will select randomly the rol's
+    minister = create_first_turn(game_data[0])
+
+    director_promulgate(
         game_id=game_data[0],
-        minister_id=game_data[1] + 2,
+        player_id=minister,
         card_type=1)
 
     response = execute_spell(
         game_data[0],
         "Avada Kedavra",
-        game_data[1] + 2,
+        minister,
         game_data[1])
 
     assert response.status_code == 409
@@ -793,7 +787,7 @@ selected formula
 
 
 def test_get_director_candidate_ids_with_no_restriction():
-    game_data = game_factory(10, 1)
+    game_data = game_factory(10, 0)
 
     response = get_director_candidates(game_data[0])
 
@@ -815,15 +809,24 @@ accepted formula in the game
 def test_get_director_candidates_ids_with_minister_restriction():
     game_data = game_factory(7, 2)
 
-    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
+    response = player_vote(game_id=game_data[0], player_id=game_data[1] - 2, vote=True)
+    response = player_vote(game_id=game_data[0], player_id=game_data[1] - 1, vote=True)
+
+    for i in range(5):
+        response = player_vote(
+            game_id=game_data[0],
+            player_id=game_data[1] + i,
+            vote=True)
+
+
 
     candidates = [
+        game_data[1] - 2,
         game_data[1] - 1,
-        game_data[1],
+        game_data[1] + 1,
         game_data[1] + 2,
         game_data[1] + 3,
-        game_data[1] + 4,
-        game_data[1] + 5]
+        game_data[1] + 4]
 
     response = get_director_candidates(game_data[0])
 
@@ -872,7 +875,7 @@ of the id
 
 
 def test_set_director_twice():
-    game_data = game_factory(10, 3)
+    game_data = game_factory(10, 0)
 
     set_director_candidate(game_data[0], game_data[1], game_data[1] + 7)
 
@@ -891,19 +894,18 @@ the correct director candidates in different turns
 
 
 def test_get_director_candidate_after_multiple_selected_director():
-    game_data = game_factory(7, 3)
+    game_data = game_factory(7, 0)
 
     set_director_candidate(game_data[0], game_data[1], game_data[1] + 1)
 
     make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
 
     candidates = [
-        game_data[1] - 2,
-        game_data[1] - 1,
-        game_data[1],
         game_data[1] + 2,
         game_data[1] + 3,
-        game_data[1] + 4]
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
 
     response = get_director_candidates(game_data[0])
 
@@ -915,12 +917,11 @@ def test_get_director_candidate_after_multiple_selected_director():
     make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
 
     candidates = [
-        game_data[1] - 2,
-        game_data[1] - 1,
         game_data[1],
-        game_data[1] + 1,
         game_data[1] + 3,
-        game_data[1] + 4]
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
 
     response = get_director_candidates(game_data[0])
 
@@ -929,15 +930,14 @@ def test_get_director_candidate_after_multiple_selected_director():
 
     set_director_candidate(game_data[0], game_data[1] + 2, game_data[1] + 3)
 
-    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], False)
+    make_vote_and_start_new_turn(game_data[0], 7, game_data[1], True)
 
     candidates = [
-        game_data[1] - 2,
-        game_data[1] - 1,
         game_data[1],
         game_data[1] + 1,
-        game_data[1] + 2,
-        game_data[1] + 4]
+        game_data[1] + 4,
+        game_data[1] + 5,
+        game_data[1] + 6]
 
     response = get_director_candidates(game_data[0])
 
@@ -952,7 +952,7 @@ alive player to test this elegibility condition in the game
 
 
 def test_get_director_candidate_ids_with_five_player_restriction():
-    game_data = game_factory(5, 1)
+    game_data = game_factory(5, 0)
 
     set_director_candidate(game_data[0], game_data[1], game_data[1] + 3)
 
@@ -982,10 +982,9 @@ def test_get_director_candidate_ids_with_five_player_restriction():
 
     set_director_candidate(game_data[0], game_data[1] + 2, game_data[1])
 
-    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], False)
+    make_vote_and_start_new_turn(game_data[0], 5, game_data[1], True)
 
     candidates = [
-        game_data[1],
         game_data[1] + 1,
         game_data[1] + 2,
         game_data[1] + 4]
@@ -1002,17 +1001,16 @@ Test director candidates elegibility with 5 alive player between 7 players
 
 
 def test_get_director_candidate_ids_with_five_player_dead_players():
-    game_data = game_factory(7, 1, True, 1, True, 2)
+    game_data = game_factory(7, 0, True, 1, True, 2)
 
-    set_director_candidate(game_data[0], game_data[1], game_data[1] + 4)
+    set_director_candidate(game_data[0], game_data[1]+2, game_data[1] + 4)
 
     make_vote_and_start_new_turn(game_data[0], 5, game_data[1], True, 2)
 
     candidates = [
-        game_data[1],
         game_data[1] + 2,
-        game_data[1] + 3,
-        game_data[1] + 4]
+        game_data[1] + 5,
+        game_data[1] + 6]
 
     response = get_director_candidates(game_data[0])
 
@@ -1026,7 +1024,7 @@ Test correct response when geting players ids (should be in ascending order)
 
 
 def test_get_players_id():
-    game_data = game_factory(10, 1)
+    game_data = game_factory(10, 0)
 
     response = client.get('game/{}/players'.format(game_data[0]))
 
@@ -1044,15 +1042,18 @@ Assert correct response when geting players info
 
 
 def test_get_players_info():
-    game_data = game_factory(6, 1)
+    game_data = game_factory(7, 0, False, 2, False, 0, 0, 0)
+
+    # If we call init game endpoint, it will select randomly the rol's
+    minister = create_first_turn(game_data[0])
 
     response = client.get('game/{}/players_info'.format(game_data[0]))
 
     info = []
-    for i in range(6):
+    for i in range(7):
         info.append({"player_id": game_data[1]+i,
-                     "username": 'User_{}'.format(game_data[2] - 6 + i),
-                     "loyalty": "Fenix" if (i + 1) % 2 == 0 else "Mortifago"})
+                     "username": 'User_{}'.format(game_data[2] - 7 + i),
+                     "loyalty": "Fenix Order" if (i + 1) % 2 == 0 else "Death Eater"})
 
     assert response.status_code == 200
     assert response.json() == {"Players info": info}

@@ -2,11 +2,10 @@ from fastapi import Request
 from fastapi.security import OAuth2, OAuth2PasswordBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
+from API.Model.exceptions import not_authenticated_exception
 
-from API.Model.userExceptions import not_authenticated_exception
 
-
-class OAuth2PasswordBearerWithCookie(OAuth2):
+class OAuth2PasswordBearer(OAuth2):
     def __init__(
         self,
         tokenUrl: str,

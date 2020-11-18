@@ -1,5 +1,5 @@
-from numpy import *
-from API.Model.gameExceptions import inconsistent_amount_of_players_exception
+from Database.database import *
+from API.Model.exceptions import inconsistent_amount_of_players_exception
 
 
 five_roles = ["Fenix Order", "Fenix Order", "Fenix Order", "Death Eater", "Voldemort"]
@@ -42,3 +42,16 @@ def get_loyalty(rol: str):
         return "Death Eater"
     else:
         return rol
+
+'''
+Create a list of player ids based on the input 'players' array of Player
+'''
+
+
+def create_players_id_list(players):
+    player_ids = []
+
+    for player in players:
+        player_ids.append(player.id)
+
+    return player_ids

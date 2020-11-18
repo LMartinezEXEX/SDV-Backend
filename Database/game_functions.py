@@ -1,35 +1,26 @@
+from pony import orm
 from datetime import datetime
-from pony.orm import *
-from Database.database import Player, User, Game, Board, db
 from pydantic import EmailStr
-from fastapi import HTTPException, status
-from API.Model.gameExceptions import *
 from numpy import random
-from Database.roles_constants import *
+from Database.database import *
+import Database.aux_functions as aux
+import Database.user_functions as db_user
+import Database.player_functions as db_player
+import Database.turn_functions as db_turn
+from API.Model.exceptions import *
 
-
-@db_session
-def get_user_by_email(email: EmailStr):
-    return User.get(email=email)
-
-
-@db_session
+@orm.db_session
 def get_game_by_id(game_id: int):
     return Game.get(id=game_id)
 
 
-@db_session
-def get_player_by_id(player_id: int):
-    return Player.get(id=player_id)
-
-
-@db_session
+@orm.db_session
 def players_in_game(game_id: int):
     game = Game[game_id]
     return game.players.count()
 
 
-@db_session()
+@orm.db_session
 def get_game_state(game_id):
     try:
         game = Game[game_id]
@@ -39,46 +30,26 @@ def get_game_state(game_id):
 
     return state
 
-@db_session()
-def get_player_rol_and_loyalty(player_id: int):
-    player = get_player_by_id(player_id=player_id)
-    return {"Rol": player.rol, "Loyalty": player.loyalty}
 
-
-@db_session()
+@orm.db_session
 def set_game_init(game_id: int):
     Game[game_id].state = 1
 
 
-@db_session
-def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
-    user_joining = get_user_by_email(email=user_email)
-    game = get_game_by_id(game_id=game_id)
-    for player in game.players:
-        if player.user == user_joining:
-            return 1
-    return 0
-
-
-@db_session
+@orm.db_session
 def get_player_set(game_id: int):
     game = get_game_by_id(game_id= game_id)
     return game.players
 
-@db_session()
-def is_player_in_game_by_id(game_id: int, player_id: int):
-    return True if Player.get(
-        lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
 
-
-@db_session
+@orm.db_session
 def save_new_game(owner: EmailStr, name: str,
                   min_players: int, max_players: int):
-    owner = get_user_by_email(email=owner)
+    owner = db_user.get_user_by_email(email=owner)
     game = Game(
         owner=owner,
         name=name,
-        creation_date=datetime.today(),
+        creation_date=datetime.datetime.today(),
         state=0,
         min_players=min_players,
         max_players=max_players
@@ -94,28 +65,10 @@ def save_new_game(owner: EmailStr, name: str,
     return game.id
 
 
-@db_session
-def put_new_player_in_game(user: EmailStr, game_id: int):
-    game = get_game_by_id(game_id=game_id)
-    creator = get_user_by_email(email=user)
-    new_player = Player(
-        user=creator,
-        is_alive=True,
-        game_in=game,
-        chat_enabled=True,
-        is_investigated=False,
-        turn=game.players.count()+1
-    )
-    commit()
-    creator.playing_in.add(Player[new_player.id])
-    game.players.add(Player[new_player.id])
-    return new_player.id
-
-
-@db_session
+@orm.db_session
 def check_create_conditions(user_email: EmailStr, name: str,
                             min_players: int, max_players: int):
-    user = get_user_by_email(user_email)
+    user = db_user.get_user_by_email(user_email)
     if not user:
         raise user_not_found_exception
     if min_players < 5:
@@ -126,15 +79,15 @@ def check_create_conditions(user_email: EmailStr, name: str,
         raise more_than_ten_players_exception
 
 
-@db_session 
+@orm.db_session
 def check_join_conditions(game_id: int, user_email: EmailStr):
     game = get_game_by_id(game_id=game_id)
     if not game:
         raise game_not_found_exception
-    user = get_user_by_email(email=user_email)
+    user = db_user.get_user_by_email(email=user_email)
     if not user:
         raise user_not_found_exception
-    if is_player_in_game_by_email(user_email, game_id):
+    if db_player.is_player_in_game_by_email(user_email, game_id):
         raise player_already_in_game_exception
     if game.players.count() >= game.max_players:
         raise max_players_reach_exception
@@ -144,12 +97,12 @@ def check_join_conditions(game_id: int, user_email: EmailStr):
         raise game_has_finished_exception
 
 
-@db_session
+@orm.db_session
 def check_init_conditions(game_id: int, player_id: int):
     game = get_game_by_id(game_id=game_id)
     if not game:
         raise game_not_found_exception
-    player = get_player_by_id(player_id=player_id)
+    player = db_player.get_player_by_id(player_id=player_id)
     if not player:
         raise player_not_found_exception
     if player not in game.players:
@@ -164,20 +117,20 @@ def check_init_conditions(game_id: int, player_id: int):
         raise min_player_not_reach_exception
 
 
-@db_session
+@orm.db_session
 def assign_roles(game_id: int):
     game = get_game_by_id(game_id=game_id)
     amount_players = game.players.count()
-    roles = select_roles_for_game(players=amount_players)
+    roles = aux.select_roles_for_game(players=amount_players)
     mixed_roles = random.choice(roles, amount_players, replace=False)
     index = 0
     for player in game.players:
         player.rol = mixed_roles[index]
-        player.loyalty = get_loyalty(rol=mixed_roles[index])
+        player.loyalty = aux.get_loyalty(rol=mixed_roles[index])
         index = index+1
-    
 
-@db_session()
+
+@orm.db_session
 def get_game_list():
     games = Game.select(lambda g: g.state == 0)
     g_list = []
@@ -195,7 +148,7 @@ def get_game_list():
     return g_list
 
 
-@db_session()
+@orm.db_session
 def get_current_users_in_game(game_id: int):
     game = get_game_by_id(game_id=game_id)
     user_list = []
@@ -204,3 +157,79 @@ def get_current_users_in_game(game_id: int):
             {"username": user.username}
         )
     return user_list
+
+
+'''
+Get the number of alive players at the moment in the game
+'''
+
+
+@orm.db_session
+def alive_players_count(game_id: int):
+    game = Game[game_id]
+    alive_players = Player.select(
+    lambda p: p.game_in.id == game_id and p.is_alive)
+    return alive_players.count()
+
+
+'''
+Get all players id in the game
+'''
+
+
+@orm.db_session
+def get_all_players_id(game_id: int):
+    game = Game[game_id]
+    players = game.players.order_by(Player.id)
+
+    return aux.create_players_id_list(players)
+
+
+
+
+'''
+Get players ids, username and loyalty in current game
+'''
+
+@orm.db_session
+def get_players_info(game_id):
+    players_id_list = get_all_players_id(game_id)
+
+    players_info_list = []
+    for id in players_id_list:
+        player = db_player.get_player_by_id(id)
+        players_info_list.append({"player_id": id,
+                                  "username": player.user.username,
+                                  "loyalty": player.loyalty})
+
+    return players_info_list
+
+
+
+'''
+Get the state of the 'in Game' game, to know if a team won or not
+'''
+
+
+@orm.db_session
+def check_status(game_id: int):
+    game = Game[game_id]
+    turn_number = db_turn.get_current_turn_number_in_game(game_id)
+    game_finished = False
+
+    if turn_number == 0:
+        return [game_finished, 0, 0, None, None]
+
+    turn = db_turn.get_turn_in_game(game_id, turn_number)
+    board = Board[game_id]
+
+    if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 or (
+            board.death_eater_promulgation >= 3 and turn.current_director.rol == "Voldemort"):
+        game_finished = True
+        game.state = 2
+
+    vote = Vote.get(lambda v: v.turn.turn_number ==
+                    turn.turn_number and v.turn.game.id == game_id)
+
+    return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
+            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]

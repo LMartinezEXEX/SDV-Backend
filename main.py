@@ -4,29 +4,22 @@ from imghdr import what
 from itertools import chain
 from datetime import datetime, timedelta
 from typing import Optional
-from http.cookies import SimpleCookie
 from pydantic import EmailStr
 from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, Response, status, Body
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-
 from fastapi.security import OAuth2PasswordRequestForm
-from USER_URLS import USER_REGISTER_URL, USER_LOGIN_URL, USER_LOGOUT_URL, USER_PROFILE_URL,\
-     USER_ICON_URL, USER_UPDATE_USERNAME_URL, USER_UPDATE_PASSWORD_URL, USER_UPDATE_ICON_URL
-
-# User Model
-from API.Model.userModel import UserRegisterIn, UserProfile,\
-    UserUpdateUsername, UserUpdatePassword, UserUpdateIcon,\
-    get_user_profile_by_email, get_user_icon_by_email, register,\
-    authenticate, get_this_user, change_username, change_password, change_icon
-
-from API.Model.userExceptions import not_found_exception, credentials_exception,\
-    profile_exception, register_exception, update_exception, update_icon_exception
-
-from API.Model.turnModel import *
-from API.Model.gameModel import *
-
-from API.Model.userMetadata import user_metadata
+from USER_URLS import *
+from API.Model.userAPI import *
+from API.Model.gameAPI import *
+from API.Model.turnAPI import *
+from API.Model.voteAPI import *
+from API.Model.cardAPI import *
+from API.Model.playerAPI import *
+from API.Model.spellAPI import *
+from API.Model.boardAPI import *
+from API.Model.exceptions import *
+from API.Model.metadata import *
 
 
 # Add metadata tags for each module
@@ -243,7 +236,7 @@ async def create_game(params: GameParams):
 
 # Join Game
 
-@app.put("/game/join/{id}",
+@app.put("/game/{id}/join",
          status_code=status.HTTP_200_OK,
          tags=["Join Game"])
 async def join_game(id: int, user_email: EmailParameter):
@@ -252,7 +245,7 @@ async def join_game(id: int, user_email: EmailParameter):
 # Init Game
 
 
-@app.put("/game/init/{id}",
+@app.put("/game/{id}/init",
          status_code=status.HTTP_200_OK,
          tags=["Init Game"])
 async def init_game(id: int, player_id: int):
@@ -388,5 +381,3 @@ async def set_director_candidate(id: int, formula: TurnFormula):
          )
 async def get_vote_formula(id: int):
     return get_vote_candidates(game_id=id)
-
-

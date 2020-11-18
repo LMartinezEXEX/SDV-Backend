@@ -19,7 +19,7 @@ USERS_AUTH_DICT = {}
 Endpoint test: "/user/register/"
 
 Descripción:
-Tiene que funcionar la primera vez que lo ejecutan. Si lo ejecutan una segunda vez no funciona, 
+Tiene que funcionar la primera vez que lo ejecutan. Si lo ejecutan una segunda vez no funciona,
 ya que el recurso ha sido creado.
 
 Escenario exitoso: 201 Created
@@ -34,7 +34,7 @@ def test_register_users(users):
             headers = { "accept": "application/json" },
             json    = user_register
         )
-        
+        print(response.json())
         assert response.status_code == 201, f'Conflict with {user_register["email"]}'
 
 """
@@ -79,7 +79,7 @@ def test_login_users(users):
         assert response.status_code == 200, f'Unauthorized: {user["email"]}\n'
 
         USERS_AUTH_DICT.update({ user_data["email"]: ( response.status_code, response.headers["Authorization"] ) })
-    
+
     for key in list(USERS_AUTH_DICT.keys()):
         if USERS_AUTH_DICT[key][0] == 200:
             print(f'Login: {key} -> {USERS_AUTH_DICT[key][1]}')
@@ -104,7 +104,7 @@ def test_update_usernames(users):
             headers = { "accept": "application/json", "Authorization": authorization },
             json = user_data
         )
-        
+
         assert response.status_code == 200, f'Error {user["email"]}: {response.content.decode()}\n'
         assert response.json() == { "email": user["email"], "result": "success" }
 
@@ -121,7 +121,7 @@ Error: 400 Bad Request, 401 Unauthorized, 403 Forbidden
 def test_update_passwords(users):
     for user in users:
         authorization = USERS_AUTH_DICT[user["email"]][1]
-        
+
         user_data = { "email": user["email"], "old_password": user["password"], "new_password": user["password"] + UPDATE_PASSWORD_STRING }
         response = client.put(
             "/user/update/password/",
