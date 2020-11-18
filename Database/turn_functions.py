@@ -109,7 +109,7 @@ def generate_turn(game_instance: Game, turn_number: int, candidate_minister: Pla
                 pass_cards=False,
                 reject_notified=[],
                 promulgated=False,
-                imperius_player_id = 0)
+                imperius_player_id=0)
 
 
     Vote(result=False,
@@ -298,7 +298,6 @@ def is_current_director(game_id: int, player_id: int):
 '''
 Get current turn in game
 '''
-
 
 @orm.db_session
 def get_current_turn_in_game(game_id: int):
