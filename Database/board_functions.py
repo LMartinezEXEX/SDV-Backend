@@ -25,6 +25,8 @@ def promulgate(game_id: int, card_type: int):
     turn = db_turn.get_turn_in_game(game_id, turn_number)
 
     board = Board[game_id]
+    # Restart board counter
+    board.election_counter = 0
 
     if card_type:
         board.death_eater_promulgation += 1

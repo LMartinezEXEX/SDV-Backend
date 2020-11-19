@@ -135,11 +135,12 @@ def notify_with_player(game_id: int, player_id: int):
                     # With this rejection, we have a sequence of three elections 
                     # where candidates were rejected
                     db_board.promulgate(game_id, card[0].type)
-                    # Restart board counter
-                    board.election_counter = 0
                     # Eliminate election constraints for director candidates
                     if not game.chaos:
                         game.chaos = True
+                else:
+                    # Chaos conditions are not met, then board.election_counter < 2
+                    board.election_counter += 1
                 
                 db_turn.select_MM_candidate(game_id)
 
