@@ -194,6 +194,13 @@ def director_available_candidates(game_id):
         desc(
             Vote.turn)).first()
 
+    game = Game[game_id]
+    if game.chaos:
+        # Hogwarts fell into chaos, so all alive players can be headmasters in current turn
+        # but not current minister
+        game.chaos = False
+        return aux.create_players_id_list(regular_alive_players)
+
     return create_director_candidates_list(
         game_id, regular_alive_players, previous_accepted_formula)
 

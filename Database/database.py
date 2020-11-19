@@ -47,6 +47,7 @@ class Game(db.Entity):
     max_players = Required(int)
     creation_date = Required(datetime.datetime)
     state = Required(int)
+    chaos = Required(bool)
     players = Set('Player')
     end_game_notified = Optional(IntArray)
     turn = Set('Turn')
