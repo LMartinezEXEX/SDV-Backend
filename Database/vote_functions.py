@@ -3,7 +3,6 @@ from Database.database import *
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
 import Database.game_functions as db_game
-import Database.board_functions as db_board
 
 '''
 Submit a player's vote instance.
