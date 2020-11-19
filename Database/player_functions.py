@@ -116,7 +116,7 @@ def notify_with_player(game_id: int, player_id: int):
 
             # All players know that candidates were rejected, then go to next turn
             if len(turn.reject_notified) == alive_players:
-                # But if caos conditions are met, then fall into caos!
+                # But if chaos conditions are met, then fall into chaos!
                 game = Game[game_id]
                 board = Board[game_id]
                 if board.election_counter == 2:
@@ -138,8 +138,8 @@ def notify_with_player(game_id: int, player_id: int):
                     # Restart board counter
                     board.election_counter = 0
                     # Eliminate election constraints for director candidates
-                    if !game.caos:
-                        game.caos = True
+                    if !game.chaos:
+                        game.chaos = True
                 
                 db_turn.select_MM_candidate(game_id)
 

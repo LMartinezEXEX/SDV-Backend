@@ -51,7 +51,7 @@ def save_new_game(owner: EmailStr, name: str,
         name=name,
         creation_date=datetime.datetime.today(),
         state=0,
-        caos=False,
+        chaos=False,
         min_players=min_players,
         max_players=max_players,
         end_game_notified=[]
