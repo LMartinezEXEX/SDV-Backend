@@ -138,7 +138,7 @@ def notify_with_player(game_id: int, player_id: int):
                     # Restart board counter
                     board.election_counter = 0
                     # Eliminate election constraints for director candidates
-                    if !game.chaos:
+                    if not game.chaos:
                         game.chaos = True
                 
                 db_turn.select_MM_candidate(game_id)
