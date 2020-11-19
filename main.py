@@ -362,6 +362,8 @@ async def execute_spell(id: int, spell: Spell, spell_data: SpellData):
         return check_and_execute_crucio(id, spell_data)
     elif spell == Spell.AVADA_KEDAVRA:
         return check_and_execute_avada_kedavra(id, spell_data)
+    elif spell == Spell.IMPERIUS:
+        return check_and_execute_imperius(id, spell_data)
 
 
 # Get available director candidates id's
