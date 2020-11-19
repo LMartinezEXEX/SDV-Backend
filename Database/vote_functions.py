@@ -3,6 +3,7 @@ from Database.database import *
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
 import Database.game_functions as db_game
+import Database.board_functions as db_board
 
 '''
 Submit a player's vote instance.
@@ -30,6 +31,10 @@ def vote_turn(game_id: int, player_id: int, player_vote: bool):
 
         result = False
         if len(vote.player_vote) - lumos_counter < lumos_counter:
+            # candidates were elected, restart board counter
+            board = Board[game_id]
+            board.election_counter = 0
+
             result = True
             turn.current_minister = turn.candidate_minister
             turn.current_director = turn.candidate_director

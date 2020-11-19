@@ -9,7 +9,7 @@ def promulgate_in_game(game_id: int, director_id: int, card_type: int):
     if db_turn.already_promulgate_in_current_turn(game_id):
         raise already_promulgated_in_turn_exception
 
-    # Player is not current minister
+    # Player is not current director
     if not db_turn.is_current_director(game_id, director_id):
         raise player_isnt_director_exception
 
