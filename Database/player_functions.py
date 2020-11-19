@@ -150,7 +150,7 @@ def notify_with_player(game_id: int, player_id: int):
 @db_session
 def end_game_notify_with_player(game_id: int, player_id: int):
     game = Game[game_id]
-    if game.state <= 1:
+    if game.state < 1:
         return { "game_result": "" }
     
     if not player_id in game.end_game_notified:
