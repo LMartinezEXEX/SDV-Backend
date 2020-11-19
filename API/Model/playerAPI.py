@@ -35,4 +35,4 @@ def check_and_end_game_notify(game_id: int, player_id: int):
     if not get_game_by_id(game_id=game_id):
         raise game_not_found_exception
 
-    return db_turn.end_game_notify_with_player(game_id, player_id)
+    return db_player.end_game_notify_with_player(game_id, player_id)
