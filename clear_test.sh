@@ -24,9 +24,9 @@ then
     rm -rd "./Database/__pycache__"
 fi
 
-if [ -e "./Database/*.sqlite" ]
+if [ -e "./Database/secretVoldemort.sqlite" ]
 then
-    rm "./Database/*.sqlite"
+    rm "./Database/secretVoldemort.sqlite"
 fi
 
 echo "Sleep for 2 seconds..."
