@@ -99,8 +99,7 @@ def player_voted(game_id: int, player_id: int):
 
 @orm.db_session
 def notify_with_player(game_id: int, player_id: int):
-    turn_number = db_turn.get_current_turn_number_in_game(game_id)
-    turn = db_turn.get_turn_in_game(game_id, turn_number)
+    turn = db_turn.get_current_turn_in_game(game_id)
 
     player = get_player_by_id(player_id)
 
@@ -134,8 +133,7 @@ def end_game_notify_with_player(game_id: int, player_id: int):
             if len(game.end_game_notified) == players_count:
                 game.state = 2
     
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = db_turn.get_current_turn_in_game(game_id)
 
     board = Board[game_id]
     
