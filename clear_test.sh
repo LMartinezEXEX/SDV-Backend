@@ -19,6 +19,11 @@ then
     rm -rd "./API/TestAPI/TestUser/__pycache__"
 fi
 
+if [ -d "./API/TestAPI/__pycache__" ]
+then
+    rm -rd "./API/TestAPI/__pycache__"
+fi
+
 if [ -d "./Database/__pycache__" ]
 then
     rm -rd "./Database/__pycache__"
