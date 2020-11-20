@@ -1,8 +1,7 @@
-import json
-from secrets import token_hex
-from typing import Dict, Any, Optional, Tuple
+import os
+from random import randrange, seed
 from datetime import datetime, timedelta
-from pydantic import BaseModel, Field, EmailStr, validator
+from pydantic import EmailStr
 from fastapi import Cookie, Header, Depends, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from jose import JWTError, ExpiredSignatureError, jwt
@@ -13,37 +12,68 @@ from API.Model.security_scheme import OAuth2PasswordBearer
 from API.Model.models import *
 import Database.user_functions as db_user 
 
+ASSETS_BASE_DIR = "Assets" 
+ICONS_DIR = "icons"
+DEFAULT_ICONS = [
+    "draco.jpg", "harry.jpg", "hermione.jpg", "lucius.jpg", "ron.jpg", 
+    "snape.jpg", "umbridge.jpg", "voldemort.jpg"
+]
+
 
 # Actual security scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=USER_LOGIN_URL)
 
+
 async def get_user_profile_by_email(email: EmailStr):
-    user = db_user.get_user_by_email(email)
-    return UserProfile(
-        email=user.email,
-        username=user.username,
-        last_access_date=user.last_access_date,
-        is_validated=user.is_validated
-    )
+    try:
+        user = db_user.get_user_by_email(email)
+        return UserProfile(
+            email=user.email,
+            username=user.username,
+            last_access_date=user.last_access_date,
+            is_validated=user.is_validated
+        )
+    except:
+        raise user_not_found_exception
 
 
 async def get_user_icon_by_email(email: EmailStr):
-    user = db_user.get_user_by_email(email)
-    return user.icon
+    try:
+        user = db_user.get_user_by_email(email)
+        return user.icon
+    except:
+        raise user_not_found_exception
 
 
 async def register(new_user: UserRegisterIn):
-    db_user.register_user(
-        User(
-            email=new_user.email,
-            username=new_user.username,
-            password=new_user.password,
-            icon="".encode(),
-            creation_date=datetime.utcnow(),
-            last_access_date=datetime.utcnow(),
-            is_validated=False
-        )
+    seed()
+    icon_file = DEFAULT_ICONS[randrange(len(DEFAULT_ICONS))]
+    path_icon_file = os.path.realpath(
+        os.path.join(os.path.dirname(__file__), "..", "..", ASSETS_BASE_DIR, ICONS_DIR, icon_file)
     )
+    random_icon = None
+    try:
+        icon_file = open(path_icon_file, "rb") 
+        random_icon = icon_file.read()
+    except:
+        raise asset_file_icon_exception
+    else:
+        try:
+            db_user.register_user(
+                User(
+                    email=new_user.email,
+                    username=new_user.username,
+                    password=new_user.password,
+                    icon=random_icon,
+                    creation_date=datetime.utcnow(),
+                    last_access_date=datetime.utcnow(),
+                    is_validated=False
+                )
+            )
+        except Exception as e:
+            raise e
+        finally:
+            icon_file.close()
 
 
 async def is_valid_user(email: EmailStr):
@@ -53,16 +83,15 @@ async def is_valid_user(email: EmailStr):
 
 async def authenticate(email: EmailStr, password: str):
     if db_user.auth_user_password(email, password):
-        user = await get_user_profile_by_email(email)
         access_token = await new_access_token(
-            data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
+            data={"sub": email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
         )
         access_token_json = jsonable_encoder(access_token)
 
         last_access_date = datetime.utcnow()
 
         db_user.last_access(
-            user.email,
+            email,
             last_access_date)
 
         response = Response(
@@ -87,48 +116,41 @@ async def new_access_token(data: dict, expires_delta: timedelta):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_this_user(
-    request: Request,
-    Authorization: str = Header(...),
-    access_token = Depends(oauth2_scheme)):
+
+async def get_this_user(Authorization: str = Header(...), access_token = Depends(oauth2_scheme)):
     try:
-        # This is the case of user being logged and checks are fine,ie no
+        # This is the case of user being logged and checks are fine, ie no
         # exceptions
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         token_email = payload.get("sub")
 
         if token_email is None:
             raise credentials_exception
-        user = await get_user_profile_by_email(token_email)
-        if user is None:
-            raise credentials_exception
 
-        return user
+        return await get_user_profile_by_email(token_email)
+    except ExpiredSignatureError:
+        raise expired_signature_exception
     except JWTError:
         # Any other exception
         raise credentials_exception
 
 
 async def change_username(update_data: UserUpdateUsername):
-    if db_user.auth_user_password(
-            update_data.email, update_data.password):
-        return update_data.new_username == db_user.change_username(
-            update_data)
-    else:
-        return False
+    authenticated = db_user.auth_user_password(update_data.email, update_data.password) 
+    if authenticated:
+        db_user.change_username(update_data.email, update_data.new_username)
+    return authenticated
 
 
 async def change_password(update_data: UserUpdatePassword):
-    if update_data.old_password != update_data.new_password and db_user.auth_user_password(
-            update_data.email, update_data.old_password):
-        return db_user.change_password(update_data)
-    return False
+    authenticated = db_user.auth_user_password(update_data.email, update_data.old_password)
+    if authenticated:
+        db_user.change_password(update_data.email, update_data.new_password)
+    return authenticated
 
 
 async def change_icon(update_data: UserUpdateIcon, new_icon: bytes):
-    if db_user.auth_user_password(
-            update_data.email, update_data.password):
-        return new_icon == db_user.change_icon(
-            update_data, new_icon)
-    else:
-        return False
+    authenticated = db_user.auth_user_password(update_data.email, update_data.password)
+    if authenticated:
+        db_user.change_icon(update_data.email, new_icon)
+    return authenticated
