@@ -168,14 +168,14 @@ def end_game_notify_with_player(game_id: int, player_id: int):
     # Check who won and why
     message = ""
     if board.fenix_promulgation == 5:
-        message = "La Orden del Fenix gana (5 promulgaciones)"
+        message = "La Orden del Fénix gana (5 promulgaciones)"
     elif board.death_eater_promulgation == 6:
-        message = "Los Mortifagos ganan (6 promulgaciones)"
+        message = "Los Mortífagos ganan (6 promulgaciones)"
     elif board.death_eater_promulgation >= 3 \
         and turn.current_director != turn.current_minister \
         and turn.current_director.rol == "Voldemort":
-        message = "Los Mortifagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortifagos)"
+        message = "Los Mortífagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortífagos)"
     elif not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
-        message = "La Orden del Fenix gana (Voldemort está muerto)"
+        message = "La Orden del Fénix gana (Voldemort está muerto)"
     
     return { "game_result": message }
