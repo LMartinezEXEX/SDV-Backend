@@ -299,4 +299,4 @@ def get_vote_formula(game_id: int):
     return client.get('game/{}/get_candidates'.format(game_id))
 
 def game_state_in_pregame(game_id: int, player_id: int):
-    return client.get("game/initialized/{}?player_id={}".format(game_id, player_id))
+    return client.get("game/{}/initialized/?player_id={}".format(game_id, player_id))
