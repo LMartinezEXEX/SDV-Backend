@@ -1,7 +1,5 @@
 import pytest
 from os  import path
-from pathlib import Path
-from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
 from API.TestAPI.TestUser.test_user_data import USERS, UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING,\

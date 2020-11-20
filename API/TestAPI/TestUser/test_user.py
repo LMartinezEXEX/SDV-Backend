@@ -1,6 +1,5 @@
 import pytest
 from os  import path
-from http.cookies import SimpleCookie
 from fastapi.testclient import TestClient
 
 from API.TestAPI.TestUser.test_user_data import users, \
