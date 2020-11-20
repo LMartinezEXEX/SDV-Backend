@@ -24,11 +24,8 @@ def register_user(new_user):
 
 @orm.db_session
 def auth_user_password(email: EmailStr, password: str):
-    try:
-        user = User.get(email = email)
-        return bcrypt.checkpw(password.encode(), user.password)
-    except:
-        return False
+    user = User.get(email = email)
+    return bcrypt.checkpw(password.encode(), user.password)
 
 @orm.db_session
 def last_access(email: EmailStr, last_acces_date: datetime):
@@ -36,19 +33,16 @@ def last_access(email: EmailStr, last_acces_date: datetime):
     user.last_access_date = last_acces_date
 
 @orm.db_session
-def change_username(update_data):
-    user = User.get(email = update_data.email)
-    user.username = update_data.new_username
-    return user.username
+def change_username(email: EmailStr, new_username: str):
+    user = User.get(email = email)
+    user.username = new_username
 
 @orm.db_session
-def change_password(update_data):
-    user = User.get(email = update_data.email)
-    user.password = bcrypt.hashpw(update_data.new_password.encode(), bcrypt.gensalt(rounds = 6))
-    return bcrypt.checkpw(update_data.new_password.encode(), user.password)
+def change_password(email: EmailStr, new_password: str):
+    user = User.get(email = email)
+    user.password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt(rounds = 6))
 
 @orm.db_session
-def change_icon(update_data, new_icon: bytes):
-    user = User.get(email = update_data.email)
+def change_icon(email: EmailStr, new_icon: bytes):
+    user = User.get(email = email)
     user.icon = new_icon
-    return user.icon
