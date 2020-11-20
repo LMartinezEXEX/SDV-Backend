@@ -83,6 +83,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
                 min_players=5,
                 max_players=10,
                 creation_date=datetime.datetime.today(),
+                chaos=False,
                 state=game_state-1)
     games += 1
 
