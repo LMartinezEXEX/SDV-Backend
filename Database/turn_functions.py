@@ -127,14 +127,26 @@ giving to the legislative session
 def select_MM_candidate(game_id: int):
     game = Game[game_id]
     players_set = game.players
-    game_turns = get_current_turn_number_in_game(game_id)
+    next_candidate_minister = None
 
+    # Last turn info
+    game_turns = get_current_turn_number_in_game(game_id)
     last_turn = get_turn_in_game(game_id=game_id, turn_number=game_turns)
 
     last_candidate_minister = last_turn.candidate_minister
 
-    next_candidate_minister = get_next_candidate(
-        players_set, last_candidate_minister)
+    # Get LAST minister candidate
+    if game_turns > 1:
+        # Second last turn info
+        second_last_turn = get_turn_in_game(game_id=game_id, turn_number=game_turns-1)
+        if second_last_turn.imperius_player_id != 0:
+            last_candidate_minister = second_last_turn.candidate_minister
+
+    # Get NEXT minister candidate
+    if last_turn.imperius_player_id != 0:
+        next_candidate_minister = db_player.get_player_by_id(last_turn.imperius_player_id)
+    else:
+        next_candidate_minister = get_next_candidate(players_set, last_candidate_minister)
 
     turn = generate_turn(
         game_instance=game,

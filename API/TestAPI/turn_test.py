@@ -1057,3 +1057,51 @@ def test_get_players_info():
 
     assert response.status_code == 200
     assert response.json() == {"Players info": info}
+
+
+def test_imperius():
+    game_data = game_factory(7, 0, True, 1, False, 0, 0, 2)
+
+    response = director_promulgate(
+        game_id=game_data[0],
+        player_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(game_data[0], "Imperius", game_data[1], game_data[1] + 2)
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate minister": game_data[1] + 2}
+
+    response = start_new_turn(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate_minister_id": game_data[1] + 2}
+
+
+def test_imperius_after_effect_two_turns():
+    game_data = game_factory(7, 0, True, 1, False, 0, 0, 2)
+
+    response = director_promulgate(
+        game_id=game_data[0],
+        player_id=game_data[1],
+        card_type=1)
+
+    response = execute_spell(game_data[0], "Imperius", game_data[1], game_data[1] + 5)
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate minister": game_data[1] + 5}
+
+    response = start_new_turn(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate_minister_id": game_data[1] + 5}
+
+    response = start_new_turn(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate_minister_id": game_data[1] + 1}
+
+    response = start_new_turn(game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"candidate_minister_id": game_data[1] + 2}

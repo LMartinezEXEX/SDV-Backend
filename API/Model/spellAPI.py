@@ -7,9 +7,10 @@ import Database.spell_functions as db_spell
 import Database.player_functions as db_player
 
 class Spell(str, Enum):
-    GUESSING = "Guessing"
-    CRUCIO = "Crucio"
+    GUESSING      = "Guessing"
+    CRUCIO        = "Crucio"
     AVADA_KEDAVRA = "Avada Kedavra"
+    IMPERIUS      = "Imperius"
 
 
 def check_and_get_available_spell(game_id: int):
@@ -69,3 +70,15 @@ def check_and_execute_avada_kedavra(game_id: int, spell_data: SpellData):
         raise player_is_dead_exception
 
     return {"Finished": db_spell.execute_avada_kedavra(game_id, spell_data.player_id)}
+
+
+def check_and_execute_imperius(game_id: int, spell_data: SpellData):
+    check_spell_base_conditions(game_id, spell_data.minister_id)
+
+    if not db_player.is_player_in_game_by_id(game_id, spell_data.player_id):
+        raise invalid_player_in_game_exception
+
+    if not db_player.is_alive(game_id, spell_data.player_id):
+        raise player_is_dead_exception
+
+    return {"candidate minister": db_spell.execute_imperius(game_id, spell_data.player_id)}
