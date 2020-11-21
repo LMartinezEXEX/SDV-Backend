@@ -52,6 +52,8 @@ def init_game_with_ids(game_id: int, player_id: int):
 
 
 def check_if_game_started(game_id: int, player_id: int):
+    if not db_game.get_game_by_id(game_id=game_id):
+        return {"game_state": "The game has been deleted"}
     if not db_player.is_player_in_game_by_id(game_id=game_id, player_id=player_id):
         raise player_not_in_game_exception
     state = db_game.get_game_state(game_id)
