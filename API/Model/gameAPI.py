@@ -30,6 +30,17 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
     return {"Player_Id": player_id}
 
 
+def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
+    if not db_game.get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    if is_player_the_owner(game_id=game_id, user_email=user_email.email):
+        message = db_game.delete_game(game_id=game_id)
+        return {"message": message }
+    else:
+        message = db_game.remove_player_from_game(game_id=game_id, user_email=user_email.email)
+        return {"message": message}
+
+
 def init_game_with_ids(game_id: int, player_id: int):
     db_game.check_init_conditions(game_id=game_id, player_id=player_id)
     minister_id = db_turn.create_first_turn(game_id=game_id)
