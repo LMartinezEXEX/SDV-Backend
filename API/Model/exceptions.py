@@ -204,3 +204,23 @@ not_discarded_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Card was not discarded"
 )
+
+expelliarmus_already_set = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Expelliarmus was already set in current turn"
+)
+
+expelliarmus_promulgations_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Expelliarmus requires 5 death eater promulgations"
+)
+
+expelliarmus_not_set_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Director didnt propose a Expelliarmus"
+)
+
+consent_already_given_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Consent already given"
+)

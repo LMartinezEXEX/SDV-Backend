@@ -91,3 +91,8 @@ class TurnFormula(BaseModel):
 class DiscardData(BaseModel):
     player_id: int
     to_discard: int
+
+
+class MinisterExpelliarmusConsent(BaseModel):
+    minister_id: int
+    consent: bool

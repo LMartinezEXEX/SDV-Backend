@@ -393,3 +393,19 @@ async def set_director_candidate(id: int, formula: TurnFormula):
          )
 async def get_vote_formula(id: int):
     return get_vote_candidates(game_id=id)
+
+
+# Director starts expelliarmus
+@app.put("/game/{id}/director_expelliarmus",
+         status_code=status.HTTP_200_OK,
+         tags=["Start expelliarmus"])
+async def expelliarmus(id: int, director_id: int):
+    return check_and_start_expelliarmus(id, director_id)
+
+
+# Minister consent expelliarmus
+@app.put("/game/{id}/minister_expelliarmus",
+         status_code=status.HTTP_200_OK,
+         tags=["Accept/decline expelliarmus"])
+async def expelliarmus(id: int, minister_data: MinisterExpelliarmusConsent):
+    return check_and_consent_expelliarmus(id, minister_data)

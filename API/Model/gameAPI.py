@@ -67,4 +67,6 @@ def game_status(game_id: int):
             "death eater promulgations": status[2],
             "current minister id": status[3],
             "current director id": status[4],
-            "vote done": status[5]}
+            "vote done": status[5],
+            "expelliarmus": status[6],
+            "minister consent": status[7]}

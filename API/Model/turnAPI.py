@@ -46,3 +46,41 @@ def get_vote_candidates(game_id: int):
         minister_id = candidates[0],
         director_id = candidates[1]
     )
+
+
+def check_and_start_expelliarmus(game_id: int, director_id: int):
+    check_game_with_at_least_one_turn(game_id)
+
+    if db_turn.is_expelliarmus_set(game_id):
+        raise expelliarmus_already_set
+
+    if db_board.deth_eater_promulgations_count(game_id) != 5:
+        raise expelliarmus_promulgations_exception
+
+    if not db_turn.is_current_director(game_id, director_id):
+        raise player_isnt_director_exception
+
+    state = False
+    if db_turn.set_expelliarmus(game_id):
+        state = True
+
+    return {"Expelliarmus director": state}
+
+
+def check_and_consent_expelliarmus(game_id: int, minister_data: MinisterExpelliarmusConsent):
+    check_game_with_at_least_one_turn(game_id)
+
+    if not db_turn.is_current_minister(game_id, minister_data.minister_id):
+        raise player_isnt_minister_exception
+
+    if not db_turn.is_expelliarmus_set(game_id):
+        raise expelliarmus_not_set_exception
+
+    if db_turn.already_expelliarmus_consent(game_id):
+        raise consent_already_given_exception
+
+    state = False
+    if db_turn.minister_set_expelliarmus_consent(game_id, int(minister_data.consent)):
+        state = True
+
+    return {"Expelliarmus minister": state}

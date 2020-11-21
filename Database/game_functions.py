@@ -233,4 +233,6 @@ def check_status(game_id: int):
                     turn.turn_number and v.turn.game.id == game_id)
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
-            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]
+            turn.current_minister.id, turn.current_director.id,
+            len(vote.player_vote) == alive_players_count(game_id), turn.expelliarmus,
+            turn.minister_consent]
