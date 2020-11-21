@@ -43,12 +43,13 @@ def get_loyalty(rol: str):
     else:
         return rol
 
-'''
-Create a list of player ids based on the input 'players' array of Player
-'''
 
 
 def create_players_id_list(players):
+    '''
+    Create a list of player ids based on the input 'players' array of Player
+    '''
+    
     player_ids = []
 
     for player in players:

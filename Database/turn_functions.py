@@ -1,9 +1,9 @@
 from pony import orm
 from Database.database import *
 import Database.aux_functions as aux
+import Database.card_functions as db_card
 import Database.game_functions as db_game
 import Database.player_functions as db_player
-import Database.card_functions as db_card
 
 
 @orm.db_session

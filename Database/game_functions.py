@@ -1,13 +1,14 @@
 from pony import orm
+from numpy import random
 from datetime import datetime
 from pydantic import EmailStr
-from numpy import random
 from Database.database import *
+from API.Model.exceptions import *
 import Database.aux_functions as aux
+import Database.turn_functions as db_turn
 import Database.user_functions as db_user
 import Database.player_functions as db_player
-import Database.turn_functions as db_turn
-from API.Model.exceptions import *
+
 
 @orm.db_session
 def get_game_by_id(game_id: int):
@@ -161,38 +162,36 @@ def get_current_users_in_game(game_id: int):
     return user_list
 
 
-'''
-Get the number of alive players at the moment in the game
-'''
-
-
 @orm.db_session
 def alive_players_count(game_id: int):
+    '''
+    Get the number of alive players at the moment in the game
+    '''
+
     game = Game[game_id]
     alive_players = Player.select(
     lambda p: p.game_in.id == game_id and p.is_alive)
     return alive_players.count()
 
 
-'''
-Get all players id in the game
-'''
-
-
 @orm.db_session
 def get_all_players_id(game_id: int):
+    '''
+    Get all players id in the game
+    '''
+
     game = Game[game_id]
     players = game.players.order_by(Player.id)
 
     return aux.create_players_id_list(players)
 
 
-'''
-Get players ids, username and loyalty in current game
-'''
-
 @orm.db_session
 def get_players_info(game_id):
+    '''
+    Get players ids, username and loyalty in current game
+    '''
+
     players_id_list = get_all_players_id(game_id)
 
     players_info_list = []
@@ -205,13 +204,12 @@ def get_players_info(game_id):
     return players_info_list
 
 
-'''
-Get the state of the 'in Game' game, to know if a team won or not
-'''
-
-
 @orm.db_session
 def check_status(game_id: int):
+    '''
+    Get the state of the 'in Game' game, to know if a team won or not
+    '''
+
     game = Game[game_id]
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     game_finished = False

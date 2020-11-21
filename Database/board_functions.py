@@ -31,8 +31,6 @@ def is_board_available_spell(game_id):
     return Board[game_id].spell_available
 
 
-
-
 @orm.db_session
 def promulgate(game_id: int, card_type: int):
     '''

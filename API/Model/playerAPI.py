@@ -1,10 +1,10 @@
+import Database.game_functions as db_game
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
-import Database.game_functions as db_game
-import API.Model.voteAPI as model_vote
-from API.Model.exceptions import *
 from API.Model.models import *
+from API.Model.exceptions import *
 from API.Model.game_check import *
+import API.Model.voteAPI as model_vote
 
 def check_and_get_player_ids(game_id: int):
     check_game_state(game_id)

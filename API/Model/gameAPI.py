@@ -2,9 +2,9 @@ from pydantic import EmailStr
 import Database.game_functions as db_game
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
+from API.Model.models import *
 from API.Model.exceptions import *
 from API.Model.game_check import *
-from API.Model.models import *
 
 
 def list_available_games():

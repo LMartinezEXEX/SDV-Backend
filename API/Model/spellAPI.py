@@ -1,6 +1,6 @@
 from enum import Enum
-from API.Model.game_check import *
 from API.Model.models import *
+from API.Model.game_check import *
 import Database.turn_functions as db_turn
 import Database.board_functions as db_board
 import Database.spell_functions as db_spell

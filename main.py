@@ -1,5 +1,6 @@
 # Imports
 import json
+from USER_URLS import *
 from imghdr import what
 from itertools import chain
 from datetime import datetime, timedelta
@@ -9,7 +10,6 @@ from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, Response, 
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from USER_URLS import *
 from API.Model.userAPI import *
 from API.Model.gameAPI import *
 from API.Model.turnAPI import *

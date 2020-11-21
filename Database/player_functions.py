@@ -8,14 +8,17 @@ import Database.card_functions as db_card
 import Database.board_functions as db_board
 from API.Model.exceptions import player_is_dead_exception
 
+
 @orm.db_session
 def get_player_by_id(player_id: int):
     return Player.get(id=player_id)
+
 
 @orm.db_session
 def get_player_rol_and_loyalty(player_id: int):
     player = get_player_by_id(player_id=player_id)
     return {"Rol": player.rol, "Loyalty": player.loyalty}
+
 
 @orm.db_session
 def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
@@ -26,9 +29,11 @@ def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
             return 1
     return 0
 
+
 @orm.db_session
 def is_player_in_game_by_id(game_id: int, player_id: int):
     return Player.get(lambda p: p.game_in.id == game_id and p.id == player_id)
+
 
 @orm.db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
@@ -48,36 +53,33 @@ def put_new_player_in_game(user: EmailStr, game_id: int):
     return new_player.id
 
 
-'''
-Assert if player is alive
-'''
-
-
 @orm.db_session
 def is_alive(game_id: int, player_id: int):
+    '''
+    Assert if player is alive
+    '''
+
     player = Player.get(lambda p: p.game_in.id ==
                         game_id and p.id == player_id)
     return player.is_alive
 
 
-'''
-Assert if a player was investigated previously
-'''
-
-
 @orm.db_session
 def is_player_investigated(player_id: int):
+    '''
+    Assert if a player was investigated previously
+    '''
+
     player = get_player_by_id(player_id)
     return player.is_investigated
 
 
-'''
-Assert if a player already voted
-'''
-
-
 @orm.db_session
 def player_voted(game_id: int, player_id: int):
+    '''
+    Assert if a player already voted
+    '''
+
     game = Game[game_id]
     player = get_player_by_id(player_id)
 
@@ -125,14 +127,14 @@ def notify_with_player(game_id: int, player_id: int):
                     card = Card.select(
                         lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1)
                         ).order_by(Card.order)[:1]
-                    
+
                     # Generate new card
                     db_card.generate_card(1, game_deck_cuantity + 1, game_id)
-                    
+
                     # This is not something necessary, just being consistent
                     turn.taken_cards = True
 
-                    # With this rejection, we have a sequence of three elections 
+                    # With this rejection, we have a sequence of three elections
                     # where candidates were rejected
                     db_board.promulgate(game_id, card[0].type)
                     # Eliminate election constraints for director candidates
@@ -141,30 +143,31 @@ def notify_with_player(game_id: int, player_id: int):
                 else:
                     # Chaos conditions are not met, then board.election_counter < 2
                     board.election_counter += 1
-                
+
                 db_turn.select_MM_candidate(game_id)
 
         return { "notified": True }
     else:
         raise player_is_dead_exception
 
+
 @db_session
 def end_game_notify_with_player(game_id: int, player_id: int):
     game = Game[game_id]
     if game.state < 1:
         return { "game_result": "" }
-    
+
     if not player_id in game.end_game_notified:
         players_count = game.players.count()
         if len(game.end_game_notified) < players_count:
             game.end_game_notified.append(player_id)
             if len(game.end_game_notified) == players_count:
                 game.state = 2
-    
+
     turn = db_turn.get_current_turn_in_game(game_id)
 
     board = Board[game_id]
-    
+
     # Check who won and why
     message = ""
     if board.fenix_promulgation == 5:
@@ -177,5 +180,5 @@ def end_game_notify_with_player(game_id: int, player_id: int):
         message = "Los Mortífagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortífagos)"
     elif not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
         message = "La Orden del Fénix gana (Voldemort está muerto)"
-    
+
     return { "game_result": message }

@@ -1,6 +1,6 @@
+from API.Model.exceptions import *
 from Database.game_functions import *
 from Database.turn_functions import *
-from API.Model.exceptions import *
 
 def check_game_state(game_id: int):
     state = get_game_state(game_id)
