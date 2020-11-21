@@ -250,11 +250,12 @@ async def init_game(id: int, player_id: int):
 
 # Leave not initialized game
 
-@app.put("game/{id}/leave_not_init_game",
+@app.put("/game/{id}/leave_not_init_game",
          status_code=status.HTTP_200_OK,
          tags=["Leave not initialized game"])
-async def leave_not_init_game(id: int, user_eamil: EmailParameter):
+async def leave_not_init_game(id: int, user_email: EmailParameter):
     return leave_game_not_initialized(game_id=id, user_email=user_email)
+    
 
 # Get list of player ids in the game
 

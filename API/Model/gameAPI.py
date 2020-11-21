@@ -33,7 +33,7 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
 def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
     if not db_game.get_game_by_id(game_id=game_id):
         raise game_not_found_exception
-    if is_player_the_owner(game_id=game_id, user_email=user_email.email):
+    if db_player.is_player_the_owner(game_id=game_id, user_email=user_email.email):
         message = db_game.delete_game(game_id=game_id)
         return {"message": message }
     else:

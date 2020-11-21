@@ -47,11 +47,11 @@ class Game(db.Entity):
     max_players = Required(int)
     creation_date = Required(datetime.datetime)
     state = Required(int)
-    players = Set('Player')
+    players = Set('Player', cascade_delete=True)
     end_game_notified = Optional(IntArray)
     turn = Set('Turn')
     card = Set('Card')
-    board = Optional('Board')
+    board = Optional('Board', cascade_delete=True)
 
 
 class Turn(db.Entity):
