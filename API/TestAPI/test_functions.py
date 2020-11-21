@@ -15,6 +15,7 @@ from API.Model.spellAPI import *
 from API.Model.boardAPI import *
 from API.Model.exceptions import *
 from API.Model.metadata import *
+from API.Model.models import DiscardData, EmailParameter
 
 
 client = TestClient(app)
@@ -295,7 +296,11 @@ def get_not_discarded_cards(game_id:int, player_id: int):
     )
 
 def get_vote_formula(game_id: int):
-    return client.get('game/{}/get_candidates'.format(game_id))
+    return client.get('/game/{}/get_candidates'.format(game_id))
 
 def game_state_in_pregame(game_id: int, player_id: int):
-    return client.get("game/initialized/{}?player_id={}".format(game_id, player_id))
+    return client.get("/game/{}/initialized/?player_id={}".format(game_id, player_id))
+
+def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
+    return client.put("/game/{}/leave_not_init_game".format(game_id),
+                      json= user_email)
