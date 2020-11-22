@@ -337,6 +337,7 @@ def test_initial_game_check():
                                "current minister id": game_data[1],
                                "current director id": game_data[1],
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": False,
                                "minister consent": 2}
 
@@ -366,6 +367,7 @@ def test_game_check_fenix_five_promulgations():
                                "current minister id": game_data[1] + 7,
                                "current director id": game_data[1] + 7,
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": False,
                                "minister consent": 2}
 
@@ -397,6 +399,7 @@ def test_game_check_six_death_eater_promulgations():
                                "current minister id": game_data[1] + 8,
                                "current director id": game_data[1] + 8,
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": False,
                                "minister consent": 2}
 
@@ -1189,6 +1192,7 @@ def test_expelliarmus():
                                "current minister id": game_data[1],
                                "current director id": game_data[1],
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": True,
                                "minister consent": 2}
 
@@ -1269,6 +1273,7 @@ def test_bad_consent_expelliarmus():
                                "current minister id": game_data[1],
                                "current director id": game_data[1],
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": True,
                                "minister consent": 0}
 
@@ -1301,5 +1306,6 @@ def test_good_consent_expelliarmus():
                                "current minister id": game_data[1],
                                "current director id": game_data[1],
                                "vote done": False,
+                               "vote started": False,
                                "expelliarmus": True,
                                "minister consent": 1}

@@ -14,11 +14,12 @@ from API.Model.token_data import *
 import Database.user_functions as db_user
 from API.Model.security_scheme import OAuth2PasswordBearer
 import API.Model.user_check as user_check
+from USER_URLS import *
 
-ASSETS_BASE_DIR = "Assets" 
+ASSETS_BASE_DIR = "Assets"
 ICONS_DIR = "icons"
 DEFAULT_ICONS = [
-    "draco.jpg", "harry.jpg", "hermione.jpg", "lucius.jpg", "ron.jpg", 
+    "draco.jpg", "harry.jpg", "hermione.jpg", "lucius.jpg", "ron.jpg",
     "snape.jpg", "umbridge.jpg", "voldemort.jpg"
 ]
 
@@ -56,7 +57,7 @@ async def register(new_user: UserRegisterIn):
     )
     random_icon = None
     try:
-        icon_file = open(path_icon_file, "rb") 
+        icon_file = open(path_icon_file, "rb")
         random_icon = icon_file.read()
     except:
         raise asset_file_icon_exception
@@ -139,7 +140,7 @@ async def get_this_user(Authorization: str = Header(...), access_token = Depends
 
 
 async def change_username(update_data: UserUpdateUsername):
-    authenticated = db_user.auth_user_password(update_data.email, update_data.password) 
+    authenticated = db_user.auth_user_password(update_data.email, update_data.password)
     if authenticated:
         db_user.change_username(update_data.email, update_data.new_username)
     return authenticated
