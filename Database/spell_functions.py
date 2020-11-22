@@ -77,9 +77,11 @@ def available_spell_in_board_3(player_cuantity: int, promulgations: int):
 
     return spell
 
+
 '''
 Get available spell string
 '''
+
 
 @orm.db_session
 def available_spell_in_game_conditions(game_id: int):
@@ -125,9 +127,12 @@ def execute_guessing(game_id):
 
     return [cards[0].type, cards[1].type, cards[2].type]
 
+
 '''
 Execute crucio to a player in game
 '''
+
+
 @orm.db_session
 def execute_crucio(game_id, player_id):
     board = Board[game_id]
@@ -138,16 +143,35 @@ def execute_crucio(game_id, player_id):
 
     return player.loyalty == "Fenix Order"
 
+'''
+Execute avada kedavra to a player in game
+'''
 
 @orm.db_session
-def execute_avada_kedavra(game_id, player_id):
+def execute_avada_kedavra(game_id: int, player_id: int):
     game = Game[game_id]
+    board = Board[game_id]
+
     player = db_player.get_player_by_id(player_id)
     player.is_alive = False
     player.chat_enabled = False
 
-    # If killed player is Voldemort, finish the game
-    if player.rol == "Voldemort":
-        game.state = 2
+    board.spell_available = False
 
     return player.rol == "Voldemort"
+
+
+'''
+Execute imperius to a player to be the next minister candidate in game
+'''
+
+
+@orm.db_session
+def execute_imperius(game_id: int, player_id: int):
+    board = Board[game_id]
+    turn = db_turn.get_current_turn_in_game(game_id)
+
+    turn.imperius_player_id = player_id
+    board.spell_available = False
+
+    return player_id

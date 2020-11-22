@@ -48,6 +48,7 @@ class Game(db.Entity):
     creation_date = Required(datetime.datetime)
     state = Required(int)
     players = Set('Player', cascade_delete=True)
+    chaos = Required(bool)
     end_game_notified = Optional(IntArray)
     turn = Set('Turn')
     card = Set('Card')

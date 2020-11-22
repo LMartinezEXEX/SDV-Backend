@@ -51,6 +51,7 @@ def save_new_game(owner: EmailStr, name: str,
         name=name,
         creation_date=datetime.datetime.today(),
         state=0,
+        chaos=False,
         min_players=min_players,
         max_players=max_players,
         end_game_notified=[]
@@ -250,4 +251,5 @@ def check_status(game_id: int):
                     turn.turn_number and v.turn.game.id == game_id)
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
-            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id)]
+            turn.current_minister.id, turn.current_director.id, len(vote.player_vote) == alive_players_count(game_id), 
+            turn.candidate_minister.id != turn.candidate_director.id]

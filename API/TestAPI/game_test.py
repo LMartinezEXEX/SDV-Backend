@@ -340,14 +340,14 @@ def test_get_vote_formula_dir_not_selected():
 
 
 def test_game_state_not_initialized():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, start=False, game_state=1, dead_player=False, dead_cuantity=0, fenix_promulgation=0, death_eater_promulgation=0)
      response = game_state_in_pregame(game_id=game_data[0], player_id=game_data[1])
      users = response.json().get("users")
 
      assert response.status_code == 200
      assert len(users) == 5
 
-
+    
 def test_leave_game_not_initialized_owner():
      game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0, start=False)
      owner = game_data[1]
@@ -361,7 +361,6 @@ def test_leave_game_not_initialized_owner():
      assert response2.json() == {"game_state": "The game has been deleted"}
 
 
-
 def test_leave_game_not_initialized_not_owner():
      game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0, start=False)
      player_id = game_data[2]-1
@@ -371,5 +370,3 @@ def test_leave_game_not_initialized_not_owner():
      assert response.status_code == 200
      assert response.json() == {"message": "Player removed OK"}
      assert not is_player_in_game_by_id(game_id=game_data[0], player_id=player_id)
-
-

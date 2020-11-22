@@ -4,6 +4,8 @@ from Database.database import *
 import Database.turn_functions as db_turn
 import Database.user_functions as db_user
 import Database.game_functions as db_game
+import Database.card_functions as db_card
+import Database.board_functions as db_board
 from API.Model.exceptions import player_is_dead_exception
 
 @orm.db_session
@@ -119,6 +121,32 @@ def notify_with_player(game_id: int, player_id: int):
 
             # All players know that candidates were rejected, then go to next turn
             if len(turn.reject_notified) == alive_players:
+                # But if chaos conditions are met, then fall into chaos!
+                game = Game[game_id]
+                board = Board[game_id]
+                if board.election_counter == 2:
+                    game_deck_cuantity = len(game.card)
+                    # Select next card, returns a singleton list
+                    card = Card.select(
+                        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1)
+                        ).order_by(Card.order)[:1]
+                    
+                    # Generate new card
+                    db_card.generate_card(1, game_deck_cuantity + 1, game_id)
+                    
+                    # This is not something necessary, just being consistent
+                    turn.taken_cards = True
+
+                    # With this rejection, we have a sequence of three elections 
+                    # where candidates were rejected
+                    db_board.promulgate(game_id, card[0].type)
+                    # Eliminate election constraints for director candidates
+                    if not game.chaos:
+                        game.chaos = True
+                else:
+                    # Chaos conditions are not met, then board.election_counter < 2
+                    board.election_counter += 1
+                
                 db_turn.select_MM_candidate(game_id)
 
         return { "notified": True }
@@ -145,14 +173,14 @@ def end_game_notify_with_player(game_id: int, player_id: int):
     # Check who won and why
     message = ""
     if board.fenix_promulgation == 5:
-        message = "La Orden del Fenix gana (5 promulgaciones)"
+        message = "La Orden del Fénix gana (5 promulgaciones)"
     elif board.death_eater_promulgation == 6:
-        message = "Los Mortifagos ganan (6 promulgaciones)"
+        message = "Los Mortífagos ganan (6 promulgaciones)"
     elif board.death_eater_promulgation >= 3 \
         and turn.current_director != turn.current_minister \
         and turn.current_director.rol == "Voldemort":
-        message = "Los Mortifagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortifagos)"
+        message = "Los Mortífagos ganan (Voldemort es director con 3 o más proclamaciones de los Mortífagos)"
     elif not (next(player for player in game.players if player.rol == "Voldemort").is_alive):
-        message = "La Orden del Fenix gana (Voldemort está muerto)"
+        message = "La Orden del Fénix gana (Voldemort está muerto)"
     
     return { "game_result": message }
