@@ -1,8 +1,8 @@
 from fastapi import Request
 from fastapi.security import OAuth2, OAuth2PasswordBearer
-from fastapi.security.utils import get_authorization_scheme_param
-from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from API.Model.exceptions import not_authenticated_exception
+from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
+from fastapi.security.utils import get_authorization_scheme_param
 
 
 class OAuth2PasswordBearer(OAuth2):

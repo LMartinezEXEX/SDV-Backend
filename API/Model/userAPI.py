@@ -4,14 +4,16 @@ from datetime import datetime, timedelta
 from pydantic import EmailStr
 from fastapi import Header, Depends, UploadFile, Response, status
 from fastapi.encoders import jsonable_encoder
+from typing import Dict, Any, Optional, Tuple
 from jose import JWTError, ExpiredSignatureError, jwt
+from pydantic import BaseModel, Field, EmailStr, validator
+from fastapi import Cookie, Header, Depends, Request, Response, status
+from API.Model.models import *
 from API.Model.exceptions import *
 from API.Model.token_data import *
-from USER_URLS import USER_LOGIN_URL
+import Database.user_functions as db_user
 from API.Model.security_scheme import OAuth2PasswordBearer
-from API.Model.models import *
 import API.Model.user_check as user_check
-import Database.user_functions as db_user 
 
 ASSETS_BASE_DIR = "Assets" 
 ICONS_DIR = "icons"

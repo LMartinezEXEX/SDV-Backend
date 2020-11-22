@@ -224,7 +224,7 @@ async def list_games():
     return list_available_games()
 
 
-# For polling: Has the game started?
+# Check if the game has started
 
 @app.get("/game/{id}/initialized",
          status_code=status.HTTP_200_OK,
@@ -286,6 +286,15 @@ async def join_game(id: int, user_email: EmailParameter):
 async def init_game(id: int, player_id: int):
     return init_game_with_ids(game_id=id, player_id=player_id)
 
+
+# Leave not initialized game
+
+@app.put("/game/{id}/leave_not_init_game",
+         status_code=status.HTTP_200_OK,
+         tags=["Leave not initialized game"])
+async def leave_not_init_game(id: int, user_email: EmailParameter):
+    return leave_game_not_initialized(game_id=id, user_email=user_email)
+    
 
 # Get list of player ids in the game
 
@@ -432,3 +441,19 @@ async def set_director_candidate(id: int, formula: TurnFormula):
          )
 async def get_vote_formula(id: int):
     return get_vote_candidates(game_id=id)
+
+
+# Director starts expelliarmus
+@app.put("/game/{id}/director_expelliarmus",
+         status_code=status.HTTP_200_OK,
+         tags=["Start expelliarmus"])
+async def expelliarmus(id: int, director_id: int):
+    return check_and_start_expelliarmus(id, director_id)
+
+
+# Minister consent expelliarmus
+@app.put("/game/{id}/minister_expelliarmus",
+         status_code=status.HTTP_200_OK,
+         tags=["Accept/decline expelliarmus"])
+async def expelliarmus(id: int, minister_data: MinisterExpelliarmusConsent):
+    return check_and_consent_expelliarmus(id, minister_data)

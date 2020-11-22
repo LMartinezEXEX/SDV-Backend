@@ -1,5 +1,5 @@
-from pony.orm import *
 import datetime
+from pony.orm import *
 
 
 db = Database()
@@ -47,12 +47,12 @@ class Game(db.Entity):
     max_players = Required(int)
     creation_date = Required(datetime.datetime)
     state = Required(int)
+    players = Set('Player', cascade_delete=True)
     chaos = Required(bool)
-    players = Set('Player')
     end_game_notified = Optional(IntArray)
     turn = Set('Turn')
     card = Set('Card')
-    board = Optional('Board')
+    board = Optional('Board', cascade_delete=True)
 
 
 class Turn(db.Entity):
@@ -70,6 +70,8 @@ class Turn(db.Entity):
     reject_notified = Optional(IntArray)
     promulgated = Required(bool)
     imperius_player_id = Required(int)
+    expelliarmus = Required(bool)
+    minister_consent = Required(int)
     PrimaryKey(game, turn_number)
 
 
