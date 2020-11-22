@@ -1,17 +1,17 @@
 from pony import orm
 from Database.database import *
+import Database.game_functions as db_game
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
-import Database.game_functions as db_game
-
-'''
-Submit a player's vote instance.
-If it is the first vote in the turn, create the Vote instance for the turn.
-'''
 
 
 @orm.db_session
 def vote_turn(game_id: int, player_id: int, player_vote: bool):
+    '''
+    Submit a player's vote instance.
+    If it is the first vote in the turn, create the Vote instance for the turn.
+    '''
+
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     turn = db_turn.get_turn_in_game(game_id, turn_number)
     player = db_player.get_player_by_id(player_id)
@@ -40,13 +40,12 @@ def vote_turn(game_id: int, player_id: int, player_vote: bool):
     return len(vote.player_vote)
 
 
-'''
-Get the number of votes currently
-'''
-
-
 @orm.db_session
 def current_votes(game_id: int):
+    '''
+    Get the number of votes currently
+    '''
+
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     turn = db_turn.get_turn_in_game(game_id, turn_number)
 
@@ -56,13 +55,12 @@ def current_votes(game_id: int):
     return len(vote.player_vote)
 
 
-'''
-Get the result from the current Vote and an array of player id's who voted lumos
-'''
-
-
 @orm.db_session
 def get_result(game_id: int):
+    '''
+    Get the result from the current Vote and an array of player id's who voted lumos
+    '''
+
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     turn = db_turn.get_turn_in_game(game_id, turn_number)
     vote = Vote.get(lambda v: v.turn.turn_number ==

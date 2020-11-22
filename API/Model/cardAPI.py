@@ -1,6 +1,6 @@
+from API.Model.models import *
 from API.Model.exceptions import *
 from API.Model.game_check import *
-from API.Model.models import *
 import Database.game_functions as db_game
 import Database.turn_functions as db_turn
 import Database.card_functions as db_card

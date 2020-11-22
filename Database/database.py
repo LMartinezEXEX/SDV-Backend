@@ -1,5 +1,5 @@
-from pony.orm import *
 import datetime
+from pony.orm import *
 
 
 db = Database()
@@ -70,6 +70,8 @@ class Turn(db.Entity):
     reject_notified = Optional(IntArray)
     promulgated = Required(bool)
     imperius_player_id = Required(int)
+    expelliarmus = Required(bool)
+    minister_consent = Required(int)
     PrimaryKey(game, turn_number)
 
 

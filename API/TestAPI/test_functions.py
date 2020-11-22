@@ -159,21 +159,21 @@ def make_vote_and_start_new_turn(
     start_new_turn(game_id)
 
 
-def start_new_turn(game_id):
+def start_new_turn(game_id: int):
     return client.put('game/{}/select_MM'.format(game_id))
 
 
-def get_3_cards(game_id, player_id):
+def get_3_cards(game_id: int, player_id: int):
     return client.get(
         '/game/{}/minister_cards?player_id={}'.format(game_id, player_id)
     )
 
 
-def check_game_state(game_id):
+def check_game_state(game_id: int):
     return client.get('game/{}/check_game'.format(game_id))
 
 
-def get_director_candidates(game_id):
+def get_director_candidates(game_id: int):
     return client.get('/game/{}/director_candidates'.format(game_id))
 
 
@@ -184,7 +184,8 @@ def execute_spell(game_id: int, spell: str, minister_id: int, player_id: int):
     }
     )
 
-def player_vote(game_id, player_id, vote):
+
+def player_vote(game_id: int, player_id: int, vote: int):
     return client.put('/game/{}/vote'.format(game_id), json={
         "id": player_id,
         "vote": vote
@@ -192,7 +193,7 @@ def player_vote(game_id, player_id, vote):
     )
 
 
-def director_promulgate(game_id, player_id, card_type):
+def director_promulgate(game_id: int, player_id: int, card_type: int):
     return client.put('/game/{}/promulgate'.format(game_id), json={
         "player_id": player_id,
         "to_promulgate": card_type
@@ -200,20 +201,30 @@ def director_promulgate(game_id, player_id, card_type):
     )
 
 
-def set_director_candidate(game_id, minister_id, director_id):
+def set_director_candidate(game_id: int, minister_id: int, director_id: int):
     return client.put('/game/{}/select_director_candidate'.format(game_id), json={
         "minister_id": minister_id,
         "director_id": director_id
     }
     )
 
+
+def start_expelliarmus(game_id: int, director_id: int):
+    return client.put('/game/{}/director_expelliarmus?director_id={}'.format(game_id, director_id))
+
+
+def consent_expelliarmus(game_id: int, minister_id: int, consent: bool):
+    return client.put('/game/{}/minister_expelliarmus'.format(game_id), json={
+        "minister_id": minister_id,
+        "consent": consent
+    }
+    )
+
+
 @db_session()
 def get_player_by_id(player_id: int):
     return Player[player_id]
 
-# --------------------------------------
-
-# Functions for test game
 
 @db_session()
 def check_players_roles(game_id: int):
@@ -242,7 +253,6 @@ def count_roles_from_game(game_id: int, rol: str):
             count = count+1
     return count
 
-#------ New functions for test games --------------
 
 @db_session()
 def users_factory(amount_users: int):
@@ -269,22 +279,27 @@ def start_new_game(game_params: GameParams):
          json = game_params
      )
 
+
 @db_session()
 def is_player_in_game_by_id(game_id: int, player_id: int):
     return True if Player.get(
         lambda p: p.game_in.id == game_id and p.id == player_id) is not None else False
 
+
 def join_a_game(game_id: int, user_email: EmailParameter):
      return client.put('game/{}/join'.format(game_id),
          json= user_email)
 
+
 def init_the_game(game_id: int, player_id: int):
      return client.put('game/{}/init?player_id={}'.format(game_id, player_id))
+
 
 def get_3_cards(game_id: int, player_id: int):
     return client.get(
         '/game/{}/minister_cards?player_id={}'.format(game_id, player_id)
     )
+
 
 def card_discard(game_id: int, discard_data: DiscardData):
     return client.put(
@@ -292,13 +307,16 @@ def card_discard(game_id: int, discard_data: DiscardData):
         json = discard_data
     )
 
+
 def get_not_discarded_cards(game_id:int, player_id: int):
     return client.get(
         "/game/{}/director_cards?player_id={}".format(game_id, player_id)
     )
 
+
 def get_vote_formula(game_id: int):
     return client.get('/game/{}/get_candidates'.format(game_id))
+
 
 def game_state_in_pregame(game_id: int, player_id: int):
     return client.get("/game/{}/initialized/?player_id={}".format(game_id, player_id))

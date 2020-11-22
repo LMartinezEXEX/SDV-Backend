@@ -2,9 +2,9 @@ from pydantic import EmailStr
 import Database.game_functions as db_game
 import Database.turn_functions as db_turn
 import Database.player_functions as db_player
+from API.Model.models import *
 from API.Model.exceptions import *
 from API.Model.game_check import *
-from API.Model.models import *
 
 
 def list_available_games():
@@ -85,4 +85,6 @@ def game_status(game_id: int):
             "current minister id": status[3],
             "current director id": status[4],
             "vote done": status[5],
-            "vote started": status[6]}
+            "vote started": status[6],
+            "expelliarmus": status[7],
+            "minister consent": status[8]}

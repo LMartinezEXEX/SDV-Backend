@@ -336,7 +336,9 @@ def test_initial_game_check():
                                "death eater promulgations": 0,
                                "current minister id": game_data[1],
                                "current director id": game_data[1],
-                               "vote done": False}
+                               "vote done": False,
+                               "expelliarmus": False,
+                               "minister consent": 2}
 
 
 '''
@@ -363,7 +365,9 @@ def test_game_check_fenix_five_promulgations():
                                "death eater promulgations": 0,
                                "current minister id": game_data[1] + 7,
                                "current director id": game_data[1] + 7,
-                               "vote done": False}
+                               "vote done": False,
+                               "expelliarmus": False,
+                               "minister consent": 2}
 
 
 '''
@@ -392,7 +396,9 @@ def test_game_check_six_death_eater_promulgations():
                                "death eater promulgations": 6,
                                "current minister id": game_data[1] + 8,
                                "current director id": game_data[1] + 8,
-                               "vote done": False}
+                               "vote done": False,
+                               "expelliarmus": False,
+                               "minister consent": 2}
 
 
 '''
@@ -1059,6 +1065,11 @@ def test_get_players_info():
     assert response.json() == {"Players info": info}
 
 
+'''
+Assert correct imperius functionality after one turn
+'''
+
+
 def test_imperius():
     game_data = game_factory(7, 0, True, 1, False, 0, 0, 2)
 
@@ -1076,6 +1087,11 @@ def test_imperius():
 
     assert response.status_code == 200
     assert response.json() == {"candidate_minister_id": game_data[1] + 2}
+
+
+'''
+Assert imperius functionality after several turns
+'''
 
 
 def test_imperius_after_effect_two_turns():
@@ -1105,3 +1121,185 @@ def test_imperius_after_effect_two_turns():
 
     assert response.status_code == 200
     assert response.json() == {"candidate_minister_id": game_data[1] + 2}
+
+
+'''
+Test expelliarmus endpoint with less than five death eater promulgations
+'''
+
+
+def test_expelliarmus_death_eater_promulgations_constraint():
+    game_data = game_factory(7, 0, True, 1, False, 0, 0, 4)
+
+    response = start_expelliarmus(game_data[0], game_data[1])
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Expelliarmus requires 5 death eater promulgations"}
+
+
+'''
+Test regular player executing expelliarmus
+'''
+
+
+def test_expelliarmus_regular_player():
+    game_data = game_factory(7, 0, True, 1, False, 0, 0, 5)
+
+    response = start_expelliarmus(game_data[0], game_data[1] + 3)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not director"}
+
+
+'''
+Assert correct response when trying to execute expelliarmus twince in same turn
+'''
+
+
+def test_expelliarmus_twice():
+    game_data = game_factory(5, 0, True, 1, False, 0, 0, 5)
+
+    start_expelliarmus(game_data[0], game_data[1])
+    response = start_expelliarmus(game_data[0], game_data[1])
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Expelliarmus was already set in current turn"}
+
+
+'''
+Test correct response in a valid expelliarmus execution
+'''
+
+
+def test_expelliarmus():
+    game_data = game_factory(10, 0, True, 1, False, 0, 0, 5)
+
+    response = start_expelliarmus(game_data[0], game_data[1])
+
+    assert response.status_code == 200
+    assert response.json() == {"Expelliarmus director": True}
+
+    response = check_game_state(game_id=game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"game id": game_data[0],
+                               "finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 5,
+                               "current minister id": game_data[1],
+                               "current director id": game_data[1],
+                               "vote done": False,
+                               "expelliarmus": True,
+                               "minister consent": 2}
+
+
+'''
+Test consent to expelliarmus when regular player
+'''
+
+
+def test_consent_expelliarmus_regular_player():
+    game_data = game_factory(5, 2, True, 1, False, 0, 0, 5)
+
+    get_3_cards(game_id=game_data[0], player_id=game_data[1])
+
+    start_expelliarmus(game_data[0], game_data[1])
+
+    response = consent_expelliarmus(game_data[0], game_data[1] + 2, True)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Player is not minister"}
+
+
+'''
+Test consent expelliarmus when expelliarmus wasn't executed
+'''
+
+
+def test_consent_expelliarmus_not_set():
+    game_data = game_factory(5, 3, True, 1, False, 0, 0, 5)
+
+    response = consent_expelliarmus(game_data[0], game_data[1], True)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Director didnt propose a Expelliarmus"}
+
+
+'''
+Assert expelliarmus response when trying to give consent twice
+'''
+
+
+def test_consent_expelliarmus_twice():
+    game_data = game_factory(9, 0, True, 1, False, 0, 0, 5)
+
+    get_3_cards(game_id=game_data[0], player_id=game_data[1])
+
+    start_expelliarmus(game_data[0], game_data[1])
+
+    consent_expelliarmus(game_data[0], game_data[1], True)
+    response = consent_expelliarmus(game_data[0], game_data[1], False)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Consent already given"}
+
+
+'''
+Test correct negative consent to expelliarmus response
+'''
+
+
+def test_bad_consent_expelliarmus():
+    game_data = game_factory(7, 1, True, 1, False, 0, 0, 5)
+
+    start_expelliarmus(game_data[0], game_data[1])
+
+    response = consent_expelliarmus(game_data[0], game_data[1], False)
+
+    assert response.status_code == 200
+    assert response.json() == {"Expelliarmus minister": True}
+
+    response = check_game_state(game_id=game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"game id": game_data[0],
+                               "finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 5,
+                               "current minister id": game_data[1],
+                               "current director id": game_data[1],
+                               "vote done": False,
+                               "expelliarmus": True,
+                               "minister consent": 0}
+
+
+
+'''
+Test correct positive consent to expelliarmus response
+'''
+
+
+def test_good_consent_expelliarmus():
+    game_data = game_factory(10, 1, True, 1, False, 0, 0, 5)
+
+    get_3_cards(game_id=game_data[0], player_id=game_data[1])
+
+    start_expelliarmus(game_data[0], game_data[1])
+
+    response = consent_expelliarmus(game_data[0], game_data[1], True)
+
+    assert response.status_code == 200
+    assert response.json() == {"Expelliarmus minister": True}
+
+    response = check_game_state(game_id=game_data[0])
+
+    assert response.status_code == 200
+    assert response.json() == {"game id": game_data[0],
+                               "finished": False,
+                               "fenix promulgations": 0,
+                               "death eater promulgations": 5,
+                               "current minister id": game_data[1],
+                               "current director id": game_data[1],
+                               "vote done": False,
+                               "expelliarmus": True,
+                               "minister consent": 1}

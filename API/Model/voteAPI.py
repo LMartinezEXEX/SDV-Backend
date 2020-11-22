@@ -1,8 +1,8 @@
 from API.Model.models import *
-import Database.player_functions as db_player
+from API.Model.game_check import *
 import Database.vote_functions as db_vote
 import Database.game_functions as db_game
-from API.Model.game_check import *
+import Database.player_functions as db_player
 
 
 def check_and_vote_candidate(game_id: int, player_id: int, vote: bool):

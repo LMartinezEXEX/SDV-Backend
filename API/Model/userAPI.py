@@ -1,17 +1,17 @@
 import json
 from secrets import token_hex
-from typing import Dict, Any, Optional, Tuple
+from USER_URLS import USER_LOGIN_URL
 from datetime import datetime, timedelta
+from fastapi.encoders import jsonable_encoder
+from typing import Dict, Any, Optional, Tuple
+from jose import JWTError, ExpiredSignatureError, jwt
 from pydantic import BaseModel, Field, EmailStr, validator
 from fastapi import Cookie, Header, Depends, Request, Response, status
-from fastapi.encoders import jsonable_encoder
-from jose import JWTError, ExpiredSignatureError, jwt
+from API.Model.models import *
 from API.Model.exceptions import *
 from API.Model.token_data import *
-from USER_URLS import USER_LOGIN_URL
+import Database.user_functions as db_user
 from API.Model.security_scheme import OAuth2PasswordBearer
-from API.Model.models import *
-import Database.user_functions as db_user 
 
 
 # Actual security scheme
