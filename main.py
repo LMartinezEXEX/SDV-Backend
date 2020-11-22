@@ -187,11 +187,11 @@ async def user_update_password(
     tags=["Update icon"]
 )
 async def user_update_icon(
-        email: EmailStr = Form(...), password: str = Form(...), password_verify: str = Form(...), 
+        email: EmailStr = Form(...), password: str = Form(...), 
         new_icon: UploadFile = File(...), Authorization: str = Header(...), 
         user: UserProfile = Depends(get_this_user)):
     try:
-        update_data = UserUpdateIcon(email=email, password=password, password_verify=password_verify)
+        update_data = UserUpdateIcon(email=email, password=password)
 
         if update_data.email == user.email:
             if await change_icon(update_data, new_icon):
