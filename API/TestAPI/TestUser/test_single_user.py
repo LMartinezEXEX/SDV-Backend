@@ -30,7 +30,12 @@ def test_register(email, username, password, expected_codes, fail_message):
     response = client.post(
         "/user/register/",
         headers = { "accept": "application/json" },
-        json    = { "email": email, "username": username, "password": password }
+        json    = { 
+            "email": email, 
+            "username": username, 
+            "password": password, 
+            "password_verify": password 
+        }
     )
     assert response.status_code in expected_codes, fail_message + ": " + response.content.decode()
 

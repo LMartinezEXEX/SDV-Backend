@@ -27,7 +27,12 @@ Error: 409 Conflict
 """
 def test_register_users(users):
     for user in users:
-        user_register = { "email": user["email"], "username": user["username"], "password": user["password"] }
+        user_register = { 
+            "email": user["email"], 
+            "username": user["username"], 
+            "password": user["password"],
+            "password_verify": user["password"]  
+        }
         response = client.post(
             "/user/register/",
             headers = { "accept": "application/json" },
