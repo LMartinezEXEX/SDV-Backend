@@ -2,7 +2,7 @@ import os
 from random import randrange, seed
 from datetime import datetime, timedelta
 from pydantic import EmailStr
-from fastapi import Cookie, Header, Depends, Request, Response, status
+from fastapi import Header, Depends, UploadFile, Response, status
 from fastapi.encoders import jsonable_encoder
 from jose import JWTError, ExpiredSignatureError, jwt
 from API.Model.exceptions import *
@@ -10,6 +10,7 @@ from API.Model.token_data import *
 from USER_URLS import USER_LOGIN_URL
 from API.Model.security_scheme import OAuth2PasswordBearer
 from API.Model.models import *
+import API.Model.user_check as user_check
 import Database.user_functions as db_user 
 
 ASSETS_BASE_DIR = "Assets" 
@@ -149,8 +150,12 @@ async def change_password(update_data: UserUpdatePassword):
     return authenticated
 
 
-async def change_icon(update_data: UserUpdateIcon, new_icon: bytes):
+async def change_icon(update_data: UserUpdateIcon, new_icon: UploadFile):
     authenticated = db_user.auth_user_password(update_data.email, update_data.password)
     if authenticated:
-        db_user.change_icon(update_data.email, new_icon)
+        try:
+            raw_icon = user_check.icon_validate(new_icon)
+            db_user.change_icon(update_data.email, raw_icon)
+        except Exception as e:
+            raise e
     return authenticated

@@ -1,23 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr, validator, StrictInt
 from datetime import datetime
 
-def email_size_validate(email: EmailStr):
-    if len(email) > 100:
-        raise ValueError("email length is greater than 100")
-    if len(email) < 10:
-        raise ValueError("email length is less than 10")
-    return email
-
-def username_char_set_validate(username: str):
-    if not username.isalnum():
-        raise ValueError("username must be a nonempty alphanumeric string")
-    return username
-
-
-def no_space_in_string_validate(stringVal: str):
-    if any(map(lambda c: c.isspace(), stringVal)):
-        raise ValueError("spaces not allowed in password")
-    return stringVal
+import API.Model.user_check as user_check
 
 
 class User(BaseModel):
@@ -31,33 +15,43 @@ class User(BaseModel):
 
     @validator("email")
     def email_size(cls, val):
-        return email_size_validate(val)
+        return user_check.email_size_validate(val)
 
     @validator("username")
     def username_char_set(cls, val):
-        return username_char_set_validate(val)
+        return user_check.username_char_set_validate(val)
     
     @validator("password")
     def no_space_in_string(cls, val):
-        return no_space_in_string_validate(val)
+        return user_check.no_space_in_string_validate(val)
 
 
 class UserRegisterIn(BaseModel):
     email: EmailStr = Field(...)
     username: str   = Field(..., min_length=5, max_length=50)
     password: str   = Field(..., min_length=8, max_length=50)
+    password_verify: str = Field(..., min_length=8, max_length=50)
 
     @validator("email")
     def email_size(cls, val):
-        return email_size_validate(val)
+        return user_check.email_size_validate(val)
 
     @validator("username")
     def username_char_set(cls, val):
-        return username_char_set_validate(val)
+        return user_check.username_char_set_validate(val)
     
     @validator("password")
     def no_space_in_string(cls, val):
-        return no_space_in_string_validate(val)
+        return user_check.no_space_in_string_validate(val)
+    
+    @validator("password_verify")
+    def passwords_match(cls, val, values):
+        if not ("password" in values):
+            raise ValueError("password was not valid")
+        if val != values["password"]:
+            raise ValueError("passwords don't match")
+        # We already know that password matched is valid
+        return val
 
 
 class UserProfile(BaseModel):
@@ -75,15 +69,15 @@ class UserUpdateUsername(BaseModel):
 
     @validator("email")
     def email_size(cls, val):
-        return email_size_validate(val)
+        return user_check.email_size_validate(val)
 
     @validator("new_username")
     def username_char_set(cls, val):
-        return username_char_set_validate(val)
+        return user_check.username_char_set_validate(val)
     
     @validator("password")
     def no_space_in_string(cls, val):
-        return no_space_in_string_validate(val)
+        return user_check.no_space_in_string_validate(val)
 
     @validator("password_verify")
     def passwords_match(cls, val, values):
@@ -103,11 +97,11 @@ class UserUpdatePassword(BaseModel):
 
     @validator("email")
     def email_size(cls, val):
-        return email_size_validate(val)
+        return user_check.email_size_validate(val)
     
     @validator("old_password", "new_password")
     def no_space_in_string(cls, val):
-        return no_space_in_string_validate(val)
+        return user_check.no_space_in_string_validate(val)
 
     @validator("old_password_verify")
     def passwords_match(cls, val, values):
@@ -136,11 +130,11 @@ class UserUpdateIcon(BaseModel):
 
     @validator("email")
     def email_size(cls, val):
-        return email_size_validate(val)
+        return user_check.email_size_validate(val)
 
     @validator("password")
     def no_space_in_string(cls, val):
-        return no_space_in_string_validate(val)
+        return user_check.no_space_in_string_validate(val)
 
     @validator("password_verify")
     def passwords_match(cls, val, values):

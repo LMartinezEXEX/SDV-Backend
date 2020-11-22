@@ -1,5 +1,4 @@
 # Imports
-from imghdr import what
 from itertools import chain
 from datetime import datetime, timedelta
 from pydantic import EmailStr, ValidationError
@@ -194,31 +193,8 @@ async def user_update_icon(
     try:
         update_data = UserUpdateIcon(email=email, password=password, password_verify=password_verify)
 
-        # ~ 2 MB is maximum size 
-        max_size_icon = 2097152
-        check_real_size = 0
-        chunk_size = 1024
-        chunk = new_icon.file.read(chunk_size)
-        raw_icon = "".encode()
-        while chunk:
-            check_real_size += len(chunk)
-            raw_icon += chunk
-            if check_real_size > max_size_icon:
-                raise update_icon_size_exception
-            chunk = new_icon.file.read(chunk_size)
-        
-        if new_icon.content_type not in [
-                "image/jpeg", "image/png", "image/bmp", "image/webp"]:
-            raise update_icon_format_exception
-
-        #raw_icon = new_icon.file.read()
-    
-        if what(new_icon.filename, h=raw_icon) not in [
-                "jpeg", "png", "bmp", "webp"]:
-            raise update_icon_format_exception
-
         if update_data.email == user.email:
-            if await change_icon(update_data, raw_icon):
+            if await change_icon(update_data, new_icon):
                 return {
                     "email": user.email,
                     "result": "success"
