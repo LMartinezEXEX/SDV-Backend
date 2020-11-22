@@ -62,8 +62,7 @@ def test_update_username():
         json = { 
             "email": single_user["email"], 
             "new_username": single_user["username"] + UPDATE_USERNAME_STRING, 
-            "password": single_user["password"],  
-            "password_verify": single_user["password"]
+            "password": single_user["password"]
         }
     )
     assert response.status_code == 200, f'Error:\n{response.content.decode()}\n\nAuthorization: {pytest.USER_AUTH}\n'
@@ -80,9 +79,9 @@ def test_update_password(email, old_password, new_password, expected_codes, fail
         headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
         json = { 
             "email": email, 
-            "old_password": old_password, 
-            "old_password_verify": old_password, 
-            "new_password": new_password 
+            "old_password": old_password,  
+            "new_password": new_password, 
+            "new_password_verify": new_password,
         }
     )
     assert response.status_code in expected_codes, fail_message
@@ -107,8 +106,7 @@ def test_update_icon(email, password, dir_file, file, expected_codes, fail_messa
         headers = { "accept": "application/json", "Authorization": pytest.USER_AUTH },
         data = { 
             "email": email, 
-            "password": password, 
-            "password_verify": password 
+            "password": password
         },
         files = { 
             "new_icon": (file, file_to_upload, "image/jpeg") 

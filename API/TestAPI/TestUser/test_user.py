@@ -105,8 +105,7 @@ def test_update_usernames(users):
         user_data = { 
             "email": user["email"], 
             "new_username": user["username"] + UPDATE_USERNAME_STRING, 
-            "password": user["password"], 
-            "password_verify": user["password"] 
+            "password": user["password"]
         }
 
         response = client.put(
@@ -135,8 +134,8 @@ def test_update_passwords(users):
         user_data = { 
             "email": user["email"], 
             "old_password": user["password"], 
-            "old_password_verify": user["password"], 
-            "new_password": user["password"] + UPDATE_PASSWORD_STRING 
+            "new_password": user["password"] + UPDATE_PASSWORD_STRING,
+            "new_password_verify": user["password"] + UPDATE_PASSWORD_STRING
         }
 
         response = client.put(
@@ -164,8 +163,7 @@ def test_update_icons(users):
 
         user_data = { 
             "email": user["email"], 
-            "password": user["password"] + UPDATE_PASSWORD_STRING, 
-            "password_verify": user["password"] + UPDATE_PASSWORD_STRING 
+            "password": user["password"] + UPDATE_PASSWORD_STRING 
         }
 
         file_to_upload = open(path.join(path.dirname(__file__), UPDATE_ICON_DIR, UPDATE_ICON_FILE), "rb")
