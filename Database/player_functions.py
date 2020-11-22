@@ -31,9 +31,7 @@ def is_player_in_game_by_id(game_id: int, player_id: int):
 @orm.db_session
 def is_player_the_owner(game_id: int, user_email: EmailStr):
     game = Game[game_id]
-    if game.owner.email == user_email:
-        return 1
-    return 0
+    return game.owner.email == user_email
 
 @orm.db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
@@ -94,7 +92,7 @@ def player_voted(game_id: int, player_id: int):
 
     voted = False
     # No one voted yet in this turn
-    if vote is None:
+    if not vote:
         return voted
 
     if Player_vote.get(lambda pv: pv.player.id == player_id and

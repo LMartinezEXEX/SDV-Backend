@@ -126,6 +126,7 @@ def game_factory(players_cuantity: int, turns_cuantity: int, start: bool = True,
     # Start game with one turn if game_state is 0
     if start:
         response = client.put('game/{}/init?player_id={}'.format(game_id, players[0].id))
+        
 
     candidate_id = players[0].id
     # Correcting bug about minister selection for endpoint "promulgate". Director should select!

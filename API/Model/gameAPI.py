@@ -62,7 +62,7 @@ def check_if_game_started(game_id: int, player_id: int):
         raise player_not_in_game_exception
     state = db_game.get_game_state(game_id)
     users = db_game.get_current_users_in_game(game_id=game_id)
-    if not state or state == 2 or state == -1:
+    if not state or state == 2:
         return {"game_state": state, "users": users}
     else:
         minister_id = db_turn.get_current_minister(game_id=game_id)
