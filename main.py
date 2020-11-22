@@ -1,15 +1,11 @@
 # Imports
-import json
-from USER_URLS import *
-from imghdr import what
 from itertools import chain
 from datetime import datetime, timedelta
-from typing import Optional
-from pydantic import EmailStr
-from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, Response, status, Body
-from fastapi.responses import RedirectResponse
+from pydantic import EmailStr, ValidationError
+from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, status, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from USER_URLS import *
 from API.Model.userAPI import *
 from API.Model.gameAPI import *
 from API.Model.turnAPI import *
@@ -73,12 +69,23 @@ async def get_root():
 async def user_register(new_user: UserRegisterIn):
     try:
         await register(new_user)
-    except BaseException:
+        return {
+            "email": new_user.email,
+            "result": "success"
+        }
+    except ValidationError as ve:
+        result = []
+        for error in ve.errors():
+            result.append({ error["loc"][0]: error["msg"] })
+        
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result
+        )
+    except HTTPException as http_e:
+        raise http_e
+    except:
         raise register_exception
-    return {
-        "email": new_user.email,
-        "result": "success"
-    }
 
 
 @app.post(
@@ -87,7 +94,11 @@ async def user_register(new_user: UserRegisterIn):
     tags=["Login"]
 )
 async def user_login(email: EmailStr = Form(...), password: str = Form(...)):
-    return await authenticate(email, password)
+    try:
+        user = await get_user_profile_by_email(email)
+        return await authenticate(user.email, password)
+    except Exception as e:
+        raise e
 
 
 @app.get(
@@ -96,10 +107,7 @@ async def user_login(email: EmailStr = Form(...), password: str = Form(...)):
     tags=["Profile"]
 )
 async def get_user_public_profile(email: EmailStr):
-    try:
-        return await get_user_profile_by_email(email)
-    except BaseException:
-        raise not_found_exception
+    return await get_user_profile_by_email(email)
 
 
 @app.get(
@@ -108,10 +116,8 @@ async def get_user_public_profile(email: EmailStr):
     tags=["User icon"]
 )
 async def get_user_icon(email: EmailStr):
-    try:
-        return Response(await get_user_icon_by_email(email))
-    except BaseException:
-        raise not_found_exception
+    return Response(await get_user_icon_by_email(email))
+
 
 @app.put(
     USER_UPDATE_USERNAME_URL,
@@ -121,13 +127,27 @@ async def get_user_icon(email: EmailStr):
 async def user_update_username(
         update_data: UserUpdateUsername,
         Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
-    if update_data.email == user.email and (await change_username(update_data)):
-        return {
-            "email": update_data.email,
-            "result": "success"
-        }
-    else:
-        raise update_exception
+    try:
+        if update_data.email == user.email:
+            if await change_username(update_data):
+                return {
+                    "email": update_data.email,
+                    "result": "success"
+                }
+            else:
+                raise unauthorized_exception
+        else:
+            raise unauthorized_exception
+    except ValidationError as ve:
+        result = []
+        for error in ve.errors():
+            result.append({ error["loc"][0]: error["msg"] })
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result
+        )
+    except Exception as e:
+        raise e
 
 
 @app.put(
@@ -138,13 +158,27 @@ async def user_update_username(
 async def user_update_password(
         update_data: UserUpdatePassword,
         Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
-    if update_data.email == user.email and (await change_password(update_data)):
-        return {
-            "email": user.email,
-            "result": "success"
-        }
-    else:
-        raise update_exception
+    try:
+        if update_data.email == user.email:
+            if await change_password(update_data):
+                return {
+                    "email": update_data.email,
+                    "result": "success"
+                }
+            else:
+                raise unauthorized_exception
+        else:
+            raise unauthorized_exception
+    except ValidationError as ve:
+        result = []
+        for error in ve.errors():
+            result.append({ error["loc"][0]: error["msg"] })
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result
+        )
+    except Exception as e:
+        raise e
 
 
 @app.put(
@@ -153,27 +187,32 @@ async def user_update_password(
     tags=["Update icon"]
 )
 async def user_update_icon(
-        email: EmailStr = Form(...), password: str = Form(...), new_icon: UploadFile = File(...),
-        Authorization: str = Header(...), user: UserProfile = Depends(get_this_user)):
-    update_data = UserUpdateIcon(email=email, password=password)
+        email: EmailStr = Form(...), password: str = Form(...), password_verify: str = Form(...), 
+        new_icon: UploadFile = File(...), Authorization: str = Header(...), 
+        user: UserProfile = Depends(get_this_user)):
+    try:
+        update_data = UserUpdateIcon(email=email, password=password, password_verify=password_verify)
 
-    if new_icon.content_type not in [
-            "image/jpeg", "image/png", "image/bmp", "image/webp"]:
-        raise update_icon_exception
-
-    raw_icon = new_icon.file.read()
-
-    if what(new_icon.filename, h=raw_icon) not in [
-            "jpeg", "png", "bmp", "webp"]:
-        raise update_icon_exception
-
-    if update_data.email == user.email and (await change_icon(update_data, raw_icon)):
-        return {
-            "email": user.email,
-            "result": "success"
-        }
-    else:
-        raise credentials_exception
+        if update_data.email == user.email:
+            if await change_icon(update_data, new_icon):
+                return {
+                    "email": user.email,
+                    "result": "success"
+                }
+            else:
+                raise unauthorized_exception
+        else:
+            raise unauthorized_exception
+    except ValidationError as ve:
+        result = []
+        for error in ve.errors():
+            result.append({ error["loc"][0]: error["msg"] })
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result
+        )
+    except Exception as e:
+        raise e
 
 
 #List games

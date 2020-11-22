@@ -1,23 +1,28 @@
 from fastapi import HTTPException, status
 
-not_found_exception = HTTPException(
-    status_code=status.HTTP_404_NOT_FOUND,
-    detail="Resource not found"
-)
-
 register_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Could not register the user"
 )
 
-update_exception = HTTPException(
+asset_file_icon_exception = HTTPException(
+    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    detail="Could not open and read default icon file"
+)
+ 
+passwords_dont_match_exception = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
-    detail="Failed to update"
+    detail="Passwords provided didn't match"
 )
 
-update_icon_exception = HTTPException(
+update_icon_format_exception = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail="Failed to update icon. Formats allowed: jpeg, png, bmp, webp"
+)
+
+update_icon_size_exception = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail="Failed to update icon. Largest size allowed is 2 MB"
 )
 
 unauthorized_exception = HTTPException(
@@ -30,14 +35,14 @@ not_authenticated_exception = HTTPException(
     detail="Not authenticated"
 )
 
+expired_signature_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Expired signature, you need to login again"
+)
+
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
-)
-
-profile_exception = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,
-    detail="Login to see private profile"
 )
 
 user_not_found_exception = HTTPException(
