@@ -100,6 +100,11 @@ game_has_finished_exception = HTTPException(
     detail="The game has finished"
 )
 
+game_not_deleted_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="The game has not been deleted"
+)
+
 game_not_started_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Game hasn't started"

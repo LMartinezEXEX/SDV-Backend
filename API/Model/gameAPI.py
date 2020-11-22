@@ -30,6 +30,21 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
     return {"Player_Id": player_id}
 
 
+def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
+    if not db_game.get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    if not db_game.get_game_state(game_id=game_id):
+        raise game_has_started_exception
+    if not db_player.is_player_in_game_by_email(game_id=game_id, user_email=user_email.email):
+        raise player_not_in_game_exception
+    if db_player.is_player_the_owner(game_id=game_id, user_email=user_email.email):
+        message = db_game.delete_game(game_id=game_id)
+        return {"message": message }
+    else:
+        message = db_game.remove_player_from_game(game_id=game_id, user_email=user_email.email)
+        return {"message": message}
+
+
 def init_game_with_ids(game_id: int, player_id: int):
     db_game.check_init_conditions(game_id=game_id, player_id=player_id)
     minister_id = db_turn.create_first_turn(game_id=game_id)
@@ -41,6 +56,8 @@ def init_game_with_ids(game_id: int, player_id: int):
 
 
 def check_if_game_started(game_id: int, player_id: int):
+    if not db_game.get_game_by_id(game_id=game_id):
+        return {"game_state": "The game has been deleted"}
     if not db_player.is_player_in_game_by_id(game_id=game_id, player_id=player_id):
         raise player_not_in_game_exception
     state = db_game.get_game_state(game_id)
@@ -68,5 +85,6 @@ def game_status(game_id: int):
             "current minister id": status[3],
             "current director id": status[4],
             "vote done": status[5],
-            "expelliarmus": status[6],
-            "minister consent": status[7]}
+            "vote started": status[6],
+            "expelliarmus": status[7],
+            "minister consent": status[8]}

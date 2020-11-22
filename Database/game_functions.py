@@ -121,6 +121,24 @@ def check_init_conditions(game_id: int, player_id: int):
 
 
 @orm.db_session
+def remove_player_from_game(game_id: int, user_email: EmailStr):
+    game = get_game_by_id(game_id=game_id)
+    for player in game.players:
+        if player.user.email == user_email:
+            game.players.remove(player)
+            return "Player removed OK"
+    raise player_not_found_exception
+
+
+@orm.db_session
+def delete_game(game_id: int):
+    Game[game_id].delete()
+    if not get_game_by_id(game_id):
+        return "The game was successfully deleted"
+    else:
+        raise game_not_deleted_exception
+
+@orm.db_session
 def assign_roles(game_id: int):
     game = get_game_by_id(game_id=game_id)
     amount_players = game.players.count()
@@ -232,5 +250,7 @@ def check_status(game_id: int):
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id,
-            len(vote.player_vote) == alive_players_count(game_id), turn.expelliarmus,
+            len(vote.player_vote) == alive_players_count(game_id), 
+            turn.candidate_minister.id != turn.candidate_director.id,
+            turn.expelliarmus,
             turn.minister_consent]
