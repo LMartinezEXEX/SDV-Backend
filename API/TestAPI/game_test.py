@@ -347,9 +347,9 @@ def test_game_state_not_initialized():
      assert response.status_code == 200
      assert len(users) == 5
 
-    
+
 def test_leave_game_not_initialized_owner():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0, start=False)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=1, start=False)
      owner = game_data[1]
      owner_email = {"email": 'usuario{}@gmail.br'.format(game_data[2]-5)}
      response = leave_game_not_initialized(game_id=game_data[0], user_email=owner_email)
@@ -357,12 +357,12 @@ def test_leave_game_not_initialized_owner():
 
      assert response.json() == {"message": "The game was successfully deleted"}
      assert response.status_code == 200
-     
+
      assert response2.json() == {"game_state": "The game has been deleted"}
 
 
 def test_leave_game_not_initialized_not_owner():
-     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=0, start=False)
+     game_data = game_factory(players_cuantity=5, turns_cuantity=0, game_state=1, start=False)
      player_id = game_data[2]-1
      player_email = {"email": 'usuario{}@gmail.br'.format(game_data[2]-1)}
      response = leave_game_not_initialized(game_id=game_data[0], user_email=player_email)
