@@ -223,9 +223,15 @@ def get_players_info(game_id):
     players_info_list = []
     for id in players_id_list:
         player = db_player.get_player_by_id(id)
+        loyalty = ""
+        if player.rol == "Voldemort":
+            loyalty = "Voldemort"
+        else:
+            loyalty = player.loyalty
         players_info_list.append({"player_id": id,
                                   "username": player.user.username,
-                                  "loyalty": player.loyalty})
+                                  "loyalty": loyalty,
+                                  "is alive": player.is_alive})
 
     return players_info_list
 

@@ -1060,13 +1060,21 @@ def test_get_players_info():
 
     info = []
     for i in range(7):
+        loyalty = ""
+        if (i + 1) % 2 == 0:
+            loyalty = "Fenix Order"
+        else:
+            loyalty = "Death Eater"
+        # Is last player, who happend to be voldemort
+        if i == 6:
+            loyalty = "Voldemort"
         info.append({"player_id": game_data[1]+i,
                      "username": 'User_{}'.format(game_data[2] - 7 + i),
-                     "loyalty": "Fenix Order" if (i + 1) % 2 == 0 else "Death Eater"})
+                     "loyalty": loyalty,
+                     "is alive": True})
 
     assert response.status_code == 200
-    assert response.json() == {"Players info": info,
-                               "Voldemort id": game_data[1] + 6}
+    assert response.json() == {"Players info": info}
 
 
 '''
