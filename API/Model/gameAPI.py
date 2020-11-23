@@ -33,7 +33,7 @@ def join_game_with_keys(game_id: int, user_email: EmailStr):
 def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
     if not db_game.get_game_by_id(game_id=game_id):
         raise game_not_found_exception
-    if not db_game.get_game_state(game_id=game_id):
+    if db_game.get_game_state(game_id=game_id):
         raise game_has_started_exception
     if not db_player.is_player_in_game_by_email(game_id=game_id, user_email=user_email.email):
         raise player_not_in_game_exception
