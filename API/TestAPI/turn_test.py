@@ -1065,7 +1065,8 @@ def test_get_players_info():
                      "loyalty": "Fenix Order" if (i + 1) % 2 == 0 else "Death Eater"})
 
     assert response.status_code == 200
-    assert response.json() == {"Players info": info}
+    assert response.json() == {"Players info": info,
+                               "Voldemort id": game_data[1] + 6}
 
 
 '''

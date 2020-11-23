@@ -33,6 +33,14 @@ def get_game_state(game_id):
 
 
 @orm.db_session
+def get_voldemort_id(game_id: int):
+    players = get_player_set(game_id)
+    for player in players:
+        if player.rol == "Voldemort":
+            return player.id
+
+
+@orm.db_session
 def set_game_init(game_id: int):
     Game[game_id].state = 1
 
@@ -250,7 +258,7 @@ def check_status(game_id: int):
 
     return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
             turn.current_minister.id, turn.current_director.id,
-            len(vote.player_vote) == alive_players_count(game_id), 
+            len(vote.player_vote) == alive_players_count(game_id),
             turn.candidate_minister.id != turn.candidate_director.id,
             turn.expelliarmus,
             turn.minister_consent]

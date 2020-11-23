@@ -15,7 +15,8 @@ def check_and_get_player_ids(game_id: int):
 def check_and_get_players_info(game_id: int):
     check_game_state(game_id)
 
-    return {"Players info": db_game.get_players_info(game_id)}
+    return {"Players info": db_game.get_players_info(game_id),
+            "Voldemort id": db_game.get_voldemort_id(game_id)}
 
 
 def check_and_reject_notify(game_id: int, player_id: int):
