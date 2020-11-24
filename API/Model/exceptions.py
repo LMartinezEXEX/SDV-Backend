@@ -40,6 +40,11 @@ expired_signature_exception = HTTPException(
     detail="Expired signature, you need to login again"
 )
 
+invalid_token_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid JWT token"
+)
+
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
