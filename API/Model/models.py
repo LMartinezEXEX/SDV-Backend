@@ -6,7 +6,7 @@ import API.Model.user_check as user_check
 
 class User(BaseModel):
     email: EmailStr = Field(...)
-    username: str   = Field(..., min_length=5, max_length=50)
+    username: str   = Field(..., min_length=5, max_length=35)
     password: str   = Field(..., min_length=8, max_length=50)
     icon: bytes
     creation_date: datetime
@@ -28,7 +28,7 @@ class User(BaseModel):
 
 class UserRegisterIn(BaseModel):
     email: EmailStr = Field(...)
-    username: str   = Field(..., min_length=5, max_length=50)
+    username: str   = Field(..., min_length=5, max_length=35)
     password: str   = Field(..., min_length=8, max_length=50)
     password_verify: str = Field(..., min_length=8, max_length=50)
 
@@ -63,7 +63,7 @@ class UserProfile(BaseModel):
 
 class UserUpdateUsername(BaseModel):
     email: EmailStr   = Field(...)
-    new_username: str = Field(..., min_length=5, max_length=50)
+    new_username: str = Field(..., min_length=5, max_length=35)
     password: str     = Field(..., min_length=8, max_length=50)
 
     @validator("email")
