@@ -49,7 +49,36 @@ USERS = [
         "username": "thejoker",
         "password": "12345678"
     },
-
+    {
+        "email": "daredevil@gmail.com",
+        "username": "daredevil",
+        "password": "12345678"
+    },
+    {
+        "email": "uglygorilla22@sss.cn",
+        "username": "wangdong",
+        "password": "12345678"
+    },
+    {
+        "email": "han.gong@gggg.cn",
+        "username": "hangong",
+        "password": "12345678"
+    },
+    {
+        "email": "billy.jean@chan.cn",
+        "username": "billyjean12",
+        "password": "12345678"
+    },
+    {
+        "email": "paxddd@bells.cn",
+        "username": "paxddd",
+        "password": "12345678"
+    },
+    {
+        "email": "cesar@roma.it",
+        "username": "paxromana",
+        "password": "12345678"
+    }
 ]
 
 @pytest.fixture
