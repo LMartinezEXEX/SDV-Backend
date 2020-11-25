@@ -339,7 +339,8 @@ def test_initial_game_check():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": False,
-                               "minister consent": 2}
+                               "minister consent": 2,
+                               "election counter": 0}
 
 
 '''
@@ -369,7 +370,8 @@ def test_game_check_fenix_five_promulgations():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": False,
-                               "minister consent": 2}
+                               "minister consent": 2,
+                               "election counter": 0}
 
 
 '''
@@ -401,7 +403,8 @@ def test_game_check_six_death_eater_promulgations():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": False,
-                               "minister consent": 2}
+                               "minister consent": 2,
+                               "election counter": 0}
 
 
 '''
@@ -1203,7 +1206,8 @@ def test_expelliarmus():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": True,
-                               "minister consent": 2}
+                               "minister consent": 2,
+                               "election counter": 0}
 
 
 '''
@@ -1284,7 +1288,8 @@ def test_bad_consent_expelliarmus():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": True,
-                               "minister consent": 0}
+                               "minister consent": 0,
+                               "election counter": 0}
 
 
 
@@ -1317,4 +1322,5 @@ def test_good_consent_expelliarmus():
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": True,
-                               "minister consent": 1}
+                               "minister consent": 1,
+                               "election counter": 0}

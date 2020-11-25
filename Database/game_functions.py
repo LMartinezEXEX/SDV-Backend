@@ -267,4 +267,5 @@ def check_status(game_id: int):
             len(vote.player_vote) == alive_players_count(game_id),
             turn.candidate_minister.id != turn.candidate_director.id,
             turn.expelliarmus,
-            turn.minister_consent]
+            turn.minister_consent,
+            board.election_counter]

@@ -87,4 +87,5 @@ def game_status(game_id: int):
             "vote done": status[5],
             "vote started": status[6],
             "expelliarmus": status[7],
-            "minister consent": status[8]}
+            "minister consent": status[8],
+            "election counter": status[9]}
