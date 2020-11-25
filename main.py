@@ -2,7 +2,7 @@
 from itertools import chain
 from datetime import datetime, timedelta
 from pydantic import EmailStr, ValidationError
-from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, status, Body, Response
+from fastapi import FastAPI, Header, Depends, Form, File, UploadFile, status, Body, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from USER_URLS import *
@@ -16,6 +16,8 @@ from API.Model.spellAPI import *
 from API.Model.boardAPI import *
 from API.Model.exceptions import *
 from API.Model.metadata import *
+from Chat.chatAPI import *
+from fastapi.responses import HTMLResponse
 
 
 # Add metadata tags for each module
@@ -77,7 +79,7 @@ async def user_register(new_user: UserRegisterIn):
         result = []
         for error in ve.errors():
             result.append({ error["loc"][0]: error["msg"] })
-        
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=result
@@ -187,8 +189,8 @@ async def user_update_password(
     tags=["Update icon"]
 )
 async def user_update_icon(
-        email: EmailStr = Form(...), password: str = Form(...), 
-        new_icon: UploadFile = File(...), Authorization: str = Header(...), 
+        email: EmailStr = Form(...), password: str = Form(...),
+        new_icon: UploadFile = File(...), Authorization: str = Header(...),
         user: UserProfile = Depends(get_this_user)):
     try:
         update_data = UserUpdateIcon(email=email, password=password)
@@ -294,7 +296,7 @@ async def init_game(id: int, player_id: int):
          tags=["Leave not initialized game"])
 async def leave_not_init_game(id: int, user_email: EmailParameter):
     return leave_game_not_initialized(game_id=id, user_email=user_email)
-    
+
 
 # Get list of player ids in the game
 
@@ -457,3 +459,69 @@ async def expelliarmus(id: int, director_id: int):
          tags=["Accept/decline expelliarmus"])
 async def expelliarmus(id: int, minister_data: MinisterExpelliarmusConsent):
     return check_and_consent_expelliarmus(id, minister_data)
+
+#-CHAT--------------------------------------------------------------------------
+html1 ="""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+"""
+html2="""
+            document.querySelector("#ws-id").textContent = player_id;
+            var ws = new WebSocket(`ws://localhost:8000/chat/1/${player_id}`);
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages');
+                var message = document.createElement('li');
+                var content = document.createTextNode(event.data);
+                message.appendChild(content);
+                messages.appendChild(message);
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText");
+                ws.send(input.value);
+                input.value = '';
+                event.preventDefault();
+            }
+        </script>
+    </body>
+</html>
+"""
+
+manager = ConnectionManager()
+user = 0
+
+@app.get("/chat")
+async def get():
+    global user
+    user += 1
+    return HTMLResponse(html1 + 'var player_id = {};'.format(user) + html2)
+
+
+@app.websocket("/chat/{id}/{player_id}")
+async def websocket_endpoint(websocket: WebSocket, id: int, player_id: int):
+    print(id)
+    print(player_id)
+    await manager.connect(websocket, id, player_id)
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            #await manager.send_personal_message(f"You wrote: {data}", websocket)
+            await manager.broadcast(f"PLAYER {player_id}~> {data}", id)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, id)
+        await manager.broadcast(f"PLAYER {player_id} LEFT THE CHAT", id)
+    except:
+        pass
