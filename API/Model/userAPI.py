@@ -86,32 +86,25 @@ async def is_valid_user(email: EmailStr):
 
 
 async def authenticate(email: EmailStr, password: str):
-    try:
-        if db_user.auth_user_password(email, password):
-            access_token = await new_access_token(
-                data={"sub": email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
-            )
-            access_token_json = jsonable_encoder(access_token)
-            last_access_date = datetime.utcnow()
-            db_user.last_access(
-                email,
-                last_access_date)
-            response = Response(
-                status_code=status.HTTP_200_OK,
-                headers={
-                    "WWW-Authenticate": "Bearer",
-                    "Authorization": f"Bearer {access_token_json}"
-                }
-            )
-            return response
-        else:
-            raise credentials_exception
-    except ExpiredSignatureError:
-        raise expired_signature_exception
-    except JWTError:
-        raise invalid_token_exception
-    except Exception as e:
-        raise e
+    if db_user.auth_user_password(email, password):
+        access_token = await new_access_token(
+            data={"sub": email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
+        )
+        access_token_json = jsonable_encoder(access_token)
+        last_access_date = datetime.utcnow()
+        db_user.last_access(
+            email,
+            last_access_date)
+        response = Response(
+            status_code=status.HTTP_200_OK,
+            headers={
+                "WWW-Authenticate": "Bearer",
+                "Authorization": f"Bearer {access_token_json}"
+            }
+        )
+        return response
+    else:
+        raise unauthorized_exception
 
 
 async def new_access_token(data: dict, expires_delta: timedelta):
@@ -140,7 +133,9 @@ async def get_this_user(Authorization: str = Header(...), access_token = Depends
         raise expired_signature_exception
     except JWTError:
         # Any other exception
-        raise credentials_exception
+        raise invalid_token_exception
+    except Exception as e:
+        raise e
 
 
 async def change_username(update_data: UserUpdateUsername):
