@@ -75,6 +75,11 @@ player_already_in_game_exception = HTTPException(
     detail="The user is already in game"
 )
 
+all_spaces_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Game's name must have at least one word"
+)
+
 less_than_five_players_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="The game must have at least 5 players"

@@ -82,6 +82,8 @@ def check_create_conditions(user_email: EmailStr, name: str,
     user = db_user.get_user_by_email(user_email)
     if not user:
         raise user_not_found_exception
+    if not len(name.strip()):
+        raise all_spaces_exception
     if min_players < 5:
         raise less_than_five_players_exception
     if max_players < min_players:
