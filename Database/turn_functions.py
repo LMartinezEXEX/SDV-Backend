@@ -168,7 +168,7 @@ def create_director_candidates_list(game_id, players, previous_formula_vote):
 
     player_ids = []
     for player in players:
-        if alive_players_counter == 5 and player.id != previous_director_id:
+        if alive_players_counter <= 5 and player.id != previous_director_id:
             player_ids.append(player.id)
 
         elif player.id != previous_minister_id and player.id != previous_director_id:
