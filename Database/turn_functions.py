@@ -148,7 +148,7 @@ def select_MM_candidate(game_id: int):
         current_minister=next_candidate_minister,
         current_director=next_candidate_minister)
 
-    return next_candidate_minister.id
+    return next_candidate_minister.id   
 
 
 @orm.db_session
@@ -279,6 +279,18 @@ def get_current_minister(game_id: int):
     turn_number = get_current_turn_number_in_game(game_id=game_id)
     turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
     return turn.current_minister.id
+
+
+@orm.db_session
+def get_current_director(game_id: int):
+    '''
+    Get director id in current turn
+    '''
+
+    game = db_game.get_game_by_id(game_id=game_id)
+    turn_number = get_current_turn_number_in_game(game_id=game_id)
+    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    return turn.current_director.id
 
 
 @orm.db_session

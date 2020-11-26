@@ -4,6 +4,8 @@ import datetime
 from main import app
 from pony.orm import db_session, select
 from Database.database import *
+from Database.game_functions import *
+from Database.turn_functions import *
 from fastapi.testclient import TestClient
 from API.Model.userAPI import *
 from API.Model.gameAPI import *
@@ -319,8 +321,23 @@ def get_vote_formula(game_id: int):
 
 
 def game_state_in_pregame(game_id: int, player_id: int):
-    return client.get("/game/{}/initialized/?player_id={}".format(game_id, player_id))
+    return client.get("/game/{}/initialized?player_id={}".format(game_id, player_id))
 
 def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
     return client.put("/game/{}/leave_not_init_game".format(game_id),
                       json= user_email)
+
+def leave_game_already_initialized(game_id: int, player_id: int):
+    return client.put("/game/{}/leave_game?player_id={}".format(game_id, player_id))
+
+@db_session()
+def get_not_important_player(game_id: int):
+    game = Game[game_id]
+    for player in game.players:
+        if ((player.rol is not "Voldemort") and 
+           (not is_current_minister(game_id=game_id, player_id=player.id)) and
+           (not is_current_director(game_id=game_id, player_id=player.id))):
+           return player.id
+           
+
+
