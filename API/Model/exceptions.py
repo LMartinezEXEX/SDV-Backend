@@ -244,3 +244,8 @@ consent_already_given_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Consent already given"
 )
+
+player_not_killed_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="The player is still alive"
+)

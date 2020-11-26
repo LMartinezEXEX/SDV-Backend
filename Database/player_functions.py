@@ -78,6 +78,11 @@ def is_player_investigated(player_id: int):
     player = get_player_by_id(player_id)
     return player.is_investigated
 
+@orm.db_session
+def kill_player_leaving(player_id: int):
+    player = get_player_by_id(player_id=player_id)
+    player.is_alive = False
+    return "The player has been killed"
 
 @orm.db_session
 def player_voted(game_id: int, player_id: int):

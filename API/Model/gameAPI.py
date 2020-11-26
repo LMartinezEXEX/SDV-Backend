@@ -45,6 +45,21 @@ def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
         return {"message": message}
 
 
+def leave_game_initialized(game_id: int, player_id: int):
+    if not db_game.get_game_by_id(game_id=game_id):
+        raise game_not_found_exception
+    if not db_player.is_player_in_game_by_id(game_id=game_id, player_id=player_id):
+        raise player_not_in_game_exception
+    message = db_player.kill_player_leaving(player_id=player_id)
+    if db_player.is_alive(game_id=game_id, player_id=player_id):
+        raise player_not_killed_exception
+    if (db_turn.is_current_minister(game_id=game_id, player_id=player_id) or 
+        db_turn.is_current_director(game_id=game_id, player_id=player_id)):
+        # if the player leaving is M or D, a new turn starts
+        db_turn.select_MM_candidate(game_id=game_id)
+    return {"message": message}
+
+
 def init_game_with_ids(game_id: int, player_id: int):
     db_game.check_init_conditions(game_id=game_id, player_id=player_id)
     minister_id = db_turn.create_first_turn(game_id=game_id)

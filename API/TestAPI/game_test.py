@@ -1,5 +1,8 @@
 from test_functions import *
 from pydantic import EmailStr
+from Database.player_functions import is_alive
+from Database.game_functions import get_voldemort_id
+from Database.turn_functions import get_current_turn_number_in_game, get_current_minister, get_current_director
 
 
 # --------  SET UP ----------------------------------
@@ -370,3 +373,47 @@ def test_leave_game_not_initialized_not_owner():
      assert response.status_code == 200
      assert response.json() == {"message": "Player removed OK"}
      assert not is_player_in_game_by_id(game_id=game_data[0], player_id=player_id)
+
+
+def test_leave_game_initialized_not_important_player():
+     game_data = game_factory(players_cuantity=5, turns_cuantity=1)
+     regular_player = get_not_important_player(game_id=game_data[0])
+     response = leave_game_already_initialized(game_id=game_data[0], player_id=regular_player)
+
+     assert response.status_code == 200
+     assert response.json() == {"message": "The player has been killed"}
+     assert not is_alive(game_id=game_data[0], player_id=regular_player)
+
+
+def test_leave_game_initialized_Voldemort():
+     game_data = game_factory(players_cuantity=6, turns_cuantity=1)
+     voldemort_id = get_voldemort_id(game_id=game_data[0])
+     response = leave_game_already_initialized(game_id=game_data[0], player_id=voldemort_id)
+
+     assert response.status_code == 200
+     assert response.json() == {"message": "The player has been killed"}
+     assert not is_alive(game_id=game_data[0], player_id=voldemort_id)
+
+
+def test_leave_game_initialized_minister():
+     game_data = game_factory(players_cuantity=6, turns_cuantity=1)
+     minister_id = get_current_minister(game_id=game_data[0])
+     turn_number = get_current_turn_number_in_game(game_id=game_data[0])
+     response = leave_game_already_initialized(game_id=game_data[0], player_id=minister_id)
+
+     assert response.status_code == 200
+     assert response.json() == {"message": "The player has been killed"}
+     assert not is_alive(game_id=game_data[0], player_id=minister_id)
+     assert get_current_turn_number_in_game(game_id=game_data[0]) == turn_number+1
+
+
+def test_leave_game_initialized_director():
+     game_data = game_factory(players_cuantity=6, turns_cuantity=4)
+     director_id = get_current_director(game_id=game_data[0])
+     turn_number = get_current_turn_number_in_game(game_id=game_data[0])
+     response = leave_game_already_initialized(game_id=game_data[0], player_id=director_id)
+
+     assert response.status_code == 200
+     assert response.json() == {"message": "The player has been killed"}
+     assert not is_alive(game_id=game_data[0], player_id=director_id)
+     assert get_current_turn_number_in_game(game_id=game_data[0]) == turn_number+1

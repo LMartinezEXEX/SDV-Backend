@@ -295,6 +295,13 @@ async def init_game(id: int, player_id: int):
 async def leave_not_init_game(id: int, user_email: EmailParameter):
     return leave_game_not_initialized(game_id=id, user_email=user_email)
     
+# Leave Game
+
+@app.put("/game/{id}/leave_game",
+         status_code=status.HTTP_200_OK,
+         tags=["Leave Game"])
+async def leave_game(id: int, player_id: int):
+    return leave_game_initialized(game_id=id, player_id=player_id)
 
 # Get list of player ids in the game
 
