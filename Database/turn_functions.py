@@ -386,3 +386,12 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     director_cards[1].discarded = True
 
     return turn.turn_number
+
+
+@orm.db_session
+def is_minister_or_director_candidate(game_id: int, player_id: int):
+    turn_number = get_current_turn_number_in_game(game_id)
+    turn = get_turn_in_game(game_id, turn_number)
+    return (turn.candidate_minister.id == player_id or 
+            turn.candidate_director.id == player_id)
+    

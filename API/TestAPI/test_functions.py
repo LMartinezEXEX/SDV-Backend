@@ -324,11 +324,11 @@ def game_state_in_pregame(game_id: int, player_id: int):
     return client.get("/game/{}/initialized?player_id={}".format(game_id, player_id))
 
 def leave_game_not_initialized(game_id: int, user_email: EmailParameter):
-    return client.put("/game/{}/leave_not_init_game".format(game_id),
+    return client.post("/game/{}/leave_not_init_game".format(game_id),
                       json= user_email)
 
 def leave_game_already_initialized(game_id: int, player_id: int):
-    return client.put("/game/{}/leave_game?player_id={}".format(game_id, player_id))
+    return client.post("/game/{}/leave_game?player_id={}".format(game_id, player_id))
 
 @db_session()
 def get_not_important_player(game_id: int):
