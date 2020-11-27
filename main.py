@@ -289,7 +289,7 @@ async def init_game(id: int, player_id: int):
 
 # Leave not initialized game
 
-@app.put("/game/{id}/leave_not_init_game",
+@app.post("/game/{id}/leave_not_init_game",
          status_code=status.HTTP_200_OK,
          tags=["Leave not initialized game"])
 async def leave_not_init_game(id: int, user_email: EmailParameter):
@@ -297,7 +297,7 @@ async def leave_not_init_game(id: int, user_email: EmailParameter):
     
 # Leave Game
 
-@app.put("/game/{id}/leave_game",
+@app.post("/game/{id}/leave_game",
          status_code=status.HTTP_200_OK,
          tags=["Leave Game"])
 async def leave_game(id: int, player_id: int):
