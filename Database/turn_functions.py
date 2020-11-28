@@ -373,7 +373,6 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     turn = get_current_turn_in_game(game_id)
 
     turn.minister_consent = consent
-    turn.expelliarmus = False
 
     if not consent:
         return turn.turn_number
@@ -385,6 +384,11 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
 
     director_cards[0].discarded = True
     director_cards[1].discarded = True
+
+    board = Board[game_id]
+    board.election_counter += 1
+
+    select_MM_candidate(game_id)
 
     return turn.turn_number
 
