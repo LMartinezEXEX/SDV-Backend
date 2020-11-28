@@ -1258,7 +1258,7 @@ def test_consent_expelliarmus_twice():
     response = consent_expelliarmus(game_data[0], game_data[1], False)
 
     assert response.status_code == 409
-    assert response.json() == {"detail": "Consent already given"}
+    assert response.json() == {"detail": "Director didnt propose a Expelliarmus"}
 
 
 '''
@@ -1287,7 +1287,7 @@ def test_bad_consent_expelliarmus():
                                "current director id": game_data[1],
                                "vote done": False,
                                "vote started": False,
-                               "expelliarmus": True,
+                               "expelliarmus": False,
                                "minister consent": 0,
                                "election counter": 0}
 
@@ -1321,6 +1321,6 @@ def test_good_consent_expelliarmus():
                                "current director id": game_data[1],
                                "vote done": False,
                                "vote started": False,
-                               "expelliarmus": True,
+                               "expelliarmus": False,
                                "minister consent": 1,
                                "election counter": 0}

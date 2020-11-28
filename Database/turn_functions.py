@@ -148,7 +148,7 @@ def select_MM_candidate(game_id: int):
         current_minister=next_candidate_minister,
         current_director=next_candidate_minister)
 
-    return next_candidate_minister.id   
+    return next_candidate_minister.id
 
 
 @orm.db_session
@@ -373,6 +373,7 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     turn = get_current_turn_in_game(game_id)
 
     turn.minister_consent = consent
+    turn.expelliarmus = False
 
     if not consent:
         return turn.turn_number
@@ -392,6 +393,5 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
 def is_minister_or_director_candidate(game_id: int, player_id: int):
     turn_number = get_current_turn_number_in_game(game_id)
     turn = get_turn_in_game(game_id, turn_number)
-    return (turn.candidate_minister.id == player_id or 
+    return (turn.candidate_minister.id == player_id or
             turn.candidate_director.id == player_id)
-    

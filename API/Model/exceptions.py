@@ -9,7 +9,7 @@ asset_file_icon_exception = HTTPException(
     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     detail="Could not open and read default icon file"
 )
- 
+
 passwords_dont_match_exception = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,
     detail="Passwords provided didn't match"
@@ -238,6 +238,11 @@ expelliarmus_promulgations_exception = HTTPException(
 expelliarmus_not_set_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="Director didnt propose a Expelliarmus"
+)
+
+cant_promulgate_expelliarmus_exception = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail="Expelliarmu's set, must wait for minister consent before promulgate"
 )
 
 consent_already_given_exception = HTTPException(
