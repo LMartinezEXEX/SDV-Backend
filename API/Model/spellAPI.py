@@ -5,6 +5,7 @@ import Database.turn_functions as db_turn
 import Database.board_functions as db_board
 import Database.spell_functions as db_spell
 import Database.player_functions as db_player
+import Database.game_functions as db_game
 
 class Spell(str, Enum):
     GUESSING      = "Guessing"
@@ -15,9 +16,10 @@ class Spell(str, Enum):
 
 def check_and_get_available_spell(game_id: int):
     check_game_state(game_id)
-
+    
+    game = db_game.get_game_by_id(game_id)
     if db_turn.get_current_turn_number_in_game(game_id) == 0 or (
-            not db_board.is_board_available_spell(game_id)):
+            not db_board.is_board_available_spell(game_id)) or game.chaos:
         spell = ""
 
     else:

@@ -135,7 +135,7 @@ def notify_with_player(game_id: int, player_id: int):
                     game_deck_cuantity = len(game.card)
                     # Select next card, returns a singleton list
                     card = Card.select(
-                        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1)
+                        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1) and (not c.discarded)
                         ).order_by(Card.order)[:1]
 
                     # Generate new card
@@ -148,10 +148,10 @@ def notify_with_player(game_id: int, player_id: int):
                     # where candidates were rejected
                     db_board.promulgate(game_id, card[0].type)
                     # Eliminate election constraints for director candidates
-                    if not game.chaos:
-                        game.chaos = True
+                    game.chaos = True
                 else:
                     # Chaos conditions are not met, then board.election_counter < 2
+                    game.chaos = False
                     board.election_counter += 1
 
                 db_turn.select_MM_candidate(game_id)

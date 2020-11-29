@@ -41,8 +41,10 @@ def promulgate(game_id: int, card_type: int):
 
     turn_number = db_turn.get_current_turn_number_in_game(game_id)
     turn = db_turn.get_turn_in_game(game_id, turn_number)
-
+    game = Game[game_id]
     board = Board[game_id]
+    # No more chaos
+    game.chaos = False
     # Restart board counter
     board.election_counter = 0
 

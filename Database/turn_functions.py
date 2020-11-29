@@ -1,6 +1,7 @@
 from pony import orm
 from Database.database import *
 import Database.aux_functions as aux
+import Database.board_functions as db_board
 import Database.card_functions as db_card
 import Database.game_functions as db_game
 import Database.player_functions as db_player
@@ -198,7 +199,6 @@ def director_available_candidates(game_id):
     if game.chaos:
         # Hogwarts fell into chaos, so all alive players can be headmasters in current turn
         # but not current minister
-        game.chaos = False
         return aux.create_players_id_list(regular_alive_players)
 
     return create_director_candidates_list(
@@ -386,7 +386,26 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     director_cards[1].discarded = True
 
     board = Board[game_id]
-    board.election_counter += 1
+    # Case where chaos conditions are met because minister's consent
+    if board.election_counter == 2:
+        game_deck_cuantity = len(game.card)
+        # Select next card, returns a singleton list
+        card = Card.select(
+            lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1) and (not c.discarded)
+            ).order_by(Card.order)[:1]
+        # Generate new card
+        db_card.generate_card(1, game_deck_cuantity + 1, game_id)
+        # This is not something necessary, just being consistent
+        turn.taken_cards = True
+        # With this inactive government, we have a sequence of three elections
+        # where candidates were rejected
+        db_board.promulgate(game_id, card[0].type)
+        # Eliminate election constraints for director candidates
+        game.chaos = True
+    else:
+        # board.election_counter < 2, and minister
+        game.chaos = False
+        board.election_counter += 1
 
     select_MM_candidate(game_id)
 
