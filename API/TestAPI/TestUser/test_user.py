@@ -1,6 +1,7 @@
 import pytest
 from os  import path
 from fastapi.testclient import TestClient
+from API.TestAPI.test_functions import *
 
 from API.TestAPI.TestUser.test_user_data import users, \
     UPDATE_USERNAME_STRING, UPDATE_PASSWORD_STRING, UPDATE_ICON_DIR, UPDATE_ICON_FILE
@@ -8,6 +9,25 @@ from API.TestAPI.TestUser.test_user_data import users, \
 from main import app
 
 client = TestClient(app)
+
+
+#-SET-UP-----------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session", autouse=True)
+def init_data(request):
+    db.drop_all_tables(with_all_data=True)
+    db.create_tables()
+    request.addfinalizer(clean_db)
+
+
+#-TEAR-DOWN--------------------------------------------------------------------
+
+
+def clean_db():
+    db.drop_all_tables(with_all_data=True)
+    db.create_tables()
+
 
 """ Guardamos lo que nos haga falta para interactuar autenticados en un diccionario.
     El diccionario tendría la "forma": "user_email" : (status_code_login, cookie)
@@ -27,11 +47,11 @@ Error: 409 Conflict
 """
 def test_register_users(users):
     for user in users:
-        user_register = { 
-            "email": user["email"], 
-            "username": user["username"], 
+        user_register = {
+            "email": user["email"],
+            "username": user["username"],
             "password": user["password"],
-            "password_verify": user["password"]  
+            "password_verify": user["password"]
         }
         response = client.post(
             "/user/register/",
@@ -102,9 +122,9 @@ def test_update_usernames(users):
     for user in users:
         authorization = USERS_AUTH_DICT[user["email"]][1]
 
-        user_data = { 
-            "email": user["email"], 
-            "new_username": user["username"] + UPDATE_USERNAME_STRING, 
+        user_data = {
+            "email": user["email"],
+            "new_username": user["username"] + UPDATE_USERNAME_STRING,
             "password": user["password"]
         }
 
@@ -131,9 +151,9 @@ def test_update_passwords(users):
     for user in users:
         authorization = USERS_AUTH_DICT[user["email"]][1]
 
-        user_data = { 
-            "email": user["email"], 
-            "old_password": user["password"], 
+        user_data = {
+            "email": user["email"],
+            "old_password": user["password"],
             "new_password": user["password"] + UPDATE_PASSWORD_STRING,
             "new_password_verify": user["password"] + UPDATE_PASSWORD_STRING
         }
@@ -161,9 +181,9 @@ def test_update_icons(users):
     for user in users:
         authorization = USERS_AUTH_DICT[user["email"]][1]
 
-        user_data = { 
-            "email": user["email"], 
-            "password": user["password"] + UPDATE_PASSWORD_STRING 
+        user_data = {
+            "email": user["email"],
+            "password": user["password"] + UPDATE_PASSWORD_STRING
         }
 
         file_to_upload = open(path.join(path.dirname(__file__), UPDATE_ICON_DIR, UPDATE_ICON_FILE), "rb")

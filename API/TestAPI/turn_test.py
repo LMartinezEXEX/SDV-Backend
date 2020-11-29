@@ -1255,10 +1255,11 @@ def test_consent_expelliarmus_twice():
     start_expelliarmus(game_data[0], game_data[1])
 
     consent_expelliarmus(game_data[0], game_data[1], True)
+
     response = consent_expelliarmus(game_data[0], game_data[1], False)
 
     assert response.status_code == 409
-    assert response.json() == {"detail": "Director didnt propose a Expelliarmus"}
+    assert response.json() == {"detail": "Player is not minister"}
 
 
 '''
@@ -1287,14 +1288,14 @@ def test_bad_consent_expelliarmus():
                                "current director id": game_data[1],
                                "vote done": False,
                                "vote started": False,
-                               "expelliarmus": False,
+                               "expelliarmus": True,
                                "minister consent": 0,
                                "election counter": 0}
 
 
 
 '''
-Test correct positive consent to expelliarmus response
+Test correct positive consent to expelliarmus response (i.e. start a new turn)
 '''
 
 
@@ -1317,10 +1318,10 @@ def test_good_consent_expelliarmus():
                                "finished": False,
                                "fenix promulgations": 0,
                                "death eater promulgations": 5,
-                               "current minister id": game_data[1],
-                               "current director id": game_data[1],
+                               "current minister id": game_data[1] + 1,
+                               "current director id": game_data[1] + 1,
                                "vote done": False,
                                "vote started": False,
                                "expelliarmus": False,
-                               "minister consent": 1,
-                               "election counter": 0}
+                               "minister consent": 2,
+                               "election counter": 1}
