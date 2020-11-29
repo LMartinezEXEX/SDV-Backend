@@ -21,10 +21,10 @@ from API.Model.metadata import *
 # Add metadata tags for each module
 tags_metadata = list(
     chain.from_iterable([
-        [{"name": "Root", "description": "", }],
-        user_metadata,
-    ]
-    )
+                        [{"name": "Root", "description": "Root endpoint", }],
+                        user_metadata,
+                        game_metadata]
+                        )
 )
 
 app = FastAPI(
@@ -551,7 +551,7 @@ async def end_game_notify(id: int, player_id: int):
          tags=["Leave Game"])
 async def leave_game(id: int, player_id: int):
     '''
-    Leave Game
+    Leave initialized game
     '''
 
     return leave_game_initialized(game_id=id, player_id=player_id)
