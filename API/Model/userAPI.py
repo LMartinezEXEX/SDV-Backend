@@ -14,7 +14,7 @@ from API.Model.token_data import *
 import Database.user_functions as db_user
 from API.Model.security_scheme import OAuth2PasswordBearer
 import API.Model.user_check as user_check
-from USER_URLS import *
+from URLS import *
 
 ASSETS_BASE_DIR = "Assets"
 ICONS_DIR = "icons"
