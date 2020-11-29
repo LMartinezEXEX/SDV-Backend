@@ -17,7 +17,8 @@ def get_game_by_id(game_id: int):
 
 @orm.db_session
 def players_in_game(game_id: int):
-    game = Game[game_id]
+    game = get_game_by_id(game_id)
+
     return game.players.count()
 
 
@@ -48,6 +49,7 @@ def set_game_init(game_id: int):
 @orm.db_session
 def get_player_set(game_id: int):
     game = get_game_by_id(game_id= game_id)
+
     return game.players
 
 
@@ -176,6 +178,7 @@ def get_game_list():
              "players": game.players.count()
             }
         )
+
     return g_list
 
 
@@ -187,6 +190,7 @@ def get_current_users_in_game(game_id: int):
         user_list.append(
             {"username": user.username}
         )
+
     return user_list
 
 
@@ -196,9 +200,10 @@ def alive_players_count(game_id: int):
     Get the number of alive players at the moment in the game
     '''
 
-    game = Game[game_id]
-    alive_players = Player.select(
-    lambda p: p.game_in.id == game_id and p.is_alive)
+    game = get_game_by_id(game_id=game_id)
+    alive_players = Player.select(lambda p: p.game_in.id == game_id \
+                                    and p.is_alive)
+
     return alive_players.count()
 
 
@@ -208,7 +213,7 @@ def get_all_players_id(game_id: int):
     Get all players id in the game
     '''
 
-    game = Game[game_id]
+    game = get_game_by_id(game_id=game_id)
     players = game.players.order_by(Player.id)
 
     return aux.create_players_id_list(players)
@@ -225,11 +230,7 @@ def get_players_info(game_id):
     players_info_list = []
     for id in players_id_list:
         player = db_player.get_player_by_id(id)
-        loyalty = ""
-        if player.rol == "Voldemort":
-            loyalty = "Voldemort"
-        else:
-            loyalty = player.loyalty
+        loyalty = "Voldemort" if player.rol == "Voldemort" else player.loyalty
         players_info_list.append({"player_id": id,
                                   "username": player.user.username,
                                   "loyalty": loyalty,
@@ -244,16 +245,11 @@ def check_status(game_id: int):
     Get the state of the 'in Game' game, to know if a team won or not
     '''
 
-    game = Game[game_id]
-    turn_number = db_turn.get_current_turn_number_in_game(game_id)
-    game_finished = False
-
-    if turn_number == 0:
-        return [game_finished, 0, 0, None, None]
-
-    turn = db_turn.get_turn_in_game(game_id, turn_number)
+    game = get_game_by_id(game_id=game_id)
+    turn = db_turn.get_current_turn_in_game(game_id)
     board = Board[game_id]
 
+    game_finished = False
     if board.fenix_promulgation == 5 or board.death_eater_promulgation == 6 \
         or (board.death_eater_promulgation >= 3 \
             and turn.current_director != turn.current_minister \
@@ -264,8 +260,11 @@ def check_status(game_id: int):
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
 
-    return [game_finished, board.fenix_promulgation, board.death_eater_promulgation,
-            turn.current_minister.id, turn.current_director.id,
+    return [game_finished,
+            board.fenix_promulgation,
+            board.death_eater_promulgation,
+            turn.current_minister.id,
+            turn.current_director.id,
             len(vote.player_vote) == alive_players_count(game_id),
             turn.candidate_minister.id != turn.candidate_director.id,
             turn.expelliarmus,

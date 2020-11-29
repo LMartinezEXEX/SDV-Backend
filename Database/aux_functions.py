@@ -38,18 +38,14 @@ def select_roles_for_game(players: int):
 
 
 def get_loyalty(rol: str):
-    if rol == "Voldemort":
-        return "Death Eater"
-    else:
-        return rol
-
+    return "Death Eater" if rol == "Voldemort" else rol
 
 
 def create_players_id_list(players):
     '''
     Create a list of player ids based on the input 'players' array of Player
     '''
-    
+
     player_ids = []
 
     for player in players:

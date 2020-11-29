@@ -17,6 +17,7 @@ def get_player_by_id(player_id: int):
 @orm.db_session
 def get_player_rol_and_loyalty(player_id: int):
     player = get_player_by_id(player_id=player_id)
+
     return {"Rol": player.rol, "Loyalty": player.loyalty}
 
 
@@ -37,8 +38,10 @@ def is_player_in_game_by_id(game_id: int, player_id: int):
 
 @orm.db_session
 def is_player_the_owner(game_id: int, user_email: EmailStr):
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id=game_id)
+
     return game.owner.email == user_email
+
 
 @orm.db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
@@ -55,6 +58,7 @@ def put_new_player_in_game(user: EmailStr, game_id: int):
     commit()
     creator.playing_in.add(Player[new_player.id])
     game.players.add(Player[new_player.id])
+
     return new_player.id
 
 
@@ -64,8 +68,8 @@ def is_alive(game_id: int, player_id: int):
     Assert if player is alive
     '''
 
-    player = Player.get(lambda p: p.game_in.id ==
-                        game_id and p.id == player_id)
+    player = Player.get(lambda p: p.game_in.id == game_id and p.id == player_id)
+
     return player.is_alive
 
 
@@ -76,13 +80,17 @@ def is_player_investigated(player_id: int):
     '''
 
     player = get_player_by_id(player_id)
+
     return player.is_investigated
+
 
 @orm.db_session
 def kill_player_leaving(player_id: int):
     player = get_player_by_id(player_id=player_id)
     player.is_alive = False
+
     return "The player has been killed"
+
 
 @orm.db_session
 def player_voted(game_id: int, player_id: int):
@@ -90,25 +98,17 @@ def player_voted(game_id: int, player_id: int):
     Assert if a player already voted
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id=game_id)
     player = get_player_by_id(player_id)
 
-    turn_number = db_turn.get_current_turn_number_in_game(game_id)
-    turn = db_turn.get_turn_in_game(game_id, turn_number)
+    turn = db_turn.get_current_turn_in_game(game_id)
 
     vote = Vote.get(lambda v: v.turn.turn_number ==
                     turn.turn_number and v.turn.game.id == game_id)
 
-    voted = False
-    # No one voted yet in this turn
-    if not vote:
-        return voted
-
-    if Player_vote.get(lambda pv: pv.player.id == player_id and
-                    pv.vote.turn == turn and pv.vote.turn.game.id == game_id):
-        voted = True
-
-    return voted
+    return Player_vote.get(lambda pv: pv.player.id == player_id \
+                            and pv.vote.turn == turn \
+                            and pv.vote.turn.game.id == game_id)
 
 
 @orm.db_session
@@ -134,9 +134,10 @@ def notify_with_player(game_id: int, player_id: int):
                 if board.election_counter == 2:
                     game_deck_cuantity = len(game.card)
                     # Select next card, returns a singleton list
-                    card = Card.select(
-                        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1) and (not c.discarded)
-                        ).order_by(Card.order)[:1]
+                    card = Card.select(lambda c: c.game.id == game_id \
+                                        and c.order > (game_deck_cuantity - 1) \
+                                        and (not c.discarded)
+                                       ).order_by(Card.order)[:1]
 
                     # Generate new card
                     db_card.generate_card(1, game_deck_cuantity + 1, game_id)

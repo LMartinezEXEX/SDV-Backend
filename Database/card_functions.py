@@ -12,7 +12,7 @@ def generate_card(quantity: int, order_in_deck: int, game_id: int):
     Generate 'quantity' new cards for a game
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id=game_id)
 
     random.seed()
 
@@ -31,14 +31,13 @@ def generate_3_cards(game_id: int):
     Return the three cards in order, and create three new cards for future turns
     '''
 
-    game = Game[game_id]
-    turn_number = db_turn.get_current_turn_number_in_game(game_id)
-    turn = db_turn.get_turn_in_game(game_id, turn_number)
+    game = db_game.get_game_by_id(game_id=game_id)
+    turn = db_turn.get_current_turn_in_game(game_id)
     game_deck_cuantity = len(game.card)
 
-    cards = Card.select(
-        lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 3)
-        ).order_by(Card.order)[:3]
+    cards = Card.select(lambda c: c.game.id == game_id \
+                            and c.order > (game_deck_cuantity - 3)
+                        ).order_by(Card.order)[:3]
 
     generate_card(3, game_deck_cuantity + 1, game_id)
 
@@ -54,6 +53,7 @@ def get_not_discarded_cards(game_id: int):
 
     game = db_game.get_game_by_id(game_id=game_id)
     game_deck_quantity = len(game.card)
+
     card_list = []
     cards = Card.select(
         lambda c: (c.game.id == game_id) and
@@ -61,8 +61,10 @@ def get_not_discarded_cards(game_id: int):
         (c.order <= (game_deck_quantity - 3)) and
          (not c.discarded)
         ).order_by(Card.order)[:2]
+
     for card in cards:
         card_list.append(card.type)
+
     return card_list
 
 
@@ -74,17 +76,21 @@ def discard_card(game_id: int, data: int):
 
     game = db_game.get_game_by_id(game_id=game_id)
     deck_quantity = len(game.card)
-    card = Card.select(
-        lambda c: (c.game.id == game_id) and (c.order > (deck_quantity - 6)) and (c.type == data)
-        ).order_by(Card.order).first()
+
+    card = Card.select(lambda c: (c.game.id == game_id) \
+                        and (c.order > (deck_quantity - 6)) \
+                        and (c.type == data)
+                      ).order_by(Card.order).first()
+
     if not card:
         raise invalid_card_type_exception
+
     card.discarded = True
+
     if not card.discarded:
         raise not_discarded_exception
 
-    turn_number = db_turn.get_current_turn_number_in_game(game_id=game_id)
-    turn = db_turn.get_turn_in_game(game_id=game_id, turn_number=turn_number)
+    turn = db_turn.get_current_turn_in_game(game_id)
     turn.pass_cards=True
 
     return {"message": "Card discarded"}

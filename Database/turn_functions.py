@@ -8,14 +8,66 @@ import Database.player_functions as db_player
 
 
 @orm.db_session
+def get_current_minister(game_id: int):
+    '''
+    Get minister id in current turn
+    '''
+
+    game = db_game.get_game_by_id(game_id=game_id)
+    turn = get_current_turn_in_game(game_id)
+    return turn.current_minister.id
+
+
+@orm.db_session
+def get_current_director(game_id: int):
+    '''
+    Get director id in current turn
+    '''
+
+    game = db_game.get_game_by_id(game_id=game_id)
+    turn = get_current_turn_in_game(game_id)
+    return turn.current_director.id
+
+
+@orm.db_session
+def get_candidates(game_id: int):
+    '''
+    Get current turn's formula
+    '''
+
+    turn = get_current_turn_in_game(game_id)
+    return (turn.candidate_minister.id, turn.candidate_director.id)
+
+
+@orm.db_session
 def is_current_minister(game_id: int, player_id: int):
     '''
     Assert if player is the current minister in the current turn
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
     return turn.current_minister.id == player_id
+
+
+@orm.db_session
+def is_current_director(game_id: int, player_id: int):
+    '''
+    Assert if a player is the current director
+    '''
+
+    turn = get_current_turn_in_game(game_id)
+    return turn.current_director.id == player_id
+
+
+@orm.db_session
+def is_minister_or_director_candidate(game_id: int, player_id: int):
+    '''
+    Assert if a player is the minister or director candidate
+    '''
+
+    turn = get_current_turn_in_game(game_id)
+    return (turn.candidate_minister.id == player_id or
+            turn.candidate_director.id == player_id)
 
 
 @orm.db_session
@@ -24,8 +76,7 @@ def already_selected_director_candidate(game_id):
     Assert if the director candidate was already selected in the current turn
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
     return turn.candidate_minister.id != turn.candidate_director.id
 
 
@@ -35,8 +86,7 @@ def already_promulgate_in_current_turn(game_id: int):
     Assert if there was already a promulgation in the current turn
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
     return turn.promulgated
 
 
@@ -46,7 +96,7 @@ def get_current_turn_number_in_game(game_id: int):
     Get cuantity of turns in the game
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id)
     return len(game.turn)
 
 
@@ -56,8 +106,19 @@ def get_turn_in_game(game_id: int, turn_number: int):
     Get some turn instance in the game depending the number
     '''
 
-    return Turn.get(lambda t: t.game.id ==
-                    game_id and t.turn_number == turn_number)
+    return Turn.get(lambda t: t.game.id == game_id \
+                        and t.turn_number == turn_number)
+
+
+@orm.db_session
+def get_current_turn_in_game(game_id: int):
+    '''
+    Get current turn in game
+    '''
+
+    turn_number = get_current_turn_number_in_game(game_id)
+
+    return get_turn_in_game(game_id, turn_number)
 
 
 @orm.db_session
@@ -69,14 +130,15 @@ def get_next_candidate(players: Set(Player), last_candidate: Player = None):
     next_candidate = None
 
     if last_candidate:
-        next_candidate = players.select(
-            lambda p: p.is_alive and p.turn > last_candidate.turn).order_by(
-            Player.turn).first()
+        next_candidate = players.select(lambda p: p.is_alive \
+                                            and p.turn > last_candidate.turn
+                                       ).order_by(Player.turn
+                                       ).first()
 
     if next_candidate is None:
-        next_candidate = players.select(
-            lambda p: p.is_alive).order_by(
-            Player.turn).first()
+        next_candidate = players.select(lambda p: p.is_alive
+                                       ).order_by(Player.turn
+                                       ).first()
 
     return next_candidate
 
@@ -116,7 +178,7 @@ def select_MM_candidate(game_id: int):
     Start a new turn and return the candidate for minister in mentioned turn.
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id)
     players_set = game.players
     next_candidate_minister = None
 
@@ -130,11 +192,11 @@ def select_MM_candidate(game_id: int):
     if game_turns > 1:
         # Second last turn info
         second_last_turn = get_turn_in_game(game_id=game_id, turn_number=game_turns-1)
-        if second_last_turn.imperius_player_id != 0:
+        if second_last_turn.imperius_player_id:
             last_candidate_minister = second_last_turn.candidate_minister
 
     # Get NEXT minister candidate
-    if last_turn.imperius_player_id != 0:
+    if last_turn.imperius_player_id:
         next_candidate_minister = db_player.get_player_by_id(last_turn.imperius_player_id)
     else:
         next_candidate_minister = get_next_candidate(players_set, last_candidate_minister)
@@ -187,15 +249,17 @@ def director_available_candidates(game_id):
     current_turn_number = get_current_turn_number_in_game(game_id)
     current_turn = get_turn_in_game(game_id, current_turn_number)
 
-    regular_alive_players = Player.select(
-        lambda p: p.is_alive and p.game_in.id == game_id and p.id != current_turn.candidate_minister.id)[:]
+    regular_alive_players = Player.select(lambda p: p.is_alive \
+                                            and p.game_in.id == game_id \
+                                            and p.id != current_turn.candidate_minister.id)[:]
 
-    previous_accepted_formula = Vote.select(
-        lambda v: v.result and v.turn.turn_number < current_turn_number and v.turn.game.id == game_id).order_by(
-        desc(
-            Vote.turn)).first()
+    previous_accepted_formula = Vote.select(lambda v: v.result \
+                                                and v.turn.turn_number < current_turn_number \
+                                                and v.turn.game.id == game_id
+                                            ).order_by(desc(Vote.turn)
+                                            ).first()
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id)
     if game.chaos:
         # Hogwarts fell into chaos, so all alive players can be headmasters in current turn
         # but not current minister
@@ -212,8 +276,7 @@ def select_DD_candidate(game_id, player_id):
     This function doesn't make checks, it should've been made privously
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
 
     director_candidate_player = db_player.get_player_by_id(player_id)
 
@@ -228,8 +291,7 @@ def taked_cards(game_id: int):
     Assert if the three cards for legislative session have been taken
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
 
     return turn.taken_cards
 
@@ -240,8 +302,7 @@ def director_cards_set(game_id: int):
     Check if minister passed cards to director
     '''
 
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
+    turn = get_current_turn_in_game(game_id)
 
     return turn.pass_cards
 
@@ -266,64 +327,8 @@ def create_first_turn(game_id: int):
         current_director=next_minister)
     db_card.generate_card(3,1,game_id)
     db_game.set_game_init(game_id)
+
     return next_minister.id
-
-
-@orm.db_session
-def get_current_minister(game_id: int):
-    '''
-    Get minister id in current turn
-    '''
-
-    game = db_game.get_game_by_id(game_id=game_id)
-    turn_number = get_current_turn_number_in_game(game_id=game_id)
-    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
-    return turn.current_minister.id
-
-
-@orm.db_session
-def get_current_director(game_id: int):
-    '''
-    Get director id in current turn
-    '''
-
-    game = db_game.get_game_by_id(game_id=game_id)
-    turn_number = get_current_turn_number_in_game(game_id=game_id)
-    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
-    return turn.current_director.id
-
-
-@orm.db_session
-def get_candidates(game_id: int):
-    '''
-    Get current turn's formula
-    '''
-
-    turn_number = get_current_turn_number_in_game(game_id=game_id)
-    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
-    return (turn.candidate_minister.id, turn.candidate_director.id)
-
-
-@orm.db_session
-def is_current_director(game_id: int, player_id: int):
-    '''
-    Assert if a player is the current director
-    '''
-
-    turn_number = get_current_turn_number_in_game(game_id=game_id)
-    turn = get_turn_in_game(game_id=game_id, turn_number=turn_number)
-    return turn.current_director.id == player_id
-
-
-@orm.db_session
-def get_current_turn_in_game(game_id: int):
-    '''
-    Get current turn in game
-    '''
-
-    turn_number = get_current_turn_number_in_game(game_id)
-
-    return get_turn_in_game(game_id, turn_number)
 
 
 @orm.db_session
@@ -390,9 +395,10 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     if board.election_counter == 2:
         game_deck_cuantity = len(game.card)
         # Select next card, returns a singleton list
-        card = Card.select(
-            lambda c: c.game.id == game_id and c.order > (game_deck_cuantity - 1) and (not c.discarded)
-            ).order_by(Card.order)[:1]
+        card = Card.select(lambda c: c.game.id == game_id \
+                            and c.order > (game_deck_cuantity - 1) \
+                            and (not c.discarded)
+                          ).order_by(Card.order)[:1]
         # Generate new card
         db_card.generate_card(1, game_deck_cuantity + 1, game_id)
         # This is not something necessary, just being consistent
@@ -410,11 +416,3 @@ def minister_set_expelliarmus_consent(game_id: int, consent: int):
     select_MM_candidate(game_id)
 
     return turn.turn_number
-
-
-@orm.db_session
-def is_minister_or_director_candidate(game_id: int, player_id: int):
-    turn_number = get_current_turn_number_in_game(game_id)
-    turn = get_turn_in_game(game_id, turn_number)
-    return (turn.candidate_minister.id == player_id or
-            turn.candidate_director.id == player_id)

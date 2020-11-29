@@ -2,6 +2,7 @@ from pony import orm
 from Database.database import *
 import Database.card_functions as db_card
 import Database.turn_functions as db_turn
+import Database.game_functions as db_game
 import Database.player_functions as db_player
 
 
@@ -83,8 +84,7 @@ def available_spell_in_game_conditions(game_id: int):
     '''
 
     board = Board[game_id]
-    current_turn = db_turn.get_current_turn_in_game(game_id)
-    death_eater_promulgation = Board[game_id].death_eater_promulgation
+    death_eater_promulgation = board.death_eater_promulgation
     player_cuantity = Game[game_id].players.count()
 
     spell = ""
@@ -109,7 +109,7 @@ def execute_guessing(game_id):
     Execute guessing
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id)
     board = Board[game_id]
     game_deck_cuantity = len(game.card)
     cards = Card.select(
@@ -145,7 +145,7 @@ def execute_avada_kedavra(game_id: int, player_id: int):
     Execute avada kedavra to a player in game
     '''
 
-    game = Game[game_id]
+    game = db_game.get_game_by_id(game_id)
     board = Board[game_id]
 
     player = db_player.get_player_by_id(player_id)

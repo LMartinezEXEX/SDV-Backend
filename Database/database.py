@@ -5,7 +5,7 @@ from pony.orm import *
 db = Database()
 db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
-# Declare PonyORM entities before mapping
+#-Declare-PonyORM-entities-before-mapping---------------------------------------
 
 
 class User(db.Entity):
@@ -103,7 +103,7 @@ class Board(db.Entity):
     election_counter = Required(int)
     spell_available = Required(bool)
 
-#
+#-------------------------------------------------------------------------------
 
 
 db.generate_mapping(create_tables=True)
