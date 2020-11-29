@@ -25,9 +25,14 @@ update_icon_size_exception = HTTPException(
     detail="Failed to update icon. Largest size allowed is 2 MB"
 )
 
-unauthorized_exception = HTTPException(
+incorrect_email_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Incorrect email or password",
+    detail="Incorrect email",
+)
+
+incorrect_password_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Incorrect password",
 )
 
 not_authenticated_exception = HTTPException(

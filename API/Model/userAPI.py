@@ -104,7 +104,7 @@ async def authenticate(email: EmailStr, password: str):
         )
         return response
     else:
-        raise unauthorized_exception
+        raise incorrect_password_exception
 
 
 async def new_access_token(data: dict, expires_delta: timedelta):

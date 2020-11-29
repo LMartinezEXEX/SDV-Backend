@@ -160,9 +160,9 @@ async def user_update_username(
                     "result": "success"
                 }
             else:
-                raise unauthorized_exception
+                raise incorrect_password_exception
         else:
-            raise unauthorized_exception
+            raise incorrect_email_exception
     except ValidationError as ve:
         result = []
         for error in ve.errors():
@@ -195,9 +195,9 @@ async def user_update_password(
                     "result": "success"
                 }
             else:
-                raise unauthorized_exception
+                raise incorrect_password_exception
         else:
-            raise unauthorized_exception
+            raise incorrect_email_exception
     except ValidationError as ve:
         result = []
         for error in ve.errors():
@@ -233,9 +233,9 @@ async def user_update_icon(
                     "result": "success"
                 }
             else:
-                raise unauthorized_exception
+                raise incorrect_password_exception
         else:
-            raise unauthorized_exception
+            raise incorrect_email_exception
     except ValidationError as ve:
         result = []
         for error in ve.errors():

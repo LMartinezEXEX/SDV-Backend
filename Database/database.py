@@ -10,7 +10,7 @@ db.bind(provider='sqlite', filename='secretVoldemort.sqlite', create_db=True)
 
 class User(db.Entity):
     email = PrimaryKey(str, 100)
-    username = Required(str, 35, unique=True)
+    username = Required(str, 20, unique=True)
     password = Required(bytes)
     icon = Required(bytes)
     creation_date = Required(datetime.datetime)
