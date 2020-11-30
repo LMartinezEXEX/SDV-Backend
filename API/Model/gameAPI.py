@@ -53,11 +53,11 @@ def leave_game_initialized(game_id: int, player_id: int):
     message = db_player.kill_player_leaving(player_id=player_id)
     if db_player.is_alive(game_id=game_id, player_id=player_id):
         raise player_not_killed_exception
-    if (db_turn.is_current_minister(game_id=game_id, player_id=player_id) or 
-        db_turn.is_current_director(game_id=game_id, player_id=player_id) or 
-        db_turn.is_minister_or_director_candidate):
+    #if (db_turn.is_current_minister(game_id=game_id, player_id=player_id) or 
+    #    db_turn.is_current_director(game_id=game_id, player_id=player_id) or 
+    #    db_turn.is_minister_or_director_candidate(game_id=game_id, player_id=player_id)):
         # if the player leaving is M or D, a new turn starts
-        db_turn.select_MM_candidate(game_id=game_id)
+    db_turn.select_MM_candidate(game_id=game_id)
     return {"message": message}
 
 
