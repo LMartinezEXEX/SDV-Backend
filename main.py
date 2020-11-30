@@ -480,7 +480,9 @@ html1 ="""
 """
 html2="""
             document.querySelector("#ws-id").textContent = player_id;
-            var ws = new WebSocket(`ws://localhost:8000/chat/1/${player_id}`);
+"""
+
+html3="""
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages');
                 var message = document.createElement('li');
@@ -502,26 +504,32 @@ html2="""
 manager = ConnectionManager()
 user = 0
 
-@app.get("/chat")
-async def get():
+@app.get("/chat/{id}")
+async def get(id: int):
     global user
     user += 1
-    return HTMLResponse(html1 + 'var player_id = {};'.format(user) + html2)
+    return HTMLResponse(html1 + 'var player_id = {};'.format(user) + html2 + 'var ws = new WebSocket(`ws://localhost:8000/chat_ws/{}/{}`);'.format(id, user) + html3)
 
 
-@app.websocket("/chat/{id}/{player_id}")
+@app.websocket("/chat_ws/{id}/{player_id}")
 async def websocket_endpoint(websocket: WebSocket, id: int, player_id: int):
     print(id)
     print(player_id)
-    await manager.connect(websocket, id, player_id)
+    try:
+        await manager.connect(websocket, id, player_id)
+        await manager.broadcast(f"PLAYER {player_id} JOINED THE GAME", id)
+    except:
+        return
 
     try:
         while True:
             data = await websocket.receive_text()
+            if len(data) == 0:
+                continue
             #await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"PLAYER {player_id}~> {data}", id)
+            await manager.broadcast(f"PLAYER {player_id}: {data}", id)
     except WebSocketDisconnect:
         manager.disconnect(websocket, id)
-        await manager.broadcast(f"PLAYER {player_id} LEFT THE CHAT", id)
+        await manager.broadcast(f"PLAYER {player_id} LEFT THE GAME", id)
     except:
         pass

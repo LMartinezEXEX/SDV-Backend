@@ -9,9 +9,9 @@ class ConnectionManager:
         self.active_connections: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, game_id: int, player_id: int):
-        state = get_game_state(game_id)
-        if state == -1 or not is_player_in_game_by_id(game_id, player_id):
-            return await websocket.close(code=1015)
+        #state = get_game_state(game_id)
+        #if state == -1 or not is_player_in_game_by_id(game_id, player_id):
+        #    return await websocket.close(code=1015)
 
         await websocket.accept()
         try:
