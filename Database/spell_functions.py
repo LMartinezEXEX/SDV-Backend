@@ -17,13 +17,13 @@ def check_available_spell(game_id: int):
     player_cuantity = Game[game_id].players.count()
 
     if (player_cuantity == 5 or player_cuantity ==
-            6) and death_eater_promulgation >= 3:
+            6) and 3 <= death_eater_promulgation <= 5:
         board.spell_available = True
 
-    elif (player_cuantity == 7 or player_cuantity == 8) and death_eater_promulgation >= 2:
+    elif (player_cuantity == 7 or player_cuantity == 8) and 2 <= death_eater_promulgation <= 5:
         board.spell_available = True
 
-    elif (player_cuantity == 9 or player_cuantity == 10) and death_eater_promulgation >= 1:
+    elif (player_cuantity == 9 or player_cuantity == 10) and 1 <= death_eater_promulgation <= 5:
 
         board.spell_available = True
 
