@@ -108,6 +108,9 @@ async def authenticate(email: EmailStr, password: str):
 
 
 async def new_access_token(data: dict, expires_delta: timedelta):
+    '''
+    Issue new token
+    '''
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -119,6 +122,9 @@ async def new_access_token(data: dict, expires_delta: timedelta):
 
 
 async def get_this_user(Authorization: str = Header(...), access_token = Depends(oauth2_scheme)):
+    '''
+    Check if token is fine, then returns some user data
+    '''
     try:
         # This is the case of user being logged and checks are fine, ie no
         # exceptions
@@ -132,9 +138,10 @@ async def get_this_user(Authorization: str = Header(...), access_token = Depends
     except ExpiredSignatureError:
         raise expired_signature_exception
     except JWTError:
-        # Any other exception
+        # Any other JWT exception
         raise invalid_token_exception
     except Exception as e:
+        # Any other exception
         raise e
 
 

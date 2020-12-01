@@ -83,6 +83,7 @@ async def user_register(new_user: UserRegisterIn):
             "result": "success"
         }
     except ValidationError as ve:
+        # Collect validation errors and return a dictionary
         result = []
         for error in ve.errors():
             result.append({ error["loc"][0]: error["msg"] })
@@ -164,6 +165,7 @@ async def user_update_username(
         else:
             raise incorrect_email_exception
     except ValidationError as ve:
+        # Collect validation errors and return a dictionary
         result = []
         for error in ve.errors():
             result.append({ error["loc"][0]: error["msg"] })
@@ -199,6 +201,7 @@ async def user_update_password(
         else:
             raise incorrect_email_exception
     except ValidationError as ve:
+        # Collect validation errors and return a dictionary
         result = []
         for error in ve.errors():
             result.append({ error["loc"][0]: error["msg"] })
@@ -237,6 +240,7 @@ async def user_update_icon(
         else:
             raise incorrect_email_exception
     except ValidationError as ve:
+        # Collect validation errors and return a dictionary
         result = []
         for error in ve.errors():
             result.append({ error["loc"][0]: error["msg"] })
