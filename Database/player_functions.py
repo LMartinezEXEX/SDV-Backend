@@ -23,6 +23,9 @@ def get_player_rol_and_loyalty(player_id: int):
 
 @orm.db_session
 def is_player_in_game_by_email(user_email: EmailStr, game_id: int):
+    '''
+    Check if the player is in the game with its email
+    '''
     user_joining = db_user.get_user_by_email(email=user_email)
     game = db_game.get_game_by_id(game_id=game_id)
     for player in game.players:
@@ -38,6 +41,9 @@ def is_player_in_game_by_id(game_id: int, player_id: int):
 
 @orm.db_session
 def is_player_the_owner(game_id: int, user_email: EmailStr):
+    '''
+    Check if the player is the owner of the game
+    '''
     game = db_game.get_game_by_id(game_id=game_id)
 
     return game.owner.email == user_email
@@ -45,6 +51,9 @@ def is_player_the_owner(game_id: int, user_email: EmailStr):
 
 @orm.db_session
 def put_new_player_in_game(user: EmailStr, game_id: int):
+    '''
+    Create a new player and join a game
+    '''
     game = db_game.get_game_by_id(game_id=game_id)
     creator = db_user.get_user_by_email(email=user)
     new_player = Player(
@@ -86,6 +95,9 @@ def is_player_investigated(player_id: int):
 
 @orm.db_session
 def kill_player_leaving(player_id: int):
+    '''
+    When the player leave the game, the status of is_alive is False
+    '''
     player = get_player_by_id(player_id=player_id)
     player.is_alive = False
 

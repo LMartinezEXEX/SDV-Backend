@@ -48,6 +48,9 @@ def set_game_init(game_id: int):
 
 @orm.db_session
 def get_player_set(game_id: int):
+    '''
+    Get the list of players in game
+    '''
     game = get_game_by_id(game_id= game_id)
 
     return game.players
@@ -56,6 +59,9 @@ def get_player_set(game_id: int):
 @orm.db_session
 def save_new_game(owner: EmailStr, name: str,
                   min_players: int, max_players: int):
+    '''
+    Create a new game with its board
+    '''
     owner = db_user.get_user_by_email(email=owner)
     game = Game(
         owner=owner,
@@ -81,6 +87,9 @@ def save_new_game(owner: EmailStr, name: str,
 @orm.db_session
 def check_create_conditions(user_email: EmailStr, name: str,
                             min_players: int, max_players: int):
+    '''
+    Check the conditions to create a game
+    '''
     user = db_user.get_user_by_email(user_email)
     if not user:
         raise user_not_found_exception
@@ -96,6 +105,9 @@ def check_create_conditions(user_email: EmailStr, name: str,
 
 @orm.db_session
 def check_join_conditions(game_id: int, user_email: EmailStr):
+    '''
+    Check the conditions to join a game
+    '''
     game = get_game_by_id(game_id=game_id)
     if not game:
         raise game_not_found_exception
@@ -114,6 +126,9 @@ def check_join_conditions(game_id: int, user_email: EmailStr):
 
 @orm.db_session
 def check_init_conditions(game_id: int, player_id: int):
+    '''
+    Check the conditions to start a game
+    '''
     game = get_game_by_id(game_id=game_id)
     if not game:
         raise game_not_found_exception
@@ -134,6 +149,9 @@ def check_init_conditions(game_id: int, player_id: int):
 
 @orm.db_session
 def remove_player_from_game(game_id: int, user_email: EmailStr):
+    '''
+    Remove a player from the list of players in game (pregame)
+    '''
     game = get_game_by_id(game_id=game_id)
     for player in game.players:
         if player.user.email == user_email:
@@ -152,6 +170,9 @@ def delete_game(game_id: int):
 
 @orm.db_session
 def assign_roles(game_id: int):
+    '''
+    Assign the roles corresponding to the amount of players
+    '''
     game = get_game_by_id(game_id=game_id)
     amount_players = game.players.count()
     roles = aux.select_roles_for_game(players=amount_players)
@@ -165,6 +186,9 @@ def assign_roles(game_id: int):
 
 @orm.db_session
 def get_game_list():
+    '''
+    List the available games to join
+    '''
     games = Game.select(lambda g: g.state == 0)
     g_list = []
     for game in games:
@@ -184,6 +208,9 @@ def get_game_list():
 
 @orm.db_session
 def get_current_users_in_game(game_id: int):
+    '''
+    Get a username list from the users in the game
+    '''
     game = get_game_by_id(game_id=game_id)
     user_list = []
     for user in game.players.user:
